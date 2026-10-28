@@ -1,20 +1,25 @@
-﻿using QLKhachSan.Models;
+﻿using QLKhachSan.Filters;
+using QLKhachSan.Models;
 using System;
-
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Text;
+using System.Web.Helpers;
 using System.Web.Mvc;
-using QLKhachSan.Filters;
 
 namespace QLKhachSan.Controllers
 {
     [AdminAuthorize]
-
     public class AdminController : Controller
     {
-        private HotelDbContext db = new HotelDbContext();
+        private readonly HotelDbContext db = new HotelDbContext();
 
-        // DANH SÁCH ĐƠN ĐẶT PHÒNG
+        // =========================================================
+        // DASHBOARD VẬN HÀNH NÂNG CAO
+        // =========================================================
+        // DASHBOARD QUẢN TRỊ / TỔNG QUAN
+        // =========================================================
         public ActionResult Index(
             string keyword,
             string status,
@@ -22,210 +27,1829 @@ namespace QLKhachSan.Controllers
             DateTime? toDate)
         {
             var query = db.Bookings
-    .Include(b => b.Room)
-    .AsQueryable();
+                .Include(b => b.Room)
+                .Include(b => b.ThanhToans)
+                .AsQueryable();
 
-
-            // TÌM THEO TÊN / SĐT / EMAIL
             if (!string.IsNullOrWhiteSpace(keyword))
             {
+                keyword = keyword.Trim();
                 query = query.Where(b =>
                     b.CustomerName.Contains(keyword) ||
                     b.CustomerPhone.Contains(keyword) ||
-                    b.CustomerEmail.Contains(keyword)
-                );
+                    b.CustomerEmail.Contains(keyword));
             }
 
-
-            // LỌC THEO TRẠNG THÁI
             if (!string.IsNullOrWhiteSpace(status))
             {
-                query = query.Where(b =>
-                    b.Status == status
-                );
+                query = query.Where(b => b.Status == status);
             }
 
-
-            // LỌC TỪ NGÀY
             if (fromDate.HasValue)
             {
-                DateTime startDate =
-                    fromDate.Value.Date;
-
-                query = query.Where(b =>
-                    b.CreatedAt >= startDate
-                );
+                DateTime start = fromDate.Value.Date;
+                query = query.Where(b => b.CreatedAt >= start);
             }
 
-
-            // LỌC ĐẾN NGÀY
             if (toDate.HasValue)
             {
-                DateTime endDate =
-                    toDate.Value.Date.AddDays(1);
-
-                query = query.Where(b =>
-                    b.CreatedAt < endDate
-                );
+                DateTime end = toDate.Value.Date.AddDays(1);
+                query = query.Where(b => b.CreatedAt < end);
             }
 
+            DateTime today = DateTime.Today;
+            DateTime tomorrow = today.AddDays(1);
+            DateTime monthStart = new DateTime(today.Year, today.Month, 1);
+            DateTime monthEnd = monthStart.AddMonths(1);
 
-            // LẤY DANH SÁCH SAU KHI LỌC
-            var bookings = query
-                .OrderByDescending(b => b.CreatedAt)
-                .ToList();
+            decimal roomToday = db.ThanhToans
+                .Where(t => t.TrangThai == "Đã thanh toán" &&
+                            t.NgayThanhToan >= today &&
+                            t.NgayThanhToan < tomorrow)
+                .Select(t => (decimal?)t.SoTien)
+                .Sum() ?? 0;
+
+            decimal roomMonth = db.ThanhToans
+                .Where(t => t.TrangThai == "Đã thanh toán" &&
+                            t.NgayThanhToan >= monthStart &&
+                            t.NgayThanhToan < monthEnd)
+                .Select(t => (decimal?)t.SoTien)
+                .Sum() ?? 0;
+
+            decimal foodToday = GetFoodRevenue(today, tomorrow);
+
             ViewBag.Keyword = keyword;
             ViewBag.Status = status;
+            ViewBag.FromDate = fromDate.HasValue ? fromDate.Value.ToString("yyyy-MM-dd") : "";
+            ViewBag.ToDate = toDate.HasValue ? toDate.Value.ToString("yyyy-MM-dd") : "";
+
+            ViewBag.TodayRevenue = roomToday + foodToday;
+            ViewBag.MonthRevenue = roomMonth + GetFoodRevenue(monthStart, monthEnd);
+            ViewBag.TodayRoomRevenue = roomToday;
+            ViewBag.TodayFoodRevenue = foodToday;
+
+            ViewBag.PendingFoodOrders = GetPendingFoodOrders();
+            ViewBag.TotalBookings = db.Bookings.Count();
+            ViewBag.PendingBookings = db.Bookings.Count(b => b.Status == "Chờ xác nhận");
+            ViewBag.CurrentGuests = db.Bookings.Count(b => b.Status == "Đang ở");
+
+            var bookingsList = query.OrderByDescending(b => b.CreatedAt).ToList();
+            return View(bookingsList);
+        }
+
+
+
+        // =========================================================
+        // QUẢN LÝ ĐẶT PHÒNG
+        // =========================================================
+        public ActionResult Bookings(
+            string keyword,
+            string status,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            var query = db.Bookings
+                .Include(b => b.Room)
+                .Include(b => b.ThanhToans)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                keyword = keyword.Trim();
+                query = query.Where(b =>
+                    b.CustomerName.Contains(keyword) ||
+                    b.CustomerPhone.Contains(keyword) ||
+                    b.CustomerEmail.Contains(keyword));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(b => b.Status == status);
+            }
+
+            if (fromDate.HasValue)
+            {
+                DateTime start = fromDate.Value.Date;
+                query = query.Where(b => b.CreatedAt >= start);
+            }
+
+            if (toDate.HasValue)
+            {
+                DateTime end = toDate.Value.Date.AddDays(1);
+                query = query.Where(b => b.CreatedAt < end);
+            }
+
+            ViewBag.Keyword = keyword;
+            ViewBag.Status = status;
+            ViewBag.FromDate = fromDate.HasValue ? fromDate.Value.ToString("yyyy-MM-dd") : "";
+            ViewBag.ToDate = toDate.HasValue ? toDate.Value.ToString("yyyy-MM-dd") : "";
+            ViewBag.TotalBookings = db.Bookings.Count();
+            ViewBag.PendingBookings = db.Bookings.Count(b => b.Status == "Chờ xác nhận");
+            ViewBag.CurrentGuests = db.Bookings.Count(b => b.Status == "Đang ở");
+            ViewBag.CheckedOutBookings = db.Bookings.Count(b => b.Status == "Đã trả phòng");
+
+            return View(query.OrderByDescending(b => b.CreatedAt).ToList());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Confirm(int id)
+        {
+            var booking = db.Bookings.Find(id);
+            if (booking == null) return HttpNotFound();
+
+            if (booking.Status != "Chờ xác nhận")
+            {
+                TempData["AdminError"] = "Chỉ có thể xác nhận đơn đang chờ xác nhận.";
+                return RedirectToAction("Bookings");
+            }
+
+            booking.Status = "Đã xác nhận";
+            db.SaveChanges();
+            TempData["AdminSuccess"] = "Đã xác nhận đơn #" + booking.BookingId + ".";
+            return RedirectToAction("Bookings");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Cancel(int id)
+        {
+            var booking = db.Bookings.Find(id);
+            if (booking == null) return HttpNotFound();
+
+            if (booking.Status != "Chờ xác nhận" && booking.Status != "Đã xác nhận")
+            {
+                TempData["AdminError"] = "Không thể hủy đơn ở trạng thái hiện tại.";
+                return RedirectToAction("Bookings");
+            }
+
+            bool paid = db.ThanhToans.Any(t =>
+                t.BookingId == id && t.TrangThai == "Đã thanh toán");
+
+            if (paid)
+            {
+                TempData["AdminError"] = "Đơn đã thanh toán. Không thể hủy trực tiếp.";
+                return RedirectToAction("Bookings");
+            }
+
+            booking.Status = "Đã hủy";
+            foreach (var p in db.ThanhToans.Where(t => t.BookingId == id).ToList())
+            {
+                if (p.TrangThai != "Đã thanh toán") p.TrangThai = "Đã hủy";
+            }
+
+            db.SaveChanges();
+            TempData["AdminSuccess"] = "Đã hủy đơn #" + booking.BookingId + ".";
+            return RedirectToAction("Bookings");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ConfirmPayment(int id, string returnTo = null)
+        {
+            var booking = db.Bookings.Find(id);
+            if (booking == null) return HttpNotFound();
+
+            if (booking.Status != "Đã xác nhận" && booking.Status != "Đang ở")
+            {
+                TempData["AdminError"] = "Trạng thái đơn hiện tại không thể xác nhận thanh toán.";
+                return RedirectAfterBookingAction(returnTo);
+            }
+
+            var payment = db.ThanhToans
+                .Where(t => t.BookingId == id)
+                .OrderByDescending(t => t.NgayThanhToan)
+                .FirstOrDefault();
+
+            if (payment != null && payment.TrangThai == "Đã thanh toán")
+            {
+                TempData["AdminError"] = "Đơn này đã được thanh toán trước đó.";
+                return RedirectAfterBookingAction(returnTo);
+            }
+
+            if (payment == null)
+            {
+                payment = new ThanhToan
+                {
+                    BookingId = booking.BookingId,
+                    PhuongThucThanhToan = booking.PaymentMethod,
+                    SoTien = booking.TotalAmount,
+                    NgayThanhToan = DateTime.Now,
+                    TrangThai = "Đã thanh toán",
+                    MaGiaoDich = null,
+                    GhiChu = "Admin xác nhận thanh toán"
+                };
+                db.ThanhToans.Add(payment);
+            }
+            else
+            {
+                payment.TrangThai = "Đã thanh toán";
+                payment.NgayThanhToan = DateTime.Now;
+                payment.SoTien = booking.TotalAmount;
+                payment.GhiChu = "Admin xác nhận thanh toán";
+            }
+
+            db.SaveChanges();
+            TempData["AdminSuccess"] = "Đã xác nhận thanh toán đơn #" + booking.BookingId + ".";
+            return RedirectAfterBookingAction(returnTo);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult CheckIn(int id)
+        {
+            var booking = db.Bookings.Find(id);
+            if (booking == null) return HttpNotFound();
+
+            if (booking.Status != "Đã xác nhận")
+            {
+                TempData["AdminError"] = "Chỉ đơn đã xác nhận mới có thể nhận phòng.";
+                return RedirectToAction("Bookings");
+            }
+
+            if (booking.CheckInDate.Date > DateTime.Today)
+            {
+                TempData["AdminError"] = "Chưa đến ngày nhận phòng.";
+                return RedirectToAction("Bookings");
+            }
+
+            var payment = db.ThanhToans.FirstOrDefault(p => p.BookingId == id);
+            if (payment == null || payment.TrangThai != "Đã thanh toán")
+            {
+                TempData["AdminError"] = "Đơn đặt phòng chưa hoàn tất thanh toán. Không thể nhận phòng.";
+                return RedirectToAction("Bookings");
+            }
+
+            booking.Status = "Đang ở";
+            db.SaveChanges();
+            TempData["AdminSuccess"] = "Đã nhận phòng cho đơn #" + booking.BookingId + ".";
+            return RedirectToAction("Bookings");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult CheckOut(int id, string returnTo = null)
+        {
+            var booking = db.Bookings.Find(id);
+            if (booking == null) return HttpNotFound();
+
+            if (booking.Status != "Đang ở")
+            {
+                TempData["AdminError"] = "Chỉ khách đang ở mới có thể trả phòng.";
+                return RedirectAfterBookingAction(returnTo);
+            }
+
+            bool paid = db.ThanhToans.Any(t =>
+                t.BookingId == id && t.TrangThai == "Đã thanh toán");
+
+            if (!paid)
+            {
+                TempData["AdminError"] = "Khách chưa thanh toán. Vui lòng xác nhận thanh toán trước.";
+                return RedirectAfterBookingAction(returnTo);
+            }
+
+            booking.Status = "Đã trả phòng";
+            db.SaveChanges();
+            TempData["AdminSuccess"] = "Đã trả phòng cho đơn #" + booking.BookingId + ".";
+            return RedirectAfterBookingAction(returnTo);
+        }
+
+        private ActionResult RedirectAfterBookingAction(string returnTo)
+        {
+            if (returnTo == "CurrentGuests") return RedirectToAction("CurrentGuests");
+            return RedirectToAction("Bookings");
+        }
+
+        // =========================================================
+        // QUẢN LÝ PHÒNG
+        // =========================================================
+        public ActionResult Rooms(string keyword, string status)
+        {
+            var query = db.Rooms.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                keyword = keyword.Trim();
+                query = query.Where(r =>
+                    r.RoomName.Contains(keyword) ||
+                    r.RoomType.Contains(keyword));
+            }
+
+            if (status == "active") query = query.Where(r => r.IsActive);
+            else if (status == "inactive") query = query.Where(r => !r.IsActive);
+
+            ViewBag.Keyword = keyword;
+            ViewBag.RoomStatus = status;
+            ViewBag.TotalRoomTypes = db.Rooms.Count();
+            ViewBag.ActiveRoomTypes = db.Rooms.Count(r => r.IsActive);
+            ViewBag.InactiveRoomTypes = db.Rooms.Count(r => !r.IsActive);
+            ViewBag.TotalRoomUnits = db.Rooms.Where(r => r.IsActive).Select(r => (int?)r.TotalRooms).Sum() ?? 0;
+
+            return View(query.OrderBy(r => r.Price).ToList());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult SaveRoom(
+            int? id,
+            string roomName,
+            string roomType,
+            decimal price,
+            int capacity,
+            int totalRooms,
+            string description,
+            string imageUrl,
+            bool isActive = true)
+        {
+            roomName = (roomName ?? "").Trim();
+            roomType = (roomType ?? "").Trim();
+            description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+            imageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
+
+            if (string.IsNullOrWhiteSpace(roomName) || string.IsNullOrWhiteSpace(roomType) || price < 0 || capacity <= 0 || totalRooms <= 0)
+            {
+                TempData["AdminError"] = "Thông tin phòng không hợp lệ.";
+                return RedirectToAction("Rooms");
+            }
+
+            bool duplicate = id.HasValue
+                ? db.Rooms.Any(r => r.RoomName == roomName && r.RoomId != id.Value)
+                : db.Rooms.Any(r => r.RoomName == roomName);
+
+            if (duplicate)
+            {
+                TempData["AdminError"] = "Tên phòng này đã tồn tại.";
+                return RedirectToAction("Rooms");
+            }
+
+            if (id.HasValue)
+            {
+                var room = db.Rooms.Find(id.Value);
+                if (room == null) return HttpNotFound();
+
+                room.RoomName = roomName;
+                room.RoomType = roomType;
+                room.Price = price;
+                room.Capacity = capacity;
+                room.TotalRooms = totalRooms;
+                room.Description = description;
+                room.ImageUrl = imageUrl;
+                room.IsActive = isActive;
+            }
+            else
+            {
+                db.Rooms.Add(new Room
+                {
+                    RoomName = roomName,
+                    RoomType = roomType,
+                    Price = price,
+                    Capacity = capacity,
+                    TotalRooms = totalRooms,
+                    Description = description,
+                    ImageUrl = imageUrl,
+                    IsActive = isActive
+                });
+            }
+
+            db.SaveChanges();
+            TempData["AdminSuccess"] = id.HasValue ? "Đã cập nhật phòng." : "Đã thêm phòng mới.";
+            return RedirectToAction("Rooms");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ToggleRoom(int id)
+        {
+            var room = db.Rooms.Find(id);
+            if (room == null) return HttpNotFound();
+
+            room.IsActive = !room.IsActive;
+            db.SaveChanges();
+            TempData["AdminSuccess"] = room.IsActive ? "Đã bật hoạt động phòng." : "Đã ngừng hoạt động phòng.";
+            return RedirectToAction("Rooms");
+        }
+
+        // =========================================================
+        // KHÁCH ĐANG Ở
+        // =========================================================
+        public ActionResult CurrentGuests()
+        {
+            var bookings = db.Bookings
+                .Include(b => b.Room)
+                .Include(b => b.ThanhToans)
+                .Where(b => b.Status == "Đang ở")
+                .OrderBy(b => b.CheckOutDate)
+                .ToList();
+
+            ViewBag.CurrentGuestCount = bookings.Count;
+            ViewBag.UnpaidGuests = bookings.Count(b =>
+                !b.ThanhToans.Any(t => t.TrangThai == "Đã thanh toán"));
+
+            return View(bookings);
+        }
+
+        // =========================================================
+        // TÀI KHOẢN
+        // =========================================================
+        public ActionResult Users(string keyword, string role)
+        {
+            var query = db.Users.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                keyword = keyword.Trim();
+                query = query.Where(u =>
+                    u.FullName.Contains(keyword) ||
+                    u.Email.Contains(keyword) ||
+                    u.Username.Contains(keyword));
+            }
+
+            if (!string.IsNullOrWhiteSpace(role)) query = query.Where(u => u.Role == role);
+
+            ViewBag.Keyword = keyword;
+            ViewBag.RoleFilter = role;
+            ViewBag.TotalUsers = db.Users.Count();
+            ViewBag.CustomerCount = db.Users.Count(u => u.Role == "Customer");
+            ViewBag.StaffCount = db.Users.Count(u => u.Role == "Staff");
+            ViewBag.ActiveUsers = db.Users.Count(u => u.IsActive);
+
+            return View(query.OrderBy(u => u.Role).ThenBy(u => u.FullName).ToList());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult CreateStaff(string fullName, string email, string password)
+        {
+            fullName = (fullName ?? "").Trim();
+            email = (email ?? "").Trim().ToLowerInvariant();
+            password = password ?? "";
+
+            if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email) || password.Length < 6)
+            {
+                TempData["AdminError"] = "Thông tin chưa hợp lệ. Mật khẩu ít nhất 6 ký tự.";
+                return RedirectToAction("Users", new { role = "Staff" });
+            }
+
+            if (db.Users.Any(u => u.Email == email || u.Username == email))
+            {
+                TempData["AdminError"] = "Email này đã được sử dụng.";
+                return RedirectToAction("Users", new { role = "Staff" });
+            }
+
+            db.Users.Add(new User
+            {
+                Username = email,
+                Email = email,
+                FullName = fullName,
+                PasswordHash = Crypto.HashPassword(password),
+                Role = "Staff",
+                IsActive = true,
+                CreatedAt = DateTime.Now
+            });
+
+            db.SaveChanges();
+            TempData["AdminSuccess"] = "Đã tạo tài khoản nhân viên.";
+            return RedirectToAction("Users", new { role = "Staff" });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ToggleUser(int id)
+        {
+            var user = db.Users.Find(id);
+            if (user == null) return HttpNotFound();
+
+            if (user.Role == "Admin")
+            {
+                TempData["AdminError"] = "Không thể khóa tài khoản Admin tại đây.";
+                return RedirectToAction("Users");
+            }
+
+            user.IsActive = !user.IsActive;
+            db.SaveChanges();
+            TempData["AdminSuccess"] = user.IsActive ? "Đã mở khóa tài khoản." : "Đã khóa tài khoản.";
+            return RedirectToAction("Users");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ChangeUserRole(int id, string role)
+        {
+            var user = db.Users.Find(id);
+            if (user == null) return HttpNotFound();
+
+            if (user.Role == "Admin")
+            {
+                TempData["AdminError"] = "Không thể thay đổi quyền Admin.";
+                return RedirectToAction("Users");
+            }
+
+            if (role != "Customer" && role != "Staff")
+            {
+                TempData["AdminError"] = "Quyền không hợp lệ.";
+                return RedirectToAction("Users");
+            }
+
+            user.Role = role;
+            db.SaveChanges();
+            TempData["AdminSuccess"] = "Đã cập nhật quyền tài khoản.";
+            return RedirectToAction("Users");
+        }
+
+        // =========================================================
+        // DỊCH VỤ
+        // =========================================================
+        public ActionResult Services(string keyword)
+        {
+            var query = db.DichVus.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                keyword = keyword.Trim();
+                query = query.Where(d => d.TenDichVu.Contains(keyword) || d.MoTa.Contains(keyword));
+            }
+
+            ViewBag.Keyword = keyword;
+            ViewBag.TotalServices = db.DichVus.Count();
+            ViewBag.ActiveServices = db.DichVus.Count(d => d.HoatDong);
+
+            return View(query.OrderBy(d => d.TenDichVu).ToList());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult SaveService(int? id, string tenDichVu, string moTa, decimal gia, string donVi, bool hoatDong = true)
+        {
+            tenDichVu = (tenDichVu ?? "").Trim();
+            donVi = (donVi ?? "").Trim();
+            moTa = string.IsNullOrWhiteSpace(moTa) ? null : moTa.Trim();
+
+            if (string.IsNullOrWhiteSpace(tenDichVu) || string.IsNullOrWhiteSpace(donVi) || gia < 0)
+            {
+                TempData["AdminError"] = "Thông tin dịch vụ không hợp lệ.";
+                return RedirectToAction("Services");
+            }
+
+            if (id.HasValue)
+            {
+                var service = db.DichVus.Find(id.Value);
+                if (service == null) return HttpNotFound();
+                service.TenDichVu = tenDichVu;
+                service.MoTa = moTa;
+                service.Gia = gia;
+                service.DonVi = donVi;
+                service.HoatDong = hoatDong;
+            }
+            else
+            {
+                db.DichVus.Add(new DichVu
+                {
+                    TenDichVu = tenDichVu,
+                    MoTa = moTa,
+                    Gia = gia,
+                    DonVi = donVi,
+                    HoatDong = hoatDong
+                });
+            }
+
+            db.SaveChanges();
+            TempData["AdminSuccess"] = id.HasValue ? "Đã cập nhật dịch vụ." : "Đã thêm dịch vụ.";
+            return RedirectToAction("Services");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ToggleService(int id)
+        {
+            var service = db.DichVus.Find(id);
+            if (service == null) return HttpNotFound();
+            service.HoatDong = !service.HoatDong;
+            db.SaveChanges();
+            TempData["AdminSuccess"] = service.HoatDong ? "Đã bật dịch vụ." : "Đã ngừng dịch vụ.";
+            return RedirectToAction("Services");
+        }
+
+        // =========================================================
+        // KHUYẾN MÃI
+        // =========================================================
+        public ActionResult Promotions(string keyword)
+        {
+            var query = db.KhuyenMais.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                keyword = keyword.Trim();
+                query = query.Where(k => k.MaCode.Contains(keyword) || k.TenKhuyenMai.Contains(keyword));
+            }
+
+            DateTime today = DateTime.Today;
+            ViewBag.Keyword = keyword;
+            ViewBag.TotalPromotions = db.KhuyenMais.Count();
+            ViewBag.ActivePromotions = db.KhuyenMais.Count(k =>
+                k.HoatDong && k.NgayBatDau <= today && k.NgayKetThuc >= today);
+
+            return View(query.OrderByDescending(k => k.NgayBatDau).ToList());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult SavePromotion(
+            int? id,
+            string maCode,
+            string tenKhuyenMai,
+            string moTa,
+            string loaiGiamGia,
+            decimal giaTriGiam,
+            decimal donToiThieu,
+            decimal? giamToiDa,
+            DateTime ngayBatDau,
+            DateTime ngayKetThuc,
+            int? soLuotSuDungToiDa,
+            bool hoatDong = true)
+        {
+            maCode = (maCode ?? "").Trim().ToUpperInvariant();
+            tenKhuyenMai = (tenKhuyenMai ?? "").Trim();
+            moTa = string.IsNullOrWhiteSpace(moTa) ? null : moTa.Trim();
+
+            if (string.IsNullOrWhiteSpace(maCode) || string.IsNullOrWhiteSpace(tenKhuyenMai) || giaTriGiam <= 0 || ngayKetThuc.Date < ngayBatDau.Date)
+            {
+                TempData["AdminError"] = "Thông tin khuyến mãi không hợp lệ.";
+                return RedirectToAction("Promotions");
+            }
+
+            if (loaiGiamGia != "PhanTram" && loaiGiamGia != "SoTien")
+            {
+                TempData["AdminError"] = "Loại giảm giá không hợp lệ.";
+                return RedirectToAction("Promotions");
+            }
+
+            if (loaiGiamGia == "PhanTram" && giaTriGiam > 100)
+            {
+                TempData["AdminError"] = "Phần trăm giảm không được lớn hơn 100%.";
+                return RedirectToAction("Promotions");
+            }
+
+            bool duplicate = id.HasValue
+                ? db.KhuyenMais.Any(k => k.MaCode == maCode && k.MaKhuyenMai != id.Value)
+                : db.KhuyenMais.Any(k => k.MaCode == maCode);
+
+            if (duplicate)
+            {
+                TempData["AdminError"] = "Mã khuyến mãi đã tồn tại.";
+                return RedirectToAction("Promotions");
+            }
+
+            if (id.HasValue)
+            {
+                var p = db.KhuyenMais.Find(id.Value);
+                if (p == null) return HttpNotFound();
+                p.MaCode = maCode;
+                p.TenKhuyenMai = tenKhuyenMai;
+                p.MoTa = moTa;
+                p.LoaiGiamGia = loaiGiamGia;
+                p.GiaTriGiam = giaTriGiam;
+                p.DonToiThieu = donToiThieu;
+                p.GiamToiDa = giamToiDa;
+                p.NgayBatDau = ngayBatDau.Date;
+                p.NgayKetThuc = ngayKetThuc.Date;
+                p.SoLuotSuDungToiDa = soLuotSuDungToiDa;
+                p.HoatDong = hoatDong;
+            }
+            else
+            {
+                db.KhuyenMais.Add(new KhuyenMai
+                {
+                    MaCode = maCode,
+                    TenKhuyenMai = tenKhuyenMai,
+                    MoTa = moTa,
+                    LoaiGiamGia = loaiGiamGia,
+                    GiaTriGiam = giaTriGiam,
+                    DonToiThieu = donToiThieu,
+                    GiamToiDa = giamToiDa,
+                    NgayBatDau = ngayBatDau.Date,
+                    NgayKetThuc = ngayKetThuc.Date,
+                    SoLuotSuDungToiDa = soLuotSuDungToiDa,
+                    SoLuotDaSuDung = 0,
+                    HoatDong = hoatDong
+                });
+            }
+
+            db.SaveChanges();
+            TempData["AdminSuccess"] = id.HasValue ? "Đã cập nhật khuyến mãi." : "Đã thêm khuyến mãi.";
+            return RedirectToAction("Promotions");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult TogglePromotion(int id)
+        {
+            var p = db.KhuyenMais.Find(id);
+            if (p == null) return HttpNotFound();
+            p.HoatDong = !p.HoatDong;
+            db.SaveChanges();
+            TempData["AdminSuccess"] = p.HoatDong ? "Đã bật khuyến mãi." : "Đã tắt khuyến mãi.";
+            return RedirectToAction("Promotions");
+        }
+
+        // =========================================================
+        // DOANH THU
+        // =========================================================
+        public ActionResult Revenue(int? year)
+        {
+            int selectedYear = year ?? DateTime.Today.Year;
+            if (selectedYear < 2000 || selectedYear > 2100) selectedYear = DateTime.Today.Year;
+
+            string[] monthLabels =
+            {
+                "Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6",
+                "Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12"
+            };
+
+            decimal[] roomRevenueData = new decimal[12];
+            decimal[] foodRevenueData = new decimal[12];
+            decimal[] totalRevenueData = new decimal[12];
+
+            for (int month = 1; month <= 12; month++)
+            {
+                DateTime start = new DateTime(selectedYear, month, 1);
+                DateTime end = start.AddMonths(1);
+
+                decimal roomRevenue = db.ThanhToans
+                    .Where(t => t.TrangThai == "Đã thanh toán" && t.NgayThanhToan >= start && t.NgayThanhToan < end)
+                    .Select(t => (decimal?)t.SoTien)
+                    .Sum() ?? 0;
+
+                decimal foodRevenue = GetFoodRevenue(start, end);
+
+                roomRevenueData[month - 1] = roomRevenue;
+                foodRevenueData[month - 1] = foodRevenue;
+                totalRevenueData[month - 1] = roomRevenue + foodRevenue;
+            }
+
+            DateTime yearStart = new DateTime(selectedYear, 1, 1);
+            DateTime yearEnd = yearStart.AddYears(1);
+
+            ViewBag.SelectedYear = selectedYear;
+            ViewBag.MonthLabels = monthLabels;
+            ViewBag.RoomRevenueData = roomRevenueData;
+            ViewBag.FoodRevenueData = foodRevenueData;
+            ViewBag.TotalRevenueData = totalRevenueData;
+            ViewBag.RoomYearRevenue = roomRevenueData.Sum();
+            ViewBag.FoodYearRevenue = foodRevenueData.Sum();
+            ViewBag.YearRevenue = roomRevenueData.Sum() + foodRevenueData.Sum();
+            ViewBag.PaidRoomPayments = db.ThanhToans.Count(t => t.TrangThai == "Đã thanh toán" && t.NgayThanhToan >= yearStart && t.NgayThanhToan < yearEnd);
+            ViewBag.PaidFoodOrders = GetPaidFoodOrders(yearStart, yearEnd);
+
+            return View();
+        }
+
+        // =========================================================
+        // LỊCH PHÒNG
+        // =========================================================
+        public ActionResult RoomCalendar(
+            DateTime? date)
+        {
+            DateTime selectedDate =
+                date.HasValue
+                ? date.Value.Date
+                : DateTime.Today;
+
+            DateTime nextDate =
+                selectedDate.AddDays(1);
+
+            var rooms =
+                db.Rooms
+                  .Where(r => r.IsActive)
+                  .OrderBy(r => r.RoomName)
+                  .ToList();
+
+            var bookings =
+                db.Bookings
+                  .Include(b => b.Room)
+                  .Where(b =>
+                      b.Status != "Đã hủy" &&
+                      b.CheckInDate < nextDate &&
+                      b.CheckOutDate > selectedDate)
+                  .OrderBy(b =>
+                      b.CheckInDate)
+                  .ToList();
+
+            var model =
+                new RoomCalendarPageViewModel
+                {
+                    SelectedDate =
+                        selectedDate,
+
+                    Rooms =
+                        BuildRoomAvailability(
+                            rooms,
+                            bookings
+                        )
+                };
+
+            return View(model);
+        }
+
+
+        // =========================================================
+        // CHI TIẾT BOOKING
+        // =========================================================
+        public ActionResult BookingDetails(int id)
+        {
+            var booking =
+                db.Bookings
+                  .Include(b => b.Room)
+                  .Include(b => b.ThanhToans)
+                  .FirstOrDefault(b =>
+                      b.BookingId == id);
+
+            if (booking == null)
+            {
+                return HttpNotFound();
+            }
+
+            var model =
+                new BookingDetailsViewModel
+                {
+                    Booking =
+                        booking
+                };
+
+            return View(model);
+        }
+
+
+        // =========================================================
+        // LỊCH SỬ THANH TOÁN
+        // =========================================================
+        public ActionResult Payments(
+            string keyword,
+            string status,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            var bookingQuery =
+                db.Bookings
+                  .Include(b => b.Room)
+                  .Include(b => b.ThanhToans)
+                  .AsQueryable();
+
+            if (
+                !string.IsNullOrWhiteSpace(
+                    keyword
+                )
+            )
+            {
+                keyword =
+                    keyword.Trim();
+
+                bookingQuery =
+                    bookingQuery.Where(b =>
+                        b.CustomerName.Contains(
+                            keyword
+                        ) ||
+                        b.CustomerPhone.Contains(
+                            keyword
+                        ) ||
+                        b.CustomerEmail.Contains(
+                            keyword
+                        ));
+            }
+
+            var bookings =
+                bookingQuery.ToList();
+
+            var paymentRows =
+                new List<AdminPaymentViewModel>();
+
+            foreach (
+                var booking
+                in bookings
+            )
+            {
+                foreach (
+                    var payment
+                    in booking.ThanhToans
+                )
+                {
+                    if (
+                        !string.IsNullOrWhiteSpace(
+                            status
+                        ) &&
+                        payment.TrangThai !=
+                        status
+                    )
+                    {
+                        continue;
+                    }
+
+                    if (
+                        fromDate.HasValue &&
+                        payment.NgayThanhToan <
+                        fromDate.Value.Date
+                    )
+                    {
+                        continue;
+                    }
+
+                    if (
+                        toDate.HasValue &&
+                        payment.NgayThanhToan >=
+                        toDate.Value.Date.AddDays(1)
+                    )
+                    {
+                        continue;
+                    }
+
+                    paymentRows.Add(
+                        new AdminPaymentViewModel
+                        {
+                            BookingId =
+                                booking.BookingId,
+
+                            CustomerName =
+                                booking.CustomerName,
+
+                            CustomerPhone =
+                                booking.CustomerPhone,
+
+                            CustomerEmail =
+                                booking.CustomerEmail,
+
+                            RoomName =
+                                booking.Room != null
+                                ? booking.Room.RoomName
+                                : "",
+
+                            Amount =
+                                payment.SoTien,
+
+                            Method =
+                                payment.PhuongThucThanhToan,
+
+                            Status =
+                                payment.TrangThai,
+
+                            PaidAt =
+                                payment.NgayThanhToan,
+
+                            TransactionCode =
+                                payment.MaGiaoDich,
+
+                            Note =
+                                payment.GhiChu
+                        }
+                    );
+                }
+            }
+
+            paymentRows =
+                paymentRows
+                    .OrderByDescending(x =>
+                        x.PaidAt)
+                    .ToList();
+
+            ViewBag.Keyword =
+                keyword;
+
+            ViewBag.Status =
+                status;
 
             ViewBag.FromDate =
                 fromDate.HasValue
-                ? fromDate.Value.ToString("yyyy-MM-dd")
+                ? fromDate.Value.ToString(
+                    "yyyy-MM-dd"
+                )
                 : "";
 
             ViewBag.ToDate =
                 toDate.HasValue
-                ? toDate.Value.ToString("yyyy-MM-dd")
+                ? toDate.Value.ToString(
+                    "yyyy-MM-dd"
+                )
                 : "";
 
+            ViewBag.TotalPayments =
+                paymentRows.Count;
 
-            // =========================
-            // THỐNG KÊ ĐƠN
-            // =========================
+            ViewBag.PaidAmount =
+                paymentRows
+                    .Where(x =>
+                        x.Status ==
+                        "Đã thanh toán")
+                    .Sum(x =>
+                        x.Amount);
 
-            ViewBag.TotalBookings =
-                db.Bookings.Count();
-
-            ViewBag.PendingBookings =
-                db.Bookings.Count(b =>
-                    b.Status == "Chờ xác nhận");
-
-            ViewBag.ConfirmedBookings =
-                db.Bookings.Count(b =>
-                    b.Status == "Đã xác nhận");
-
-            ViewBag.CancelledBookings =
-                db.Bookings.Count(b =>
-                    b.Status == "Đã hủy");
+            return View(paymentRows);
+        }
 
 
-            // =========================
-            // DOANH THU HÔM NAY
-            // =========================
-
+        // =========================================================
+        // TRUNG TÂM THÔNG BÁO ADMIN
+        // =========================================================
+        public ActionResult Notifications()
+        {
             DateTime today =
                 DateTime.Today;
 
             DateTime tomorrow =
                 today.AddDays(1);
 
-            decimal todayRevenue =
+            var model =
+                new AdminNotificationsViewModel();
+
+            var pendingBookings =
                 db.Bookings
-                .Where(b =>
-                    b.Status == "Đã xác nhận" &&
-                    b.CreatedAt >= today &&
-                    b.CreatedAt < tomorrow)
-                .Select(b => (decimal?)b.TotalAmount)
-                .Sum() ?? 0;
+                  .Include(b => b.Room)
+                  .Where(b =>
+                      b.Status ==
+                      "Chờ xác nhận")
+                  .OrderBy(b =>
+                      b.CreatedAt)
+                  .Take(20)
+                  .ToList();
 
-            ViewBag.TodayRevenue =
-                todayRevenue;
+            foreach (
+                var booking
+                in pendingBookings
+            )
+            {
+                model.Items.Add(
+                    new AdminNotificationItemViewModel
+                    {
+                        Type =
+                            "Booking",
+
+                        Level =
+                            "warning",
+
+                        Icon =
+                            "fa-clock",
+
+                        Title =
+                            "Đơn #" +
+                            booking.BookingId +
+                            " đang chờ xác nhận",
+
+                        Description =
+                            booking.CustomerName +
+                            " • " +
+                            (
+                                booking.Room != null
+                                ? booking.Room.RoomName
+                                : "Phòng"
+                            ),
+
+                        TimeText =
+                            booking.CreatedAt.ToString(
+                                "dd/MM/yyyy HH:mm"
+                            ),
+
+                        BookingId =
+                            booking.BookingId
+                    }
+                );
+            }
+
+            var arrivals =
+                db.Bookings
+                  .Include(b => b.Room)
+                  .Where(b =>
+                      b.Status ==
+                      "Đã xác nhận" &&
+                      b.CheckInDate >= today &&
+                      b.CheckInDate < tomorrow)
+                  .OrderBy(b =>
+                      b.CheckInDate)
+                  .ToList();
+
+            foreach (
+                var booking
+                in arrivals
+            )
+            {
+                model.Items.Add(
+                    new AdminNotificationItemViewModel
+                    {
+                        Type =
+                            "Arrival",
+
+                        Level =
+                            "info",
+
+                        Icon =
+                            "fa-door-open",
+
+                        Title =
+                            "Khách nhận phòng hôm nay",
+
+                        Description =
+                            booking.CustomerName +
+                            " • Booking #" +
+                            booking.BookingId,
+
+                        TimeText =
+                            booking.CheckInDate.ToString(
+                                "dd/MM/yyyy"
+                            ),
+
+                        BookingId =
+                            booking.BookingId
+                    }
+                );
+            }
+
+            var departures =
+                db.Bookings
+                  .Include(b => b.Room)
+                  .Where(b =>
+                      b.Status ==
+                      "Đang ở" &&
+                      b.CheckOutDate >= today &&
+                      b.CheckOutDate < tomorrow)
+                  .OrderBy(b =>
+                      b.CheckOutDate)
+                  .ToList();
+
+            foreach (
+                var booking
+                in departures
+            )
+            {
+                model.Items.Add(
+                    new AdminNotificationItemViewModel
+                    {
+                        Type =
+                            "Departure",
+
+                        Level =
+                            "purple",
+
+                        Icon =
+                            "fa-door-closed",
+
+                        Title =
+                            "Khách dự kiến trả phòng hôm nay",
+
+                        Description =
+                            booking.CustomerName +
+                            " • Booking #" +
+                            booking.BookingId,
+
+                        TimeText =
+                            booking.CheckOutDate.ToString(
+                                "dd/MM/yyyy"
+                            ),
+
+                        BookingId =
+                            booking.BookingId
+                    }
+                );
+            }
+
+            var currentGuests =
+                db.Bookings
+                  .Include(b =>
+                      b.ThanhToans)
+                  .Where(b =>
+                      b.Status ==
+                      "Đang ở")
+                  .ToList();
+
+            foreach (
+                var booking
+                in currentGuests
+            )
+            {
+                bool hasPaid =
+                    booking.ThanhToans.Any(t =>
+                        t.TrangThai ==
+                        "Đã thanh toán");
+
+                if (!hasPaid)
+                {
+                    model.Items.Add(
+                        new AdminNotificationItemViewModel
+                        {
+                            Type =
+                                "Payment",
+
+                            Level =
+                                "danger",
+
+                            Icon =
+                                "fa-money-bill-wave",
+
+                            Title =
+                                "Khách đang ở chưa thanh toán",
+
+                            Description =
+                                booking.CustomerName +
+                                " • " +
+                                booking.TotalAmount.ToString(
+                                    "N0"
+                                ) +
+                                "đ",
+
+                            TimeText =
+                                "Booking #" +
+                                booking.BookingId,
+
+                            BookingId =
+                                booking.BookingId
+                        }
+                    );
+                }
+            }
+
+            model.PendingBookingCount =
+                pendingBookings.Count;
+
+            model.ArrivalCount =
+                arrivals.Count;
+
+            model.DepartureCount =
+                departures.Count;
+
+            model.UnpaidCount =
+                currentGuests.Count(b =>
+                    !b.ThanhToans.Any(t =>
+                        t.TrangThai ==
+                        "Đã thanh toán"));
+
+            return View(model);
+        }
 
 
-            // =========================
-            // DOANH THU THÁNG NÀY
-            // =========================
+        // =========================================================
+        // KHÁCH HÀNG NÂNG CAO
+        // =========================================================
+        public ActionResult Customers(
+            string keyword)
+        {
+            var userQuery =
+                db.Users
+                  .Where(u =>
+                      u.Role ==
+                      "Customer");
 
-            DateTime firstDayOfMonth =
-                new DateTime(
-                    today.Year,
-                    today.Month,
-                    1
+            if (
+                !string.IsNullOrWhiteSpace(
+                    keyword
+                )
+            )
+            {
+                keyword =
+                    keyword.Trim();
+
+                userQuery =
+                    userQuery.Where(u =>
+                        u.FullName.Contains(
+                            keyword
+                        ) ||
+                        u.Email.Contains(
+                            keyword
+                        ) ||
+                        u.Username.Contains(
+                            keyword
+                        ));
+            }
+
+            var users =
+                userQuery
+                    .OrderBy(u =>
+                        u.FullName)
+                    .ToList();
+
+            var result =
+                new List<AdminCustomerSummaryViewModel>();
+
+            foreach (
+                var user
+                in users
+            )
+            {
+                var bookings =
+                    db.Bookings
+                      .Include(b =>
+                          b.ThanhToans)
+                      .Where(b =>
+                          b.CustomerEmail ==
+                          user.Email)
+                      .ToList();
+
+                var paidBookings =
+                    bookings
+                        .Where(b =>
+                            b.ThanhToans.Any(t =>
+                                t.TrangThai ==
+                                "Đã thanh toán"))
+                        .ToList();
+
+                result.Add(
+                    new AdminCustomerSummaryViewModel
+                    {
+                        UserId =
+                            user.UserId,
+
+                        FullName =
+                            user.FullName,
+
+                        Email =
+                            user.Email,
+
+                        Username =
+                            user.Username,
+
+                        IsActive =
+                            user.IsActive,
+
+                        CreatedAt =
+                            user.CreatedAt,
+
+                        BookingCount =
+                            bookings.Count,
+
+                        CompletedBookingCount =
+                            bookings.Count(b =>
+                                b.Status ==
+                                "Đã trả phòng"),
+
+                        TotalPaid =
+                            paidBookings.Sum(b =>
+                                b.TotalAmount),
+
+                        LastBookingAt =
+                            bookings.Count > 0
+                            ? (DateTime?)
+                              bookings.Max(b =>
+                                  b.CreatedAt)
+                            : null
+                    }
+                );
+            }
+
+            ViewBag.Keyword =
+                keyword;
+
+            ViewBag.CustomerCount =
+                result.Count;
+
+            ViewBag.TotalCustomerRevenue =
+                result.Sum(x =>
+                    x.TotalPaid);
+
+            return View(result);
+        }
+
+
+        public ActionResult CustomerDetails(int id)
+        {
+            var user =
+                db.Users.Find(id);
+
+            if (
+                user == null ||
+                user.Role !=
+                "Customer"
+            )
+            {
+                return HttpNotFound();
+            }
+
+            var bookings =
+                db.Bookings
+                  .Include(b => b.Room)
+                  .Include(b => b.ThanhToans)
+                  .Where(b =>
+                      b.CustomerEmail ==
+                      user.Email)
+                  .OrderByDescending(b =>
+                      b.CreatedAt)
+                  .ToList();
+
+            var model =
+                new CustomerDetailsViewModel
+                {
+                    User =
+                        user,
+
+                    Bookings =
+                        bookings,
+
+                    TotalPaid =
+                        bookings
+                            .Where(b =>
+                                b.ThanhToans.Any(t =>
+                                    t.TrangThai ==
+                                    "Đã thanh toán"))
+                            .Sum(b =>
+                                b.TotalAmount)
+                };
+
+            return View(model);
+        }
+
+
+        // =========================================================
+        // XUẤT CSV
+        // =========================================================
+        public FileResult ExportBookingsCsv()
+        {
+            var bookings =
+                db.Bookings
+                  .Include(b => b.Room)
+                  .OrderByDescending(b =>
+                      b.CreatedAt)
+                  .ToList();
+
+            StringBuilder sb =
+                new StringBuilder();
+
+            sb.AppendLine(
+                "BookingId,KhachHang,SoDienThoai,Email,Phong,NgayNhan,NgayTra,SoPhong,TongTien,TrangThai,NgayTao"
+            );
+
+            foreach (
+                var booking
+                in bookings
+            )
+            {
+                sb.AppendLine(
+                    Csv(booking.BookingId) + "," +
+                    Csv(booking.CustomerName) + "," +
+                    Csv(booking.CustomerPhone) + "," +
+                    Csv(booking.CustomerEmail) + "," +
+                    Csv(
+                        booking.Room != null
+                        ? booking.Room.RoomName
+                        : ""
+                    ) + "," +
+                    Csv(
+                        booking.CheckInDate.ToString(
+                            "dd/MM/yyyy"
+                        )
+                    ) + "," +
+                    Csv(
+                        booking.CheckOutDate.ToString(
+                            "dd/MM/yyyy"
+                        )
+                    ) + "," +
+                    Csv(booking.RoomCount) + "," +
+                    Csv(booking.TotalAmount) + "," +
+                    Csv(booking.Status) + "," +
+                    Csv(
+                        booking.CreatedAt.ToString(
+                            "dd/MM/yyyy HH:mm"
+                        )
+                    )
+                );
+            }
+
+            return CsvFile(
+                sb.ToString(),
+                "bookings_" +
+                DateTime.Now.ToString(
+                    "yyyyMMdd_HHmm"
+                ) +
+                ".csv"
+            );
+        }
+
+
+        public FileResult ExportPaymentsCsv()
+        {
+            var bookings =
+                db.Bookings
+                  .Include(b => b.Room)
+                  .Include(b => b.ThanhToans)
+                  .ToList();
+
+            StringBuilder sb =
+                new StringBuilder();
+
+            sb.AppendLine(
+                "BookingId,KhachHang,Phong,SoTien,PhuongThuc,TrangThai,NgayThanhToan,MaGiaoDich,GhiChu"
+            );
+
+            foreach (
+                var booking
+                in bookings
+            )
+            {
+                foreach (
+                    var payment
+                    in booking.ThanhToans
+                )
+                {
+                    sb.AppendLine(
+                        Csv(booking.BookingId) + "," +
+                        Csv(booking.CustomerName) + "," +
+                        Csv(
+                            booking.Room != null
+                            ? booking.Room.RoomName
+                            : ""
+                        ) + "," +
+                        Csv(payment.SoTien) + "," +
+                        Csv(
+                            payment.PhuongThucThanhToan
+                        ) + "," +
+                        Csv(payment.TrangThai) + "," +
+                        Csv(
+                            payment.NgayThanhToan.ToString(
+                                "dd/MM/yyyy HH:mm"
+                            )
+                        ) + "," +
+                        Csv(payment.MaGiaoDich) + "," +
+                        Csv(payment.GhiChu)
+                    );
+                }
+            }
+
+            return CsvFile(
+                sb.ToString(),
+                "payments_" +
+                DateTime.Now.ToString(
+                    "yyyyMMdd_HHmm"
+                ) +
+                ".csv"
+            );
+        }
+
+
+        public FileResult ExportCustomersCsv()
+        {
+            var users =
+                db.Users
+                  .Where(u =>
+                      u.Role ==
+                      "Customer")
+                  .OrderBy(u =>
+                      u.FullName)
+                  .ToList();
+
+            StringBuilder sb =
+                new StringBuilder();
+
+            sb.AppendLine(
+                "UserId,HoTen,Email,Username,TrangThai,SoLanDat,TongDaThanhToan,NgayTao"
+            );
+
+            foreach (
+                var user
+                in users
+            )
+            {
+                var bookings =
+                    db.Bookings
+                      .Include(b =>
+                          b.ThanhToans)
+                      .Where(b =>
+                          b.CustomerEmail ==
+                          user.Email)
+                      .ToList();
+
+                decimal totalPaid =
+                    bookings
+                        .Where(b =>
+                            b.ThanhToans.Any(t =>
+                                t.TrangThai ==
+                                "Đã thanh toán"))
+                        .Sum(b =>
+                            b.TotalAmount);
+
+                sb.AppendLine(
+                    Csv(user.UserId) + "," +
+                    Csv(user.FullName) + "," +
+                    Csv(user.Email) + "," +
+                    Csv(user.Username) + "," +
+                    Csv(
+                        user.IsActive
+                        ? "Hoạt động"
+                        : "Đã khóa"
+                    ) + "," +
+                    Csv(bookings.Count) + "," +
+                    Csv(totalPaid) + "," +
+                    Csv(
+                        user.CreatedAt.ToString(
+                            "dd/MM/yyyy"
+                        )
+                    )
+                );
+            }
+
+            return CsvFile(
+                sb.ToString(),
+                "customers_" +
+                DateTime.Now.ToString(
+                    "yyyyMMdd_HHmm"
+                ) +
+                ".csv"
+            );
+        }
+
+
+        // =========================================================
+        // HELPERS
+        // =========================================================
+        private List<RoomAvailabilityViewModel>
+            BuildRoomAvailability(
+                List<Room> rooms,
+                List<Booking> bookings)
+        {
+            var result =
+                new List<RoomAvailabilityViewModel>();
+
+            foreach (
+                var room
+                in rooms
+            )
+            {
+                var roomBookings =
+                    bookings
+                        .Where(b =>
+                            b.RoomId ==
+                            room.RoomId)
+                        .ToList();
+
+                int reservedUnits =
+                    roomBookings.Sum(b =>
+                        b.RoomCount);
+
+                int availableUnits =
+                    Math.Max(
+                        0,
+                        room.TotalRooms -
+                        reservedUnits
+                    );
+
+                int currentGuests =
+                    roomBookings.Count(b =>
+                        b.Status ==
+                        "Đang ở");
+
+                result.Add(
+                    new RoomAvailabilityViewModel
+                    {
+                        RoomId =
+                            room.RoomId,
+
+                        RoomName =
+                            room.RoomName,
+
+                        RoomType =
+                            room.RoomType,
+
+                        Price =
+                            room.Price,
+
+                        Capacity =
+                            room.Capacity,
+
+                        TotalUnits =
+                            room.TotalRooms,
+
+                        ReservedUnits =
+                            reservedUnits,
+
+                        AvailableUnits =
+                            availableUnits,
+
+                        CurrentGuestBookings =
+                            currentGuests,
+
+                        StatusText =
+                            availableUnits > 0
+                            ? "Còn phòng"
+                            : "Hết phòng",
+
+                        IsAvailable =
+                            availableUnits > 0,
+
+                        Bookings =
+                            roomBookings
+                                .Select(b =>
+                                    new RoomBookingMiniViewModel
+                                    {
+                                        BookingId =
+                                            b.BookingId,
+
+                                        CustomerName =
+                                            b.CustomerName,
+
+                                        Status =
+                                            b.Status,
+
+                                        CheckInDate =
+                                            b.CheckInDate,
+
+                                        CheckOutDate =
+                                            b.CheckOutDate,
+
+                                        RoomCount =
+                                            b.RoomCount
+                                    })
+                                .OrderBy(x =>
+                                    x.CheckInDate)
+                                .ToList()
+                    }
+                );
+            }
+
+            return result;
+        }
+
+
+        private string Csv(object value)
+        {
+            string text =
+                value == null
+                ? ""
+                : Convert.ToString(value);
+
+            text =
+                text.Replace(
+                    "\"",
+                    "\"\""
                 );
 
-            DateTime firstDayNextMonth =
-                firstDayOfMonth.AddMonths(1);
-
-            decimal monthRevenue =
-                db.Bookings
-                .Where(b =>
-                    b.Status == "Đã xác nhận" &&
-                    b.CreatedAt >= firstDayOfMonth &&
-                    b.CreatedAt < firstDayNextMonth)
-                .Select(b => (decimal?)b.TotalAmount)
-                .Sum() ?? 0;
-
-            ViewBag.MonthRevenue =
-                monthRevenue;
-
-            // =========================
-            // DOANH THU 7 NGÀY GẦN NHẤT
-            // =========================
-
-            var revenueLabels = new string[7];
-            var revenueData = new decimal[7];
-
-            for (int i = 6; i >= 0; i--)
-            {
-                DateTime date = DateTime.Today.AddDays(-i);
-                DateTime nextDate = date.AddDays(1);
-
-                int index = 6 - i;
-
-                revenueLabels[index] =
-                    date.ToString("dd/MM");
-
-                revenueData[index] =
-                    db.Bookings
-                    .Where(b =>
-                        b.Status == "Đã xác nhận" &&
-                        b.CreatedAt >= date &&
-                        b.CreatedAt < nextDate
-                    )
-                    .Select(b => (decimal?)b.TotalAmount)
-                    .Sum() ?? 0;
-            }
-
-            ViewBag.RevenueLabels = revenueLabels;
-            ViewBag.RevenueData = revenueData;
-            return View(bookings);
+            return "\"" +
+                   text +
+                   "\"";
         }
 
-        // XÁC NHẬN ĐƠN
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Confirm(int id)
+
+        private FileResult CsvFile(
+            string content,
+            string fileName)
         {
-            var booking = db.Bookings.Find(id);
+            byte[] preamble =
+                Encoding.UTF8.GetPreamble();
 
-            if (booking == null)
-            {
-                return HttpNotFound();
-            }
+            byte[] body =
+                Encoding.UTF8.GetBytes(
+                    content
+                );
 
-            booking.Status = "Đã xác nhận";
+            byte[] result =
+                new byte[
+                    preamble.Length +
+                    body.Length
+                ];
 
-            db.SaveChanges();
+            Buffer.BlockCopy(
+                preamble,
+                0,
+                result,
+                0,
+                preamble.Length
+            );
 
-            return RedirectToAction("Index");
+            Buffer.BlockCopy(
+                body,
+                0,
+                result,
+                preamble.Length,
+                body.Length
+            );
+
+            return File(
+                result,
+                "text/csv",
+                fileName
+            );
         }
 
-        // HỦY ĐƠN
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Cancel(int id)
-        {
-            var booking = db.Bookings.Find(id);
 
-            if (booking == null)
+        protected override void Dispose(
+            bool disposing)
+        {
+            if (disposing)
             {
-                return HttpNotFound();
+                db.Dispose();
             }
 
-            booking.Status = "Đã hủy";
+            base.Dispose(disposing);
+        }
+        // =========================================================
+        // CÁC HÀM BỔ SUNG ĐỂ KHẮC PHỤC LỖI THIẾU HÀM ĐỒ ĂN
+        // =========================================================
+        private decimal GetFoodRevenue(DateTime startDate, DateTime endDate)
+        {
+            // Nếu dự án chưa có module/bảng đồ ăn, tạm thời trả về 0 để hết lỗi biên dịch
+            return 0;
+        }
 
-            db.SaveChanges();
+        private int GetPendingFoodOrders()
+        {
+            // Tạm thời trả về 0 nếu chưa có bảng quản lý đơn đồ ăn
+            return 0;
+        }
 
-            return RedirectToAction("Index");
+        private int GetPaidFoodOrders(DateTime startDate, DateTime endDate)
+        {
+            // Tạm thời trả về 0 nếu chưa có bảng quản lý đơn đồ ăn
+            return 0;
         }
     }
 }

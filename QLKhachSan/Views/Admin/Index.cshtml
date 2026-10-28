@@ -1,18 +1,48 @@
 ﻿@model IEnumerable<QLKhachSan.Models.Booking>
+
+@using System
+@using System.Linq
+
 @{
-    var todayRevenue =
+    Layout = null;
+
+    ViewBag.Title =
+        "Dashboard quản trị";
+
+    ViewBag.AdminPage =
+        "Dashboard";
+
+
+    decimal todayRevenue =
         ViewBag.TodayRevenue != null
-        ? Convert.ToDecimal(ViewBag.TodayRevenue)
+        ? Convert.ToDecimal(
+            ViewBag.TodayRevenue
+        )
         : 0;
 
-    var monthRevenue =
+
+    decimal monthRevenue =
         ViewBag.MonthRevenue != null
-        ? Convert.ToDecimal(ViewBag.MonthRevenue)
+        ? Convert.ToDecimal(
+            ViewBag.MonthRevenue
+        )
         : 0;
-}
 
-@{
-    ViewBag.Title = "Quản lý đặt phòng";
+
+    decimal todayRoomRevenue =
+        ViewBag.TodayRoomRevenue != null
+        ? Convert.ToDecimal(
+            ViewBag.TodayRoomRevenue
+        )
+        : 0;
+
+
+    decimal todayFoodRevenue =
+        ViewBag.TodayFoodRevenue != null
+        ? Convert.ToDecimal(
+            ViewBag.TodayFoodRevenue
+        )
+        : 0;
 }
 
 <!DOCTYPE html>
@@ -24,98 +54,414 @@
     <meta charset="utf-8" />
 
     <meta name="viewport"
-          content="width=device-width, initial-scale=1.0" />
+          content="width=device-width,
+                   initial-scale=1.0" />
 
-    <title>Quản lý đặt phòng</title>
+    <title>
+        Dashboard quản trị - Luxury Hotel
+    </title>
+
 
     <script src="https://cdn.tailwindcss.com"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+
     <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+
+    <style>
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+    </style>
 
 </head>
 
-<body class="bg-gray-100">
 
-    <div class="min-h-screen">
+<body class="bg-[#f4f6fb]
+             text-gray-900
+             min-h-screen">
 
-        <!-- HEADER -->
 
-        <div class="bg-gray-900 text-white py-6">
+    <!-- ====================================================== -->
+    <!-- SIDEBAR -->
+    <!-- ====================================================== -->
 
-            <div class="container mx-auto px-5">
+    @Html.Partial(
+        "_AdminSidebar"
+    )
 
-                <div class="flex justify-between items-center">
 
-                    <div>
 
-                        <h1 class="text-3xl font-bold">
+    <!-- ====================================================== -->
+    <!-- MAIN -->
+    <!-- ====================================================== -->
 
-                            <i class="fas fa-hotel text-yellow-400 mr-2"></i>
+    <div class="lg:ml-72
+                min-h-screen">
 
-                            QUẢN LÝ KHÁCH SẠN
 
-                        </h1>
+        <!-- ================================================== -->
+        <!-- TOP BAR -->
+        <!-- ================================================== -->
 
-                        <p class="text-gray-400 mt-1">
-                            Quản lý đơn đặt phòng
-                        </p>
+        <header class="bg-white
+                       border-b
+                       sticky
+                       top-0
+                       z-30">
 
-                    </div>
+            <div class="px-5
+                        lg:px-8
+                        py-4
+                        flex
+                        items-center
+                        justify-between
+                        gap-4">
 
-                    <div class="flex gap-3">
 
-                        <a href="@Url.Action("Index", "Home")"
-                           class="bg-yellow-500 text-gray-900 px-5 py-3 rounded-lg font-bold">
+                <div>
 
-                            <i class="fas fa-home mr-2"></i>
-                            Trang chủ
+                    <p class="text-xs
+                              tracking-[2px]
+                              font-bold
+                              text-indigo-500">
 
-                        </a>
+                        LUXURY HOTEL
 
-                        <a href="@Url.Action("Logout", "Account")"
-                           class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-lg font-bold">
+                    </p>
 
-                            <i class="fas fa-sign-out-alt mr-2"></i>
-                            Đăng xuất
+                    <h1 class="text-2xl
+                               lg:text-3xl
+                               font-extrabold">
 
-                        </a>
+                        Dashboard quản trị
 
-                    </div>
+                    </h1>
+
+                    <p class="text-gray-500
+                              text-sm
+                              mt-1">
+
+                        Theo dõi và quản lý toàn bộ hoạt động khách sạn.
+
+                    </p>
+
+                </div>
+
+
+                <div class="flex
+                            items-center
+                            gap-3">
+
+
+                    <a href="@Url.Action(
+                                "Index",
+                                "Home"
+                            )"
+                       class="bg-yellow-400
+                              hover:bg-yellow-500
+                              text-gray-900
+                              font-bold
+                              px-4
+                              py-2.5
+                              rounded-xl
+                              whitespace-nowrap">
+
+                        <i class="fas
+                                  fa-house
+                                  mr-1">
+                        </i>
+
+                        Trang chủ khách sạn
+
+                    </a>
+
+
+                    <a href="@Url.Action(
+                                "Logout",
+                                "Account"
+                            )"
+                       class="bg-red-500
+                              hover:bg-red-600
+                              text-white
+                              font-bold
+                              px-4
+                              py-2.5
+                              rounded-xl
+                              whitespace-nowrap">
+
+                        <i class="fas
+                                  fa-right-from-bracket
+                                  mr-1">
+                        </i>
+
+                        Đăng xuất
+
+                    </a>
 
                 </div>
 
             </div>
 
-        </div>
+        </header>
 
 
+
+        <!-- ================================================== -->
         <!-- CONTENT -->
+        <!-- ================================================== -->
 
-        <div class="container mx-auto px-5 py-10">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <main class="p-5
+                     lg:p-8">
 
-                <!-- TỔNG ĐƠN -->
-                <div class="bg-white rounded-xl shadow-lg p-6">
 
-                    <div class="flex items-center justify-between">
+            <!-- ============================================== -->
+            <!-- THÔNG BÁO -->
+            <!-- ============================================== -->
+
+            @if (
+                TempData["AdminSuccess"] != null
+            )
+            {
+                <div class="mb-6
+                            bg-green-50
+                            border
+                            border-green-200
+                            text-green-700
+                            rounded-2xl
+                            px-5
+                            py-4
+                            font-semibold">
+
+                    <i class="fas
+                              fa-circle-check
+                              mr-2">
+                    </i>
+
+                    @TempData["AdminSuccess"]
+
+                </div>
+            }
+
+
+            @if (
+                TempData["AdminError"] != null
+            )
+            {
+                <div class="mb-6
+                            bg-red-50
+                            border
+                            border-red-200
+                            text-red-700
+                            rounded-2xl
+                            px-5
+                            py-4
+                            font-semibold">
+
+                    <i class="fas
+                              fa-circle-exclamation
+                              mr-2">
+                    </i>
+
+                    @TempData["AdminError"]
+
+                </div>
+            }
+
+
+
+            <!-- ============================================== -->
+            <!-- WELCOME -->
+            <!-- ============================================== -->
+
+            <section class="mb-7">
+
+                <div class="bg-gradient-to-r
+                            from-[#111827]
+                            via-[#172554]
+                            to-[#312e81]
+                            rounded-3xl
+                            p-7
+                            text-white
+                            shadow-lg">
+
+                    <div class="flex
+                                flex-col
+                                lg:flex-row
+                                lg:items-center
+                                lg:justify-between
+                                gap-5">
 
                         <div>
-                            <p class="text-gray-500 font-semibold">
-                                Tổng đơn đặt phòng
+
+                            <p class="text-blue-200
+                                      text-sm">
+
+                                Xin chào,
+
                             </p>
 
-                            <h2 class="text-4xl font-bold mt-2 text-gray-800">
-                                @ViewBag.TotalBookings
+                            <h2 class="text-3xl
+                                       font-extrabold
+                                       mt-1">
+
+                                @(Session["FullName"] != null
+                                    ? Session["FullName"].ToString()
+                                    : "Quản trị viên")
+
                             </h2>
+
+                            <p class="text-blue-100
+                                      mt-2">
+
+                                Đây là tổng quan hoạt động của Luxury Hotel.
+
+                            </p>
+
                         </div>
 
-                        <div class="bg-blue-100 text-blue-600
-                        w-14 h-14 rounded-full
-                        flex items-center justify-center">
 
-                            <i class="fas fa-calendar-check text-2xl"></i>
+                        <div class="flex
+                                    items-center
+                                    gap-3
+                                    flex-wrap">
+
+                            <a href="@Url.Action(
+                                        "Rooms",
+                                        "Admin"
+                                    )"
+                               class="bg-white/10
+                                      hover:bg-white/20
+                                      border
+                                      border-white/20
+                                      px-4
+                                      py-3
+                                      rounded-xl
+                                      font-bold">
+
+                                <i class="fas
+                                          fa-bed
+                                          mr-1">
+                                </i>
+
+                                Quản lý phòng
+
+                            </a>
+
+
+                            <a href="@Url.Action(
+                                        "CurrentGuests",
+                                        "Admin"
+                                    )"
+                               class="bg-yellow-400
+                                      hover:bg-yellow-500
+                                      text-gray-900
+                                      px-4
+                                      py-3
+                                      rounded-xl
+                                      font-bold">
+
+                                <i class="fas
+                                          fa-person-shelter
+                                          mr-1">
+                                </i>
+
+                                Khách đang ở
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- ============================================== -->
+            <!-- THỐNG KÊ -->
+            <!-- ============================================== -->
+
+            <section class="grid
+                            grid-cols-1
+                            md:grid-cols-2
+                            xl:grid-cols-3
+                            2xl:grid-cols-6
+                            gap-5
+                            mb-8">
+
+
+                <!-- TỔNG BOOKING -->
+
+                <div class="bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            p-5">
+
+                    <div class="flex
+                                justify-between
+                                items-start">
+
+                        <div>
+
+                            <p class="text-gray-500
+                                      text-sm">
+
+                                Tổng đơn phòng
+
+                            </p>
+
+                            <p class="text-3xl
+                                      font-extrabold
+                                      mt-2">
+
+                                @ViewBag.TotalBookings
+
+                            </p>
+
+                        </div>
+
+                        <div class="w-12
+                                    h-12
+                                    bg-blue-100
+                                    text-blue-600
+                                    rounded-2xl
+                                    flex
+                                    items-center
+                                    justify-center">
+
+                            <i class="fas
+                                      fa-calendar-check">
+                            </i>
 
                         </div>
 
@@ -125,25 +471,47 @@
 
 
                 <!-- CHỜ XÁC NHẬN -->
-                <div class="bg-white rounded-xl shadow-lg p-6">
 
-                    <div class="flex items-center justify-between">
+                <div class="bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            p-5">
+
+                    <div class="flex
+                                justify-between
+                                items-start">
 
                         <div>
-                            <p class="text-gray-500 font-semibold">
+
+                            <p class="text-gray-500
+                                      text-sm">
+
                                 Chờ xác nhận
+
                             </p>
 
-                            <h2 class="text-4xl font-bold mt-2 text-yellow-600">
+                            <p class="text-3xl
+                                      font-extrabold
+                                      text-yellow-600
+                                      mt-2">
+
                                 @ViewBag.PendingBookings
-                            </h2>
+
+                            </p>
+
                         </div>
 
-                        <div class="bg-yellow-100 text-yellow-600
-                        w-14 h-14 rounded-full
-                        flex items-center justify-center">
+                        <div class="w-12
+                                    h-12
+                                    bg-yellow-100
+                                    text-yellow-600
+                                    rounded-2xl
+                                    flex
+                                    items-center
+                                    justify-center">
 
-                            <i class="fas fa-clock text-2xl"></i>
+                            <i class="fas fa-clock"></i>
 
                         </div>
 
@@ -152,26 +520,167 @@
                 </div>
 
 
-                <!-- DOANH THU HÔM NAY -->
-                <div class="bg-white rounded-xl shadow-lg p-6">
+                <!-- KHÁCH ĐANG Ở -->
 
-                    <div class="flex items-center justify-between">
+                <a href="@Url.Action(
+                            "CurrentGuests",
+                            "Admin"
+                         )"
+                   class="bg-white
+                          rounded-2xl
+                          border
+                          shadow-sm
+                          p-5
+                          hover:shadow-md
+                          transition">
+
+                    <div class="flex
+                                justify-between
+                                items-start">
 
                         <div>
-                            <p class="text-gray-500 font-semibold">
-                                Doanh thu hôm nay
+
+                            <p class="text-gray-500
+                                      text-sm">
+
+                                Khách đang ở
+
                             </p>
 
-                            <h2 class="text-2xl font-bold mt-2 text-green-600">
-                                @todayRevenue.ToString("N0")đ
-                            </h2>
+                            <p class="text-3xl
+                                      font-extrabold
+                                      text-indigo-600
+                                      mt-2">
+
+                                @ViewBag.CurrentGuests
+
+                            </p>
+
                         </div>
 
-                        <div class="bg-green-100 text-green-600
-                        w-14 h-14 rounded-full
-                        flex items-center justify-center">
+                        <div class="w-12
+                                    h-12
+                                    bg-indigo-100
+                                    text-indigo-600
+                                    rounded-2xl
+                                    flex
+                                    items-center
+                                    justify-center">
 
-                            <i class="fas fa-money-bill-wave text-2xl"></i>
+                            <i class="fas
+                                      fa-person-shelter">
+                            </i>
+
+                        </div>
+
+                    </div>
+
+                </a>
+
+
+                <!-- ĐƠN MÓN -->
+
+                <a href="@Url.Action(
+                            "AdminOrders",
+                            "Restaurant"
+                         )"
+                   class="bg-white
+                          rounded-2xl
+                          border
+                          shadow-sm
+                          p-5
+                          hover:shadow-md
+                          transition">
+
+                    <div class="flex
+                                justify-between
+                                items-start">
+
+                        <div>
+
+                            <p class="text-gray-500
+                                      text-sm">
+
+                                Đơn món đang xử lý
+
+                            </p>
+
+                            <p class="text-3xl
+                                      font-extrabold
+                                      text-orange-600
+                                      mt-2">
+
+                                @ViewBag.PendingFoodOrders
+
+                            </p>
+
+                        </div>
+
+                        <div class="w-12
+                                    h-12
+                                    bg-orange-100
+                                    text-orange-600
+                                    rounded-2xl
+                                    flex
+                                    items-center
+                                    justify-center">
+
+                            <i class="fas
+                                      fa-utensils">
+                            </i>
+
+                        </div>
+
+                    </div>
+
+                </a>
+
+
+                <!-- DOANH THU HÔM NAY -->
+
+                <div class="bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            p-5">
+
+                    <div class="flex
+                                justify-between
+                                items-start">
+
+                        <div>
+
+                            <p class="text-gray-500
+                                      text-sm">
+
+                                Doanh thu hôm nay
+
+                            </p>
+
+                            <p class="text-xl
+                                      font-extrabold
+                                      text-green-600
+                                      mt-2
+                                      whitespace-nowrap">
+
+                                @todayRevenue.ToString("N0")đ
+
+                            </p>
+
+                        </div>
+
+                        <div class="w-12
+                                    h-12
+                                    bg-green-100
+                                    text-green-600
+                                    rounded-2xl
+                                    flex
+                                    items-center
+                                    justify-center">
+
+                            <i class="fas
+                                      fa-money-bill-wave">
+                            </i>
 
                         </div>
 
@@ -181,741 +690,1313 @@
 
 
                 <!-- DOANH THU THÁNG -->
-                <div class="bg-white rounded-xl shadow-lg p-6">
 
-                    <div class="flex items-center justify-between">
+                <a href="@Url.Action(
+                            "Revenue",
+                            "Admin"
+                         )"
+                   class="bg-white
+                          rounded-2xl
+                          border
+                          shadow-sm
+                          p-5
+                          hover:shadow-md
+                          transition">
+
+                    <div class="flex
+                                justify-between
+                                items-start">
 
                         <div>
-                            <p class="text-gray-500 font-semibold">
-                                Doanh thu tháng này
+
+                            <p class="text-gray-500
+                                      text-sm">
+
+                                Doanh thu tháng
+
                             </p>
 
-                            <h2 class="text-2xl font-bold mt-2 text-purple-600">
+                            <p class="text-xl
+                                      font-extrabold
+                                      text-purple-600
+                                      mt-2
+                                      whitespace-nowrap">
+
                                 @monthRevenue.ToString("N0")đ
+
+                            </p>
+
+                        </div>
+
+                        <div class="w-12
+                                    h-12
+                                    bg-purple-100
+                                    text-purple-600
+                                    rounded-2xl
+                                    flex
+                                    items-center
+                                    justify-center">
+
+                            <i class="fas
+                                      fa-chart-line">
+                            </i>
+
+                        </div>
+
+                    </div>
+
+                </a>
+
+            </section>
+
+
+
+            <!-- ============================================== -->
+            <!-- DOANH THU HÔM NAY CHI TIẾT -->
+            <!-- ============================================== -->
+
+            <section class="grid
+                            grid-cols-1
+                            lg:grid-cols-3
+                            gap-5
+                            mb-8">
+
+                <div class="lg:col-span-2
+                            bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            p-6">
+
+                    <div class="flex
+                                items-center
+                                justify-between
+                                mb-6">
+
+                        <div>
+
+                            <h2 class="text-xl
+                                       font-extrabold">
+
+                                Doanh thu 7 ngày gần nhất
+
                             </h2>
-                        </div>
 
-                        <div class="bg-purple-100 text-purple-600
-                        w-14 h-14 rounded-full
-                        flex items-center justify-center">
+                            <p class="text-sm
+                                      text-gray-500
+                                      mt-1">
 
-                            <i class="fas fa-chart-line text-2xl"></i>
+                                Bao gồm doanh thu phòng và nhà hàng đã thanh toán.
 
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-            <!-- ========================================================= -->
-            <!-- QUẢN LÝ NHÀ HÀNG -->
-            <!-- ========================================================= -->
-
-            <div style="
-    background:white;
-    border-radius:16px;
-    padding:24px;
-    margin-bottom:24px;
-    box-shadow:0 4px 16px rgba(0,0,0,.08);
-">
-
-                <!-- TIÊU ĐỀ -->
-
-                <div style="
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:16px;
-        margin-bottom:20px;
-        flex-wrap:wrap;
-    ">
-
-                    <div>
-
-                        <h2 style="
-                margin:0;
-                font-size:22px;
-                font-weight:800;
-                color:#111827;
-            ">
-
-                            🍽️ Quản lý nhà hàng
-
-                        </h2>
-
-                        <p style="
-                margin:6px 0 0 0;
-                color:#6b7280;
-                font-size:14px;
-            ">
-
-                            Quản lý thực đơn và xử lý các đơn gọi món của khách.
-
-                        </p>
-
-                    </div>
-
-
-                    <a href="@Url.Action(
-                    "Index",
-                    "Restaurant"
-                 )"
-                       style="
-               text-decoration:none;
-               color:#a16207;
-               font-weight:700;
-           ">
-
-                        Xem nhà hàng →
-
-                    </a>
-
-                </div>
-
-
-
-                <!-- 2 CHỨC NĂNG -->
-
-                <div style="
-        display:grid;
-        grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-        gap:18px;
-    ">
-
-
-                    <!-- QUẢN LÝ ĐƠN MÓN -->
-
-                    <a href="@Url.Action(
-                    "AdminOrders",
-                    "Restaurant"
-                 )"
-                       style="
-               text-decoration:none;
-               color:inherit;
-               border:1px solid #fde68a;
-               background:#fffbeb;
-               border-radius:14px;
-               padding:20px;
-               display:flex;
-               align-items:center;
-               gap:16px;
-               transition:.2s;
-           ">
-
-                        <div style="
-                width:56px;
-                height:56px;
-                flex-shrink:0;
-                border-radius:14px;
-                background:#fbbf24;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                color:#111827;
-                font-size:24px;
-            ">
-
-                            <i class="fas fa-receipt"></i>
+                            </p>
 
                         </div>
 
-
-                        <div>
-
-                            <div style="
-                    font-size:17px;
-                    font-weight:800;
-                    color:#111827;
-                    margin-bottom:5px;
-                ">
-
-                                Quản lý đơn gọi món
-
-                            </div>
-
-                            <div style="
-                    font-size:13px;
-                    color:#6b7280;
-                    line-height:1.5;
-                ">
-
-                                Xác nhận đơn, chuẩn bị món,
-                                giao món và cập nhật thanh toán.
-
-                            </div>
-
-                        </div>
-
-                    </a>
-
-
-
-                    <!-- QUẢN LÝ THỰC ĐƠN -->
-
-                    <a href="@Url.Action(
-                    "ManageFoods",
-                    "Restaurant"
-                 )"
-                       style="
-               text-decoration:none;
-               color:inherit;
-               border:1px solid #bbf7d0;
-               background:#f0fdf4;
-               border-radius:14px;
-               padding:20px;
-               display:flex;
-               align-items:center;
-               gap:16px;
-               transition:.2s;
-           ">
-
-                        <div style="
-                width:56px;
-                height:56px;
-                flex-shrink:0;
-                border-radius:14px;
-                background:#22c55e;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                color:white;
-                font-size:24px;
-            ">
-
-                            <i class="fas fa-utensils"></i>
-
-                        </div>
-
-
-                        <div>
-
-                            <div style="
-                    font-size:17px;
-                    font-weight:800;
-                    color:#111827;
-                    margin-bottom:5px;
-                ">
-
-                                Quản lý thực đơn
-
-                            </div>
-
-                            <div style="
-                    font-size:13px;
-                    color:#6b7280;
-                    line-height:1.5;
-                ">
-
-                                Xem món ăn, giá bán,
-                                món nổi bật và bật / ngừng bán.
-
-                            </div>
-
-                        </div>
-
-                    </a>
-
-                </div>
-
-            </div>
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-
-                <div class="flex justify-between items-center mb-6">
-
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800">
-                            Doanh thu 7 ngày gần nhất
-                        </h2>
-
-                        <p class="text-gray-500 mt-1">
-                            Chỉ tính các đơn đã xác nhận
-                        </p>
-                    </div>
-
-                    <div class="bg-green-100 text-green-600
-                    w-12 h-12 rounded-full
-                    flex items-center justify-center">
-
-                        <i class="fas fa-chart-line text-xl"></i>
-
-                    </div>
-
-                </div>
-
-                <div style="height: 350px;">
-                    <canvas id="revenueChart"></canvas>
-                </div>
-
-            </div>
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-
-                <h2 class="text-xl font-bold text-gray-800 mb-5">
-
-                    <i class="fas fa-filter text-yellow-600 mr-2"></i>
-
-                    Tìm kiếm và lọc đơn
-
-                </h2>
-
-
-                <form method="get"
-                      action="@Url.Action("Index", "Admin")">
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-
-
-                        <!-- TÌM KHÁCH -->
-
-                        <div>
-
-                            <label class="block font-semibold text-gray-700 mb-2">
-                                Tìm khách hàng
-                            </label>
-
-                            <input type="text"
-                                   name="keyword"
-                                   value="@ViewBag.Keyword"
-                                   placeholder="Tên, SĐT hoặc email..."
-                                   class="w-full border rounded-lg px-4 py-3" />
-
-                        </div>
-
-
-                        <!-- TRẠNG THÁI -->
-
-                        <div>
-
-                            <label class="block font-semibold text-gray-700 mb-2">
-                                Trạng thái
-                            </label>
-
-                            <select name="status"
-                                    class="w-full border rounded-lg px-4 py-3">
-
-                                <option value="">
-                                    -- Tất cả --
-                                </option>
-
-                                <option value="Chờ xác nhận"
-                                        @(ViewBag.Status == "Chờ xác nhận" ? "selected" : "")>
-                                    Chờ xác nhận
-                                </option>
-
-                                <option value="Đã xác nhận"
-                                        @(ViewBag.Status == "Đã xác nhận" ? "selected" : "")>
-                                    Đã xác nhận
-                                </option>
-
-                                <option value="Đã hủy"
-                                        @(ViewBag.Status == "Đã hủy" ? "selected" : "")>
-                                    Đã hủy
-                                </option>
-
-                            </select>
-
-                        </div>
-
-
-                        <!-- TỪ NGÀY -->
-
-                        <div>
-
-                            <label class="block font-semibold text-gray-700 mb-2">
-                                Từ ngày
-                            </label>
-
-                            <input type="date"
-                                   name="fromDate"
-                                   value="@ViewBag.FromDate"
-                                   class="w-full border rounded-lg px-4 py-3" />
-
-                        </div>
-
-
-                        <!-- ĐẾN NGÀY -->
-
-                        <div>
-
-                            <label class="block font-semibold text-gray-700 mb-2">
-                                Đến ngày
-                            </label>
-
-                            <input type="date"
-                                   name="toDate"
-                                   value="@ViewBag.ToDate"
-                                   class="w-full border rounded-lg px-4 py-3" />
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="flex gap-3 mt-6">
-
-                        <button type="submit"
-                                class="bg-yellow-500 hover:bg-yellow-600
-                           text-gray-900 font-bold
-                           px-6 py-3 rounded-lg">
-
-                            <i class="fas fa-search mr-2"></i>
-
-                            Tìm kiếm
-
-                        </button>
-
-
-                        <a href="@Url.Action("Index", "Admin")"
-                           class="bg-gray-500 hover:bg-gray-600
-                      text-white font-bold
-                      px-6 py-3 rounded-lg">
-
-                            <i class="fas fa-redo mr-2"></i>
-
-                            Xóa bộ lọc
+                        <a href="@Url.Action(
+                                    "Revenue",
+                                    "Admin"
+                                 )"
+                           class="text-indigo-600
+                                  font-bold
+                                  hover:text-indigo-800">
+
+                            Xem chi tiết →
 
                         </a>
 
                     </div>
 
-                </form>
 
-            </div>
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div style="height:330px;">
 
-                <div class="p-6 border-b">
+                        <canvas id="revenueChart">
+                        </canvas>
 
-                    <h2 class="text-2xl font-bold text-gray-800">
+                    </div>
 
-                        <i class="fas fa-calendar-check text-yellow-600 mr-2"></i>
+                </div>
 
-                        Danh sách đơn đặt phòng
+
+                <div class="bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            p-6">
+
+                    <h2 class="text-xl
+                               font-extrabold
+                               mb-5">
+
+                        Doanh thu hôm nay
 
                     </h2>
 
+
+                    <div class="space-y-4">
+
+                        <div class="bg-blue-50
+                                    border
+                                    border-blue-100
+                                    rounded-2xl
+                                    p-4">
+
+                            <div class="flex
+                                        justify-between
+                                        items-center">
+
+                                <div>
+
+                                    <p class="text-sm
+                                              text-gray-500">
+
+                                        Phòng
+
+                                    </p>
+
+                                    <p class="text-xl
+                                              font-extrabold
+                                              text-blue-700
+                                              mt-1">
+
+                                        @todayRoomRevenue.ToString("N0")đ
+
+                                    </p>
+
+                                </div>
+
+                                <i class="fas
+                                          fa-bed
+                                          text-blue-500
+                                          text-2xl">
+                                </i>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="bg-orange-50
+                                    border
+                                    border-orange-100
+                                    rounded-2xl
+                                    p-4">
+
+                            <div class="flex
+                                        justify-between
+                                        items-center">
+
+                                <div>
+
+                                    <p class="text-sm
+                                              text-gray-500">
+
+                                        Nhà hàng
+
+                                    </p>
+
+                                    <p class="text-xl
+                                              font-extrabold
+                                              text-orange-700
+                                              mt-1">
+
+                                        @todayFoodRevenue.ToString("N0")đ
+
+                                    </p>
+
+                                </div>
+
+                                <i class="fas
+                                          fa-utensils
+                                          text-orange-500
+                                          text-2xl">
+                                </i>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="bg-green-50
+                                    border
+                                    border-green-100
+                                    rounded-2xl
+                                    p-4">
+
+                            <p class="text-sm
+                                      text-gray-500">
+
+                                Tổng cộng
+
+                            </p>
+
+                            <p class="text-2xl
+                                      font-extrabold
+                                      text-green-700
+                                      mt-1">
+
+                                @todayRevenue.ToString("N0")đ
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- ============================================== -->
+            <!-- QUẢN LÝ BOOKING -->
+            <!-- ============================================== -->
+
+            <section id="bookings"
+                     class="scroll-mt-28">
+
+
+                <!-- FILTER -->
+
+                <div class="bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            p-6
+                            mb-6">
+
+                    <div class="flex
+                                flex-col
+                                lg:flex-row
+                                lg:items-center
+                                lg:justify-between
+                                gap-4
+                                mb-5">
+
+                        <div>
+
+                            <h2 class="text-2xl
+                                       font-extrabold">
+
+                                Quản lý đặt phòng
+
+                            </h2>
+
+                            <p class="text-gray-500
+                                      text-sm
+                                      mt-1">
+
+                                Tìm kiếm, xác nhận, thanh toán,
+                                nhận phòng và trả phòng.
+
+                            </p>
+
+                        </div>
+
+
+                        <span class="bg-indigo-50
+                                     text-indigo-700
+                                     px-4
+                                     py-2
+                                     rounded-xl
+                                     font-bold">
+
+                            @ViewBag.TotalBookings đơn
+
+                        </span>
+
+                    </div>
+
+
+                    <form method="get"
+                          action="@Url.Action(
+                                      "Index",
+                                      "Admin"
+                                  )">
+
+
+                        <div class="grid
+                                    grid-cols-1
+                                    md:grid-cols-2
+                                    xl:grid-cols-4
+                                    gap-4">
+
+
+                            <div>
+
+                                <label class="block
+                                              font-bold
+                                              text-sm
+                                              mb-2">
+
+                                    Khách hàng
+
+                                </label>
+
+                                <input type="text"
+                                       name="keyword"
+                                       value="@ViewBag.Keyword"
+                                       placeholder="Tên, SĐT hoặc email..."
+                                       class="w-full
+                                              border
+                                              rounded-xl
+                                              px-4
+                                              py-3
+                                              outline-none
+                                              focus:ring-2
+                                              focus:ring-indigo-200" />
+
+                            </div>
+
+
+                            <div>
+
+                                <label class="block
+                                              font-bold
+                                              text-sm
+                                              mb-2">
+
+                                    Trạng thái
+
+                                </label>
+
+                                <select name="status"
+                                        class="w-full
+                                               border
+                                               rounded-xl
+                                               px-4
+                                               py-3">
+
+                                    <option value="">
+                                        -- Tất cả --
+                                    </option>
+
+                                    <option value="Chờ xác nhận"
+                                            @(ViewBag.Status == "Chờ xác nhận" ? "selected" : "")>
+
+                                        Chờ xác nhận
+
+                                    </option>
+
+                                    <option value="Đã xác nhận"
+                                            @(ViewBag.Status == "Đã xác nhận" ? "selected" : "")>
+
+                                        Đã xác nhận
+
+                                    </option>
+
+                                    <option value="Đang ở"
+                                            @(ViewBag.Status == "Đang ở" ? "selected" : "")>
+
+                                        Đang ở
+
+                                    </option>
+
+                                    <option value="Đã trả phòng"
+                                            @(ViewBag.Status == "Đã trả phòng" ? "selected" : "")>
+
+                                        Đã trả phòng
+
+                                    </option>
+
+                                    <option value="Đã hủy"
+                                            @(ViewBag.Status == "Đã hủy" ? "selected" : "")>
+
+                                        Đã hủy
+
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div>
+
+                                <label class="block
+                                              font-bold
+                                              text-sm
+                                              mb-2">
+
+                                    Từ ngày
+
+                                </label>
+
+                                <input type="date"
+                                       name="fromDate"
+                                       value="@ViewBag.FromDate"
+                                       class="w-full
+                                              border
+                                              rounded-xl
+                                              px-4
+                                              py-3" />
+
+                            </div>
+
+
+                            <div>
+
+                                <label class="block
+                                              font-bold
+                                              text-sm
+                                              mb-2">
+
+                                    Đến ngày
+
+                                </label>
+
+                                <input type="date"
+                                       name="toDate"
+                                       value="@ViewBag.ToDate"
+                                       class="w-full
+                                              border
+                                              rounded-xl
+                                              px-4
+                                              py-3" />
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="flex
+                                    gap-3
+                                    mt-5
+                                    flex-wrap">
+
+                            <button type="submit"
+                                    class="bg-indigo-600
+                                           hover:bg-indigo-700
+                                           text-white
+                                           font-bold
+                                           px-5
+                                           py-3
+                                           rounded-xl">
+
+                                <i class="fas
+                                          fa-search
+                                          mr-1">
+                                </i>
+
+                                Tìm kiếm
+
+                            </button>
+
+
+                            <a href="@Url.Action(
+                                        "Index",
+                                        "Admin"
+                                     )#bookings"
+                               class="bg-gray-200
+                                      hover:bg-gray-300
+                                      text-gray-700
+                                      font-bold
+                                      px-5
+                                      py-3
+                                      rounded-xl">
+
+                                Xóa bộ lọc
+
+                            </a>
+
+                        </div>
+
+                    </form>
+
                 </div>
 
 
-                <div class="overflow-x-auto">
 
-                    <table class="w-full">
+                <!-- TABLE -->
 
-                        <thead class="bg-gray-800 text-white">
+                <div class="bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            overflow-hidden">
 
-                            <tr>
+                    <div class="overflow-x-auto">
 
-                                <th class="p-4 text-left">
-                                    Mã
-                                </th>
+                        <table class="w-full
+                                      min-w-[1450px]">
 
-                                <th class="p-4 text-left">
-                                    Khách hàng
-                                </th>
+                            <thead class="bg-[#111827]
+                                          text-white">
 
-                                <th class="p-4 text-left">
-                                    Phòng
-                                </th>
+                                <tr>
 
-                                <th class="p-4 text-left">
-                                    Nhận phòng
-                                </th>
+                                    <th class="p-4 text-left">
+                                        Mã
+                                    </th>
 
-                                <th class="p-4 text-left">
-                                    Trả phòng
-                                </th>
+                                    <th class="p-4 text-left">
+                                        Khách hàng
+                                    </th>
 
-                                <th class="p-4 text-center">
-                                    Số phòng
-                                </th>
+                                    <th class="p-4 text-left">
+                                        Phòng
+                                    </th>
 
-                                <th class="p-4 text-right">
-                                    Tổng tiền
-                                </th>
+                                    <th class="p-4 text-left">
+                                        Nhận / trả
+                                    </th>
 
-                                <th class="p-4 text-center">
-                                    Trạng thái
-                                </th>
+                                    <th class="p-4 text-right">
+                                        Tổng tiền
+                                    </th>
 
-                                <th class="p-4 text-center">
-                                    Thao tác
-                                </th>
+                                    <th class="p-4 text-center">
+                                        Đặt phòng
+                                    </th>
 
-                            </tr>
+                                    <th class="p-4 text-center">
+                                        Thanh toán
+                                    </th>
 
-                        </thead>
-
-
-                        <tbody>
-
-                            @foreach (var booking in Model)
-                            {
-                                <tr class="border-b hover:bg-gray-50">
-
-                                    <td class="p-4 font-bold">
-
-                                        #@booking.BookingId
-
-                                    </td>
-
-
-                                    <td class="p-4">
-
-                                        <p class="font-semibold">
-
-                                            @booking.CustomerName
-
-                                        </p>
-
-                                        <p class="text-sm text-gray-500">
-
-                                            @booking.CustomerPhone
-
-                                        </p>
-
-                                        <p class="text-sm text-gray-500">
-
-                                            @booking.CustomerEmail
-
-                                        </p>
-
-                                    </td>
-
-
-                                    <td class="p-4">
-
-                                        @if (booking.Room != null)
-                                        {
-                                            <span class="font-semibold">
-
-                                                @booking.Room.RoomName
-
-                                            </span>
-                                        }
-
-                                    </td>
-
-
-                                    <td class="p-4">
-
-                                        @booking.CheckInDate.ToString("dd/MM/yyyy")
-
-                                    </td>
-
-
-                                    <td class="p-4">
-
-                                        @booking.CheckOutDate.ToString("dd/MM/yyyy")
-
-                                    </td>
-
-
-                                    <td class="p-4 text-center">
-
-                                        @booking.RoomCount
-
-                                    </td>
-
-
-                                    <td class="p-4 text-right font-bold text-yellow-700">
-
-                                        @booking.TotalAmount.ToString("N0")đ
-
-                                    </td>
-
-
-                                    <td class="p-4 text-center">
-
-                                        @if (booking.Status == "Chờ xác nhận")
-                                        {
-                                            <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-bold">
-
-                                                Chờ xác nhận
-
-                                            </span>
-                                        }
-                                        else if (booking.Status == "Đã xác nhận")
-                                        {
-                                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">
-
-                                                Đã xác nhận
-
-                                            </span>
-                                        }
-                                        else if (booking.Status == "Đã hủy")
-                                        {
-                                            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold">
-
-                                                Đã hủy
-
-                                            </span>
-                                        }
-
-                                    </td>
-
-
-                                    <td class="p-4">
-
-                                        @if (booking.Status == "Chờ xác nhận")
-                                        {
-                                            <div class="flex gap-2 justify-center">
-
-                                                @using (Html.BeginForm(
-                                                    "Confirm",
-                                                    "Admin",
-                                                    new { id = booking.BookingId },
-                                                    FormMethod.Post,
-                                                    null))
-                                                {
-                                                    @Html.AntiForgeryToken()
-
-                                                    <button type="submit"
-                                                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm">
-
-                                                        <i class="fas fa-check mr-1"></i>
-
-                                                        Xác nhận
-
-                                                    </button>
-                                                }
-
-
-                                                @using (Html.BeginForm(
-                                                    "Cancel",
-                                                    "Admin",
-                                                    new { id = booking.BookingId },
-                                                    FormMethod.Post,
-                                                    null))
-                                                {
-                                                    @Html.AntiForgeryToken()
-
-                                                    <button type="submit"
-                                                            onclick="return confirm('Bạn có chắc muốn hủy đơn này?')"
-                                                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm">
-
-                                                        <i class="fas fa-times mr-1"></i>
-
-                                                        Hủy
-
-                                                    </button>
-                                                }
-
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-gray-400 text-sm">
-
-                                                Đã xử lý
-
-                                            </span>
-                                        }
-
-                                    </td>
+                                    <th class="p-4 text-center">
+                                        Thao tác
+                                    </th>
 
                                 </tr>
-                            }
 
-                        </tbody>
+                            </thead>
 
-                    </table>
+
+                            <tbody>
+
+                                @if (
+                                    Model != null
+                                    &&
+                                    Model.Any()
+                                )
+                                {
+                                    foreach (
+                                        var booking
+                                        in Model
+                                    )
+                                    {
+                                        var payment =
+                                            booking.ThanhToans != null
+                                            ? booking.ThanhToans
+                                                .OrderByDescending(
+                                                    x => x.NgayThanhToan
+                                                )
+                                                .FirstOrDefault()
+                                            : null;
+
+
+                                        string paymentStatus =
+                                            payment != null
+                                            ? payment.TrangThai
+                                            : "Chưa có";
+
+
+                                        bool paid =
+                                            paymentStatus ==
+                                            "Đã thanh toán";
+
+
+                                        <tr class="border-b
+                                                   hover:bg-gray-50">
+
+
+                                            <td class="p-4
+                                                       font-extrabold">
+
+                                                #@booking.BookingId
+
+                                            </td>
+
+
+                                            <td class="p-4">
+
+                                                <p class="font-bold">
+                                                    @booking.CustomerName
+                                                </p>
+
+                                                <p class="text-sm
+                                                          text-gray-500">
+                                                    @booking.CustomerPhone
+                                                </p>
+
+                                                <p class="text-sm
+                                                          text-gray-400">
+                                                    @booking.CustomerEmail
+                                                </p>
+
+                                            </td>
+
+
+                                            <td class="p-4">
+
+                                                @if (
+                                                    booking.Room != null
+                                                )
+                                                {
+                                                    <p class="font-bold">
+
+                                                        @booking.Room.RoomName
+
+                                                    </p>
+
+                                                    <p class="text-sm
+                                                              text-gray-500">
+
+                                                        @booking.RoomCount phòng
+
+                                                    </p>
+                                                }
+
+                                            </td>
+
+
+                                            <td class="p-4">
+
+                                                <p>
+
+                                                    <i class="fas
+                                                              fa-arrow-right-to-bracket
+                                                              text-green-500
+                                                              mr-1">
+                                                    </i>
+
+                                                    @booking.CheckInDate.ToString(
+                                                        "dd/MM/yyyy"
+                                                    )
+
+                                                </p>
+
+                                                <p class="mt-1">
+
+                                                    <i class="fas
+                                                              fa-arrow-right-from-bracket
+                                                              text-red-500
+                                                              mr-1">
+                                                    </i>
+
+                                                    @booking.CheckOutDate.ToString(
+                                                        "dd/MM/yyyy"
+                                                    )
+
+                                                </p>
+
+                                            </td>
+
+
+                                            <td class="p-4
+                                                       text-right
+                                                       font-extrabold
+                                                       text-yellow-700">
+
+                                                @booking.TotalAmount.ToString(
+                                                    "N0"
+                                                )đ
+
+                                            </td>
+
+
+                                            <!-- BOOKING STATUS -->
+
+                                            <td class="p-4
+                                                       text-center">
+
+                                                @if (
+                                                    booking.Status ==
+                                                    "Chờ xác nhận"
+                                                )
+                                                {
+                                                    <span class="bg-yellow-100
+                                                                 text-yellow-700
+                                                                 px-3
+                                                                 py-1
+                                                                 rounded-full
+                                                                 font-bold
+                                                                 text-sm
+                                                                 whitespace-nowrap">
+
+                                                        Chờ xác nhận
+
+                                                    </span>
+                                                }
+                                                else if (
+                                                    booking.Status ==
+                                                    "Đã xác nhận"
+                                                )
+                                                {
+                                                    <span class="bg-green-100
+                                                                 text-green-700
+                                                                 px-3
+                                                                 py-1
+                                                                 rounded-full
+                                                                 font-bold
+                                                                 text-sm
+                                                                 whitespace-nowrap">
+
+                                                        Đã xác nhận
+
+                                                    </span>
+                                                }
+                                                else if (
+                                                    booking.Status ==
+                                                    "Đang ở"
+                                                )
+                                                {
+                                                    <span class="bg-blue-100
+                                                                 text-blue-700
+                                                                 px-3
+                                                                 py-1
+                                                                 rounded-full
+                                                                 font-bold
+                                                                 text-sm
+                                                                 whitespace-nowrap">
+
+                                                        Đang ở
+
+                                                    </span>
+                                                }
+                                                else if (
+                                                    booking.Status ==
+                                                    "Đã trả phòng"
+                                                )
+                                                {
+                                                    <span class="bg-purple-100
+                                                                 text-purple-700
+                                                                 px-3
+                                                                 py-1
+                                                                 rounded-full
+                                                                 font-bold
+                                                                 text-sm
+                                                                 whitespace-nowrap">
+
+                                                        Đã trả phòng
+
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="bg-red-100
+                                                                 text-red-700
+                                                                 px-3
+                                                                 py-1
+                                                                 rounded-full
+                                                                 font-bold
+                                                                 text-sm
+                                                                 whitespace-nowrap">
+
+                                                        @booking.Status
+
+                                                    </span>
+                                                }
+
+                                            </td>
+
+
+                                            <!-- PAYMENT -->
+
+                                            <td class="p-4
+                                                       text-center">
+
+                                                @if (paid)
+                                                {
+                                                    <span class="bg-green-100
+                                                                 text-green-700
+                                                                 px-3
+                                                                 py-1
+                                                                 rounded-full
+                                                                 font-bold
+                                                                 text-sm
+                                                                 whitespace-nowrap">
+
+                                                        Đã thanh toán
+
+                                                    </span>
+                                                }
+                                                else if (
+                                                    paymentStatus ==
+                                                    "Đã hủy"
+                                                )
+                                                {
+                                                    <span class="bg-red-100
+                                                                 text-red-700
+                                                                 px-3
+                                                                 py-1
+                                                                 rounded-full
+                                                                 font-bold
+                                                                 text-sm
+                                                                 whitespace-nowrap">
+
+                                                        Đã hủy
+
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="bg-orange-100
+                                                                 text-orange-700
+                                                                 px-3
+                                                                 py-1
+                                                                 rounded-full
+                                                                 font-bold
+                                                                 text-sm
+                                                                 whitespace-nowrap">
+
+                                                        @paymentStatus
+
+                                                    </span>
+                                                }
+
+                                            </td>
+
+
+                                            <!-- ACTION -->
+
+                                            <td class="p-4
+                                                       min-w-[190px]">
+
+                                                <div class="flex
+                                                            flex-col
+                                                            gap-2">
+
+
+                                                    @if (
+                                                        booking.Status ==
+                                                        "Chờ xác nhận"
+                                                    )
+                                                    {
+                                                        <form method="post"
+                                                              action="@Url.Action(
+                                                                          "Confirm",
+                                                                          "Admin"
+                                                                      )">
+
+                                                            @Html.AntiForgeryToken()
+
+                                                            <input type="hidden"
+                                                                   name="id"
+                                                                   value="@booking.BookingId" />
+
+                                                            <button type="submit"
+                                                                    class="w-full
+                                                                           bg-green-600
+                                                                           hover:bg-green-700
+                                                                           text-white
+                                                                           font-bold
+                                                                           px-3
+                                                                           py-2
+                                                                           rounded-lg">
+
+                                                                <i class="fas
+                                                                          fa-check
+                                                                          mr-1">
+                                                                </i>
+
+                                                                Xác nhận
+
+                                                            </button>
+
+                                                        </form>
+                                                    }
+
+
+                                                    @if (
+                                                        (
+                                                            booking.Status ==
+                                                            "Đã xác nhận"
+                                                            ||
+                                                            booking.Status ==
+                                                            "Đang ở"
+                                                        )
+                                                        &&
+                                                        !paid
+                                                    )
+                                                    {
+                                                        <form method="post"
+                                                              action="@Url.Action(
+                                                                          "ConfirmPayment",
+                                                                          "Admin"
+                                                                      )">
+
+                                                            @Html.AntiForgeryToken()
+
+                                                            <input type="hidden"
+                                                                   name="id"
+                                                                   value="@booking.BookingId" />
+
+                                                            <button type="submit"
+                                                                    onclick="return confirm(
+                                                                        'Xác nhận đơn #@booking.BookingId đã thanh toán?'
+                                                                    );"
+                                                                    class="w-full
+                                                                           bg-blue-600
+                                                                           hover:bg-blue-700
+                                                                           text-white
+                                                                           font-bold
+                                                                           px-3
+                                                                           py-2
+                                                                           rounded-lg">
+
+                                                                <i class="fas
+                                                                          fa-money-bill-wave
+                                                                          mr-1">
+                                                                </i>
+
+                                                                Thanh toán
+
+                                                            </button>
+
+                                                        </form>
+                                                    }
+
+
+                                                    @if (
+                                                        booking.Status ==
+                                                        "Đã xác nhận"
+                                                        &&
+                                                        booking.CheckInDate.Date <=
+                                                        DateTime.Today
+                                                    )
+                                                    {
+                                                        <form method="post"
+                                                              action="@Url.Action(
+                                                                          "CheckIn",
+                                                                          "Admin"
+                                                                      )">
+
+                                                            @Html.AntiForgeryToken()
+
+                                                            <input type="hidden"
+                                                                   name="id"
+                                                                   value="@booking.BookingId" />
+
+                                                            <button type="submit"
+                                                                    onclick="return confirm(
+                                                                        'Xác nhận khách nhận phòng cho đơn #@booking.BookingId?'
+                                                                    );"
+                                                                    class="w-full
+                                                                           bg-indigo-600
+                                                                           hover:bg-indigo-700
+                                                                           text-white
+                                                                           font-bold
+                                                                           px-3
+                                                                           py-2
+                                                                           rounded-lg">
+
+                                                                <i class="fas
+                                                                          fa-door-open
+                                                                          mr-1">
+                                                                </i>
+
+                                                                Nhận phòng
+
+                                                            </button>
+
+                                                        </form>
+                                                    }
+
+
+                                                    @if (
+                                                        booking.Status ==
+                                                        "Đang ở"
+                                                        &&
+                                                        paid
+                                                    )
+                                                    {
+                                                        <form method="post"
+                                                              action="@Url.Action(
+                                                                          "CheckOut",
+                                                                          "Admin"
+                                                                      )">
+
+                                                            @Html.AntiForgeryToken()
+
+                                                            <input type="hidden"
+                                                                   name="id"
+                                                                   value="@booking.BookingId" />
+
+                                                            <button type="submit"
+                                                                    onclick="return confirm(
+                                                                        'Xác nhận khách trả phòng cho đơn #@booking.BookingId?'
+                                                                    );"
+                                                                    class="w-full
+                                                                           bg-purple-600
+                                                                           hover:bg-purple-700
+                                                                           text-white
+                                                                           font-bold
+                                                                           px-3
+                                                                           py-2
+                                                                           rounded-lg">
+
+                                                                <i class="fas
+                                                                          fa-door-closed
+                                                                          mr-1">
+                                                                </i>
+
+                                                                Trả phòng
+
+                                                            </button>
+
+                                                        </form>
+                                                    }
+
+
+                                                    @if (
+                                                        (
+                                                            booking.Status ==
+                                                            "Chờ xác nhận"
+                                                            ||
+                                                            booking.Status ==
+                                                            "Đã xác nhận"
+                                                        )
+                                                        &&
+                                                        !paid
+                                                    )
+                                                    {
+                                                        <form method="post"
+                                                              action="@Url.Action(
+                                                                          "Cancel",
+                                                                          "Admin"
+                                                                      )">
+
+                                                            @Html.AntiForgeryToken()
+
+                                                            <input type="hidden"
+                                                                   name="id"
+                                                                   value="@booking.BookingId" />
+
+                                                            <button type="submit"
+                                                                    onclick="return confirm(
+                                                                        'Bạn có chắc muốn hủy đơn #@booking.BookingId?'
+                                                                    );"
+                                                                    class="w-full
+                                                                           bg-red-500
+                                                                           hover:bg-red-600
+                                                                           text-white
+                                                                           font-bold
+                                                                           px-3
+                                                                           py-2
+                                                                           rounded-lg">
+
+                                                                <i class="fas
+                                                                          fa-xmark
+                                                                          mr-1">
+                                                                </i>
+
+                                                                Hủy
+
+                                                            </button>
+
+                                                        </form>
+                                                    }
+
+
+                                                    @if (
+                                                        booking.Status ==
+                                                        "Đã trả phòng"
+                                                        ||
+                                                        booking.Status ==
+                                                        "Đã hủy"
+                                                    )
+                                                    {
+                                                        <span class="text-center
+                                                                     text-gray-400
+                                                                     text-sm
+                                                                     whitespace-nowrap">
+
+                                                            Đã xử lý
+
+                                                        </span>
+                                                    }
+
+
+                                                    @if (
+                                                        booking.Status ==
+                                                        "Đã xác nhận"
+                                                        &&
+                                                        booking.CheckInDate.Date >
+                                                        DateTime.Today
+                                                        &&
+                                                        paid
+                                                    )
+                                                    {
+                                                        <span class="text-center
+                                                                     text-gray-400
+                                                                     text-sm">
+
+                                                            Chờ ngày nhận phòng
+
+                                                        </span>
+                                                    }
+
+                                                </div>
+
+                                            </td>
+
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+
+                                        <td colspan="8"
+                                            class="p-12
+                                                   text-center
+                                                   text-gray-400">
+
+                                            <i class="fas
+                                                      fa-inbox
+                                                      text-5xl
+                                                      mb-4">
+                                            </i>
+
+                                            <p>
+                                                Không có đơn phù hợp.
+                                            </p>
+
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
 
                 </div>
 
-            </div>
+            </section>
 
-        </div>
+        </main>
 
     </div>
+
+
+
+    <!-- ====================================================== -->
+    <!-- CHART -->
+    <!-- ====================================================== -->
+
     <script>
 
         const revenueLabels =
             @Html.Raw(
-                Newtonsoft.Json.JsonConvert.SerializeObject(
+                System.Web.Helpers.Json.Encode(
                     ViewBag.RevenueLabels
                 )
             );
 
         const revenueData =
             @Html.Raw(
-                Newtonsoft.Json.JsonConvert.SerializeObject(
+                System.Web.Helpers.Json.Encode(
                     ViewBag.RevenueData
                 )
             );
 
 
-        const ctx =
-            document
-                .getElementById('revenueChart')
-                .getContext('2d');
+        const revenueCanvas =
+            document.getElementById(
+                'revenueChart'
+            );
 
 
-        new Chart(ctx, {
+        if (revenueCanvas) {
 
-            type: 'bar',
+            new Chart(
+                revenueCanvas,
+                {
+                    type: 'bar',
 
-            data: {
+                    data: {
+                        labels: revenueLabels,
 
-                labels: revenueLabels,
+                        datasets: [
+                            {
+                                label:
+                                    'Doanh thu',
 
-                datasets: [
-                    {
-                        label: 'Doanh thu',
+                                data:
+                                    revenueData,
 
-                        data: revenueData,
+                                borderWidth:
+                                    1,
 
-                        borderWidth: 1,
+                                borderRadius:
+                                    10,
 
-                        borderRadius: 8
-                    }
-                ]
-            },
+                                backgroundColor:
+                                    'rgba(79, 70, 229, 0.70)',
 
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-                plugins: {
-
-                    legend: {
-                        display: false
+                                borderColor:
+                                    'rgba(79, 70, 229, 1)'
+                            }
+                        ]
                     },
 
-                    tooltip: {
+                    options: {
 
-                        callbacks: {
+                        responsive:
+                            true,
 
-                            label: function (context) {
+                        maintainAspectRatio:
+                            false,
 
-                                return Number(
-                                    context.raw
-                                ).toLocaleString('vi-VN')
-                                    + 'đ';
+                        plugins: {
+
+                            legend: {
+                                display:
+                                    false
+                            },
+
+                            tooltip: {
+
+                                callbacks: {
+
+                                    label:
+                                        function (
+                                            context
+                                        ) {
+
+                                            return Number(
+                                                context.raw
+                                            ).toLocaleString(
+                                                'vi-VN'
+                                            )
+                                            + 'đ';
+                                        }
+                                }
                             }
-                        }
-                    }
-                },
+                        },
 
-                scales: {
+                        scales: {
 
-                    y: {
+                            y: {
 
-                        beginAtZero: true,
+                                beginAtZero:
+                                    true,
 
-                        ticks: {
+                                ticks: {
 
-                            callback: function (value) {
+                                    callback:
+                                        function (
+                                            value
+                                        ) {
 
-                                return Number(value)
-                                    .toLocaleString('vi-VN')
-                                    + 'đ';
+                                            return Number(
+                                                value
+                                            ).toLocaleString(
+                                                'vi-VN'
+                                            )
+                                            + 'đ';
+                                        }
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            );
+        }
 
     </script>
 

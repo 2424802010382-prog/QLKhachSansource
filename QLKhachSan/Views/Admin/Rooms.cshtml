@@ -1,0 +1,1888 @@
+﻿@model IEnumerable<QLKhachSan.Models.Room>
+
+@using System
+@using System.Linq
+
+@{
+    Layout = null;
+
+    ViewBag.Title =
+        "Quản lý phòng";
+
+    ViewBag.AdminPage =
+        "Rooms";
+
+
+    int totalRoomTypes =
+        ViewBag.TotalRoomTypes != null
+        ? Convert.ToInt32(
+            ViewBag.TotalRoomTypes
+        )
+        : 0;
+
+
+    int activeRoomTypes =
+        ViewBag.ActiveRoomTypes != null
+        ? Convert.ToInt32(
+            ViewBag.ActiveRoomTypes
+        )
+        : 0;
+
+
+    int inactiveRoomTypes =
+        ViewBag.InactiveRoomTypes != null
+        ? Convert.ToInt32(
+            ViewBag.InactiveRoomTypes
+        )
+        : 0;
+
+
+    int totalRoomUnits =
+        ViewBag.TotalRoomUnits != null
+        ? Convert.ToInt32(
+            ViewBag.TotalRoomUnits
+        )
+        : 0;
+}
+
+<!DOCTYPE html>
+
+<html lang="vi">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width,
+                   initial-scale=1.0" />
+
+    <title>
+        Quản lý phòng - Luxury Hotel
+    </title>
+
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+
+    <style>
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .modal-hidden {
+            display: none;
+        }
+    </style>
+
+</head>
+
+
+<body class="bg-[#f4f6fb]
+             min-h-screen
+             text-gray-900">
+
+
+    <!-- ============================================== -->
+    <!-- SIDEBAR -->
+    <!-- ============================================== -->
+
+    @Html.Partial(
+        "_AdminSidebar"
+    )
+
+
+
+    <!-- ============================================== -->
+    <!-- MAIN -->
+    <!-- ============================================== -->
+
+    <div class="lg:ml-72
+                min-h-screen">
+
+
+        <!-- ========================================== -->
+        <!-- HEADER -->
+        <!-- ========================================== -->
+
+        <header class="bg-white
+                       border-b
+                       sticky
+                       top-0
+                       z-30">
+
+            <div class="px-5
+                        lg:px-8
+                        py-4
+                        flex
+                        flex-col
+                        md:flex-row
+                        md:items-center
+                        md:justify-between
+                        gap-4">
+
+
+                <div>
+
+                    <p class="text-xs
+                              tracking-[2px]
+                              font-bold
+                              text-indigo-500">
+
+                        QUẢN LÝ KHÁCH SẠN
+
+                    </p>
+
+                    <h1 class="text-2xl
+                               lg:text-3xl
+                               font-extrabold">
+
+                        Quản lý phòng
+
+                    </h1>
+
+                    <p class="text-sm
+                              text-gray-500
+                              mt-1">
+
+                        Thêm, sửa, cập nhật giá và trạng thái phòng.
+
+                    </p>
+
+                </div>
+
+
+                <div class="flex
+                            items-center
+                            gap-3
+                            flex-wrap">
+
+                    <a href="@Url.Action(
+                                "Index",
+                                "Admin"
+                            )"
+                       class="bg-gray-100
+                              hover:bg-gray-200
+                              text-gray-700
+                              font-bold
+                              px-4
+                              py-2.5
+                              rounded-xl">
+
+                        <i class="fas
+                                  fa-arrow-left
+                                  mr-1">
+                        </i>
+
+                        Dashboard
+
+                    </a>
+
+
+                    <button type="button"
+                            onclick="openCreateRoomModal()"
+                            class="bg-indigo-600
+                                   hover:bg-indigo-700
+                                   text-white
+                                   font-bold
+                                   px-4
+                                   py-2.5
+                                   rounded-xl">
+
+                        <i class="fas
+                                  fa-plus
+                                  mr-1">
+                        </i>
+
+                        Thêm phòng
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ========================================== -->
+        <!-- CONTENT -->
+        <!-- ========================================== -->
+
+        <main class="p-5
+                     lg:p-8">
+
+
+            <!-- ====================================== -->
+            <!-- MESSAGE -->
+            <!-- ====================================== -->
+
+            @if (
+                TempData["AdminSuccess"] != null
+            )
+            {
+                <div class="mb-6
+                            bg-green-50
+                            border
+                            border-green-200
+                            text-green-700
+                            rounded-2xl
+                            px-5
+                            py-4
+                            font-semibold">
+
+                    <i class="fas
+                              fa-circle-check
+                              mr-2">
+                    </i>
+
+                    @TempData["AdminSuccess"]
+
+                </div>
+            }
+
+
+            @if (
+                TempData["AdminError"] != null
+            )
+            {
+                <div class="mb-6
+                            bg-red-50
+                            border
+                            border-red-200
+                            text-red-700
+                            rounded-2xl
+                            px-5
+                            py-4
+                            font-semibold">
+
+                    <i class="fas
+                              fa-circle-exclamation
+                              mr-2">
+                    </i>
+
+                    @TempData["AdminError"]
+
+                </div>
+            }
+
+
+
+            <!-- ====================================== -->
+            <!-- STATS -->
+            <!-- ====================================== -->
+
+            <section class="grid
+                            grid-cols-1
+                            sm:grid-cols-2
+                            xl:grid-cols-4
+                            gap-5
+                            mb-7">
+
+
+                <div class="bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            p-5">
+
+                    <div class="flex
+                                justify-between
+                                items-center">
+
+                        <div>
+
+                            <p class="text-gray-500
+                                      text-sm">
+
+                                Tổng loại phòng
+
+                            </p>
+
+                            <p class="text-3xl
+                                      font-extrabold
+                                      mt-2">
+
+                                @totalRoomTypes
+
+                            </p>
+
+                        </div>
+
+
+                        <div class="w-12
+                                    h-12
+                                    bg-blue-100
+                                    text-blue-600
+                                    rounded-2xl
+                                    flex
+                                    items-center
+                                    justify-center">
+
+                            <i class="fas
+                                      fa-bed">
+                            </i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            p-5">
+
+                    <div class="flex
+                                justify-between
+                                items-center">
+
+                        <div>
+
+                            <p class="text-gray-500
+                                      text-sm">
+
+                                Đang hoạt động
+
+                            </p>
+
+                            <p class="text-3xl
+                                      font-extrabold
+                                      text-green-600
+                                      mt-2">
+
+                                @activeRoomTypes
+
+                            </p>
+
+                        </div>
+
+
+                        <div class="w-12
+                                    h-12
+                                    bg-green-100
+                                    text-green-600
+                                    rounded-2xl
+                                    flex
+                                    items-center
+                                    justify-center">
+
+                            <i class="fas
+                                      fa-circle-check">
+                            </i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            p-5">
+
+                    <div class="flex
+                                justify-between
+                                items-center">
+
+                        <div>
+
+                            <p class="text-gray-500
+                                      text-sm">
+
+                                Ngừng hoạt động
+
+                            </p>
+
+                            <p class="text-3xl
+                                      font-extrabold
+                                      text-red-600
+                                      mt-2">
+
+                                @inactiveRoomTypes
+
+                            </p>
+
+                        </div>
+
+
+                        <div class="w-12
+                                    h-12
+                                    bg-red-100
+                                    text-red-600
+                                    rounded-2xl
+                                    flex
+                                    items-center
+                                    justify-center">
+
+                            <i class="fas
+                                      fa-ban">
+                            </i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            p-5">
+
+                    <div class="flex
+                                justify-between
+                                items-center">
+
+                        <div>
+
+                            <p class="text-gray-500
+                                      text-sm">
+
+                                Tổng số phòng
+
+                            </p>
+
+                            <p class="text-3xl
+                                      font-extrabold
+                                      text-purple-600
+                                      mt-2">
+
+                                @totalRoomUnits
+
+                            </p>
+
+                        </div>
+
+
+                        <div class="w-12
+                                    h-12
+                                    bg-purple-100
+                                    text-purple-600
+                                    rounded-2xl
+                                    flex
+                                    items-center
+                                    justify-center">
+
+                            <i class="fas
+                                      fa-hotel">
+                            </i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- ====================================== -->
+            <!-- FILTER -->
+            <!-- ====================================== -->
+
+            <section class="bg-white
+                            rounded-2xl
+                            border
+                            shadow-sm
+                            p-6
+                            mb-7">
+
+                <div class="flex
+                            flex-col
+                            lg:flex-row
+                            lg:items-center
+                            lg:justify-between
+                            gap-4">
+
+
+                    <div>
+
+                        <h2 class="text-xl
+                                   font-extrabold">
+
+                            Danh sách phòng
+
+                        </h2>
+
+                        <p class="text-sm
+                                  text-gray-500
+                                  mt-1">
+
+                            Tìm theo tên, loại phòng và trạng thái.
+
+                        </p>
+
+                    </div>
+
+
+                    <form method="get"
+                          action="@Url.Action(
+                                      "Rooms",
+                                      "Admin"
+                                  )"
+                          class="flex
+                                 flex-col
+                                 md:flex-row
+                                 gap-3">
+
+
+                        <input type="text"
+                               name="keyword"
+                               value="@ViewBag.Keyword"
+                               placeholder="Tên hoặc loại phòng..."
+                               class="border
+                                      rounded-xl
+                                      px-4
+                                      py-3
+                                      min-w-[240px]
+                                      outline-none
+                                      focus:ring-2
+                                      focus:ring-indigo-200" />
+
+
+                        <select name="status"
+                                class="border
+                                       rounded-xl
+                                       px-4
+                                       py-3">
+
+                            <option value=""
+                                    @(string.IsNullOrWhiteSpace( Convert.ToString( ViewBag.RoomStatus ) ) ? "selected" : "")>
+
+                                -- Tất cả --
+
+                            </option>
+
+
+                            <option value="active"
+                                    @(Convert.ToString( ViewBag.RoomStatus ) == "active" ? "selected" : "")>
+
+                                Đang hoạt động
+
+                            </option>
+
+
+                            <option value="inactive"
+                                    @(Convert.ToString( ViewBag.RoomStatus ) == "inactive" ? "selected" : "")>
+
+                                Ngừng hoạt động
+
+                            </option>
+
+                        </select>
+
+
+                        <button type="submit"
+                                class="bg-indigo-600
+                                       hover:bg-indigo-700
+                                       text-white
+                                       font-bold
+                                       px-5
+                                       py-3
+                                       rounded-xl">
+
+                            <i class="fas
+                                      fa-search
+                                      mr-1">
+                            </i>
+
+                            Tìm kiếm
+
+                        </button>
+
+
+                        <a href="@Url.Action(
+                                    "Rooms",
+                                    "Admin"
+                                 )"
+                           class="bg-gray-200
+                                  hover:bg-gray-300
+                                  text-gray-700
+                                  font-bold
+                                  px-5
+                                  py-3
+                                  rounded-xl
+                                  text-center">
+
+                            Xóa lọc
+
+                        </a>
+
+                    </form>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- ====================================== -->
+            <!-- ROOM LIST -->
+            <!-- ====================================== -->
+
+            @if (
+                Model == null
+                ||
+                !Model.Any()
+            )
+            {
+                <div class="bg-white
+                            rounded-3xl
+                            border
+                            shadow-sm
+                            p-14
+                            text-center">
+
+                    <i class="fas
+                              fa-bed
+                              text-gray-300
+                              text-6xl">
+                    </i>
+
+                    <h3 class="text-xl
+                               font-extrabold
+                               mt-5">
+
+                        Không có phòng phù hợp
+
+                    </h3>
+
+                    <p class="text-gray-500
+                              mt-2">
+
+                        Hãy thay đổi bộ lọc hoặc thêm phòng mới.
+
+                    </p>
+
+                </div>
+            }
+            else
+            {
+                <div class="grid
+                            grid-cols-1
+                            xl:grid-cols-2
+                            2xl:grid-cols-3
+                            gap-6">
+
+
+                    @foreach (
+                        var room
+                        in Model
+                    )
+                    {
+                        string imageUrl =
+                            string.IsNullOrWhiteSpace(
+                                room.ImageUrl
+                            )
+                            ? "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80"
+                            : room.ImageUrl;
+
+
+                        <article class="bg-white
+                                        rounded-3xl
+                                        border
+                                        shadow-sm
+                                        overflow-hidden
+                                        hover:shadow-lg
+                                        transition">
+
+
+                            <!-- IMAGE -->
+
+                            <div class="relative
+                                        h-52
+                                        bg-gray-200">
+
+                                <img src="@imageUrl"
+                                     alt="@room.RoomName"
+                                     class="w-full
+                                            h-full
+                                            object-cover"
+                                     onerror="this.src='https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80';" />
+
+
+                                <div class="absolute
+                                            top-4
+                                            left-4">
+
+                                    @if (
+                                        room.IsActive
+                                    )
+                                    {
+                                        <span class="bg-green-500
+                                                     text-white
+                                                     px-3
+                                                     py-1.5
+                                                     rounded-full
+                                                     text-xs
+                                                     font-extrabold
+                                                     shadow">
+
+                                            <i class="fas
+                                                      fa-circle-check
+                                                      mr-1">
+                                            </i>
+
+                                            Đang hoạt động
+
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bg-red-500
+                                                     text-white
+                                                     px-3
+                                                     py-1.5
+                                                     rounded-full
+                                                     text-xs
+                                                     font-extrabold
+                                                     shadow">
+
+                                            <i class="fas
+                                                      fa-ban
+                                                      mr-1">
+                                            </i>
+
+                                            Ngừng hoạt động
+
+                                        </span>
+                                    }
+
+                                </div>
+
+
+                                <div class="absolute
+                                            top-4
+                                            right-4
+                                            bg-black/60
+                                            text-white
+                                            rounded-xl
+                                            px-3
+                                            py-1.5
+                                            text-sm
+                                            font-bold">
+
+                                    #@room.RoomId
+
+                                </div>
+
+                            </div>
+
+
+
+                            <!-- CONTENT -->
+
+                            <div class="p-6">
+
+
+                                <div class="flex
+                                            items-start
+                                            justify-between
+                                            gap-3">
+
+                                    <div>
+
+                                        <p class="text-xs
+                                                  text-indigo-600
+                                                  font-extrabold
+                                                  tracking-[1px]">
+
+                                            @room.RoomType
+
+                                        </p>
+
+                                        <h3 class="text-2xl
+                                                   font-extrabold
+                                                   mt-1">
+
+                                            @room.RoomName
+
+                                        </h3>
+
+                                    </div>
+
+
+                                    <p class="text-xl
+                                              font-extrabold
+                                              text-yellow-700
+                                              whitespace-nowrap">
+
+                                        @room.Price.ToString(
+                                            "N0"
+                                        )đ
+
+                                    </p>
+
+                                </div>
+
+
+
+                                <div class="grid
+                                            grid-cols-2
+                                            gap-3
+                                            mt-5">
+
+                                    <div class="bg-gray-50
+                                                rounded-xl
+                                                p-3">
+
+                                        <p class="text-xs
+                                                  text-gray-400">
+
+                                            Sức chứa
+
+                                        </p>
+
+                                        <p class="font-extrabold
+                                                  mt-1">
+
+                                            <i class="fas
+                                                      fa-user
+                                                      text-blue-500
+                                                      mr-1">
+                                            </i>
+
+                                            @room.Capacity khách
+
+                                        </p>
+
+                                    </div>
+
+
+                                    <div class="bg-gray-50
+                                                rounded-xl
+                                                p-3">
+
+                                        <p class="text-xs
+                                                  text-gray-400">
+
+                                            Số lượng
+
+                                        </p>
+
+                                        <p class="font-extrabold
+                                                  mt-1">
+
+                                            <i class="fas
+                                                      fa-door-closed
+                                                      text-purple-500
+                                                      mr-1">
+                                            </i>
+
+                                            @room.TotalRooms phòng
+
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+
+                                @if (
+                                    !string.IsNullOrWhiteSpace(
+                                        room.Description
+                                    )
+                                )
+                                {
+                                    <p class="text-gray-500
+                                              text-sm
+                                              mt-4
+                                              leading-6">
+
+                                        @room.Description
+
+                                    </p>
+                                }
+
+
+
+                                <!-- ACTION -->
+
+                                <div class="grid
+                                            grid-cols-2
+                                            gap-3
+                                            mt-6">
+
+
+                                    <button type="button"
+                                            onclick="openEditRoomModal(
+                                                '@room.RoomId',
+                                                '@Html.Raw(
+                                                    HttpUtility.JavaScriptStringEncode(
+                                                        room.RoomName ?? ""
+                                                    )
+                                                )',
+                                                '@Html.Raw(
+                                                    HttpUtility.JavaScriptStringEncode(
+                                                        room.RoomType ?? ""
+                                                    )
+                                                )',
+                                                '@room.Price',
+                                                '@room.Capacity',
+                                                '@room.TotalRooms',
+                                                '@Html.Raw(
+                                                    HttpUtility.JavaScriptStringEncode(
+                                                        room.Description ?? ""
+                                                    )
+                                                )',
+                                                '@Html.Raw(
+                                                    HttpUtility.JavaScriptStringEncode(
+                                                        room.ImageUrl ?? ""
+                                                    )
+                                                )',
+                                                '@room.IsActive.ToString().ToLower()'
+                                            )"
+                                            class="bg-indigo-50
+                                                   hover:bg-indigo-100
+                                                   text-indigo-700
+                                                   border
+                                                   border-indigo-200
+                                                   font-bold
+                                                   py-3
+                                                   rounded-xl">
+
+                                        <i class="fas
+                                                  fa-pen
+                                                  mr-1">
+                                        </i>
+
+                                        Chỉnh sửa
+
+                                    </button>
+
+
+
+                                    <form method="post"
+                                          action="@Url.Action(
+                                                      "ToggleRoom",
+                                                      "Admin"
+                                                  )">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@room.RoomId" />
+
+
+                                        @if (
+                                            room.IsActive
+                                        )
+                                        {
+                                            <button type="submit"
+                                                    onclick="return confirm(
+                                                        'Bạn có chắc muốn ngừng hoạt động phòng @room.RoomName?'
+                                                    );"
+                                                    class="w-full
+                                                           bg-red-50
+                                                           hover:bg-red-100
+                                                           text-red-700
+                                                           border
+                                                           border-red-200
+                                                           font-bold
+                                                           py-3
+                                                           rounded-xl">
+
+                                                <i class="fas
+                                                          fa-ban
+                                                          mr-1">
+                                                </i>
+
+                                                Ngừng
+
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit"
+                                                    class="w-full
+                                                           bg-green-50
+                                                           hover:bg-green-100
+                                                           text-green-700
+                                                           border
+                                                           border-green-200
+                                                           font-bold
+                                                           py-3
+                                                           rounded-xl">
+
+                                                <i class="fas
+                                                          fa-circle-check
+                                                          mr-1">
+                                                </i>
+
+                                                Kích hoạt
+
+                                            </button>
+                                        }
+
+                                    </form>
+
+                                </div>
+
+                            </div>
+
+                        </article>
+                    }
+
+                </div>
+            }
+
+        </main>
+
+    </div>
+
+
+
+    <!-- ====================================================== -->
+    <!-- CREATE ROOM MODAL -->
+    <!-- ====================================================== -->
+
+    <div id="createRoomModal"
+         class="modal-hidden
+                fixed
+                inset-0
+                z-[100]
+                bg-black/60
+                p-4
+                overflow-y-auto">
+
+
+        <div class="min-h-full
+                    flex
+                    items-center
+                    justify-center">
+
+
+            <div class="bg-white
+                        w-full
+                        max-w-3xl
+                        rounded-3xl
+                        shadow-2xl
+                        overflow-hidden">
+
+
+                <div class="bg-[#111827]
+                            text-white
+                            px-6
+                            py-5
+                            flex
+                            justify-between
+                            items-center">
+
+                    <div>
+
+                        <h2 class="text-2xl
+                                   font-extrabold">
+
+                            Thêm phòng mới
+
+                        </h2>
+
+                        <p class="text-gray-400
+                                  text-sm
+                                  mt-1">
+
+                            Nhập đầy đủ thông tin loại phòng.
+
+                        </p>
+
+                    </div>
+
+
+                    <button type="button"
+                            onclick="closeCreateRoomModal()"
+                            class="w-10
+                                   h-10
+                                   rounded-full
+                                   bg-white/10
+                                   hover:bg-white/20">
+
+                        <i class="fas fa-xmark"></i>
+
+                    </button>
+
+                </div>
+
+
+
+                <form method="post"
+                      action="@Url.Action(
+                                  "SaveRoom",
+                                  "Admin"
+                              )"
+                      class="p-6">
+
+                    @Html.AntiForgeryToken()
+
+
+                    <input type="hidden"
+                           name="isActive"
+                           value="true" />
+
+
+                    <div class="grid
+                                grid-cols-1
+                                md:grid-cols-2
+                                gap-5">
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Tên phòng *
+
+                            </label>
+
+                            <input type="text"
+                                   name="roomName"
+                                   required
+                                   placeholder="VD: Deluxe Room"
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Loại phòng *
+
+                            </label>
+
+                            <input type="text"
+                                   name="roomType"
+                                   required
+                                   placeholder="VD: DELUXE"
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Giá / đêm *
+
+                            </label>
+
+                            <input type="number"
+                                   name="price"
+                                   min="0"
+                                   step="1000"
+                                   required
+                                   placeholder="2000000"
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Sức chứa *
+
+                            </label>
+
+                            <input type="number"
+                                   name="capacity"
+                                   min="1"
+                                   required
+                                   value="2"
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Tổng số phòng *
+
+                            </label>
+
+                            <input type="number"
+                                   name="totalRooms"
+                                   min="1"
+                                   required
+                                   value="1"
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                URL hình ảnh
+
+                            </label>
+
+                            <input type="text"
+                                   name="imageUrl"
+                                   placeholder="https://..."
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div class="md:col-span-2">
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Mô tả
+
+                            </label>
+
+                            <textarea name="description"
+                                      rows="4"
+                                      placeholder="Mô tả phòng..."
+                                      class="w-full
+                                             border
+                                             rounded-xl
+                                             px-4
+                                             py-3"></textarea>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="flex
+                                justify-end
+                                gap-3
+                                mt-6">
+
+                        <button type="button"
+                                onclick="closeCreateRoomModal()"
+                                class="bg-gray-200
+                                       hover:bg-gray-300
+                                       text-gray-700
+                                       font-bold
+                                       px-5
+                                       py-3
+                                       rounded-xl">
+
+                            Hủy
+
+                        </button>
+
+
+                        <button type="submit"
+                                class="bg-indigo-600
+                                       hover:bg-indigo-700
+                                       text-white
+                                       font-bold
+                                       px-6
+                                       py-3
+                                       rounded-xl">
+
+                            <i class="fas
+                                      fa-plus
+                                      mr-1">
+                            </i>
+
+                            Thêm phòng
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ====================================================== -->
+    <!-- EDIT ROOM MODAL -->
+    <!-- ====================================================== -->
+
+    <div id="editRoomModal"
+         class="modal-hidden
+                fixed
+                inset-0
+                z-[100]
+                bg-black/60
+                p-4
+                overflow-y-auto">
+
+
+        <div class="min-h-full
+                    flex
+                    items-center
+                    justify-center">
+
+
+            <div class="bg-white
+                        w-full
+                        max-w-3xl
+                        rounded-3xl
+                        shadow-2xl
+                        overflow-hidden">
+
+
+                <div class="bg-indigo-700
+                            text-white
+                            px-6
+                            py-5
+                            flex
+                            justify-between
+                            items-center">
+
+                    <div>
+
+                        <h2 class="text-2xl
+                                   font-extrabold">
+
+                            Chỉnh sửa phòng
+
+                        </h2>
+
+                        <p class="text-indigo-200
+                                  text-sm
+                                  mt-1">
+
+                            Cập nhật thông tin phòng.
+
+                        </p>
+
+                    </div>
+
+
+                    <button type="button"
+                            onclick="closeEditRoomModal()"
+                            class="w-10
+                                   h-10
+                                   rounded-full
+                                   bg-white/10
+                                   hover:bg-white/20">
+
+                        <i class="fas fa-xmark"></i>
+
+                    </button>
+
+                </div>
+
+
+
+                <form method="post"
+                      action="@Url.Action(
+                                  "SaveRoom",
+                                  "Admin"
+                              )"
+                      class="p-6">
+
+                    @Html.AntiForgeryToken()
+
+
+                    <input type="hidden"
+                           id="editRoomId"
+                           name="id" />
+
+                    <input type="hidden"
+                           id="editRoomActive"
+                           name="isActive" />
+
+
+                    <div class="grid
+                                grid-cols-1
+                                md:grid-cols-2
+                                gap-5">
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Tên phòng *
+
+                            </label>
+
+                            <input type="text"
+                                   id="editRoomName"
+                                   name="roomName"
+                                   required
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Loại phòng *
+
+                            </label>
+
+                            <input type="text"
+                                   id="editRoomType"
+                                   name="roomType"
+                                   required
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Giá / đêm *
+
+                            </label>
+
+                            <input type="number"
+                                   id="editRoomPrice"
+                                   name="price"
+                                   min="0"
+                                   step="1000"
+                                   required
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Sức chứa *
+
+                            </label>
+
+                            <input type="number"
+                                   id="editRoomCapacity"
+                                   name="capacity"
+                                   min="1"
+                                   required
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Tổng số phòng *
+
+                            </label>
+
+                            <input type="number"
+                                   id="editRoomTotal"
+                                   name="totalRooms"
+                                   min="1"
+                                   required
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                URL hình ảnh
+
+                            </label>
+
+                            <input type="text"
+                                   id="editRoomImage"
+                                   name="imageUrl"
+                                   class="w-full
+                                          border
+                                          rounded-xl
+                                          px-4
+                                          py-3" />
+
+                        </div>
+
+
+                        <div class="md:col-span-2">
+
+                            <label class="block
+                                          font-bold
+                                          mb-2">
+
+                                Mô tả
+
+                            </label>
+
+                            <textarea id="editRoomDescription"
+                                      name="description"
+                                      rows="4"
+                                      class="w-full
+                                             border
+                                             rounded-xl
+                                             px-4
+                                             py-3"></textarea>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="flex
+                                justify-end
+                                gap-3
+                                mt-6">
+
+                        <button type="button"
+                                onclick="closeEditRoomModal()"
+                                class="bg-gray-200
+                                       hover:bg-gray-300
+                                       text-gray-700
+                                       font-bold
+                                       px-5
+                                       py-3
+                                       rounded-xl">
+
+                            Hủy
+
+                        </button>
+
+
+                        <button type="submit"
+                                class="bg-indigo-600
+                                       hover:bg-indigo-700
+                                       text-white
+                                       font-bold
+                                       px-6
+                                       py-3
+                                       rounded-xl">
+
+                            <i class="fas
+                                      fa-floppy-disk
+                                      mr-1">
+                            </i>
+
+                            Lưu thay đổi
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ====================================================== -->
+    <!-- JAVASCRIPT -->
+    <!-- ====================================================== -->
+
+    <script>
+
+        function openCreateRoomModal() {
+
+            document
+                .getElementById(
+                    'createRoomModal'
+                )
+                .classList
+                .remove(
+                    'modal-hidden'
+                );
+
+            document.body.style.overflow =
+                'hidden';
+        }
+
+
+        function closeCreateRoomModal() {
+
+            document
+                .getElementById(
+                    'createRoomModal'
+                )
+                .classList
+                .add(
+                    'modal-hidden'
+                );
+
+            document.body.style.overflow =
+                '';
+        }
+
+
+        function openEditRoomModal(
+            id,
+            roomName,
+            roomType,
+            price,
+            capacity,
+            totalRooms,
+            description,
+            imageUrl,
+            isActive
+        ) {
+
+            document.getElementById(
+                'editRoomId'
+            ).value =
+                id;
+
+            document.getElementById(
+                'editRoomName'
+            ).value =
+                roomName;
+
+            document.getElementById(
+                'editRoomType'
+            ).value =
+                roomType;
+
+            document.getElementById(
+                'editRoomPrice'
+            ).value =
+                price;
+
+            document.getElementById(
+                'editRoomCapacity'
+            ).value =
+                capacity;
+
+            document.getElementById(
+                'editRoomTotal'
+            ).value =
+                totalRooms;
+
+            document.getElementById(
+                'editRoomDescription'
+            ).value =
+                description;
+
+            document.getElementById(
+                'editRoomImage'
+            ).value =
+                imageUrl;
+
+            document.getElementById(
+                'editRoomActive'
+            ).value =
+                isActive;
+
+
+            document
+                .getElementById(
+                    'editRoomModal'
+                )
+                .classList
+                .remove(
+                    'modal-hidden'
+                );
+
+
+            document.body.style.overflow =
+                'hidden';
+        }
+
+
+        function closeEditRoomModal() {
+
+            document
+                .getElementById(
+                    'editRoomModal'
+                )
+                .classList
+                .add(
+                    'modal-hidden'
+                );
+
+
+            document.body.style.overflow =
+                '';
+        }
+
+
+        document.addEventListener(
+            'keydown',
+            function (
+                event
+            ) {
+
+                if (
+                    event.key ===
+                    'Escape'
+                ) {
+
+                    closeCreateRoomModal();
+
+                    closeEditRoomModal();
+                }
+            }
+        );
+
+
+        document
+            .getElementById(
+                'createRoomModal'
+            )
+            .addEventListener(
+                'click',
+                function (
+                    event
+                ) {
+
+                    if (
+                        event.target ===
+                        this
+                    ) {
+
+                        closeCreateRoomModal();
+                    }
+                }
+            );
+
+
+        document
+            .getElementById(
+                'editRoomModal'
+            )
+            .addEventListener(
+                'click',
+                function (
+                    event
+                ) {
+
+                    if (
+                        event.target ===
+                        this
+                    ) {
+
+                        closeEditRoomModal();
+                    }
+                }
+            );
+
+    </script>
+
+</body>
+
+</html>

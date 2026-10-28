@@ -1,0 +1,199 @@
+﻿@model IEnumerable<QLKhachSan.Models.AdminPaymentViewModel>
+@using System
+@using System.Linq
+
+@{
+    Layout = null;
+    ViewBag.AdminPage = "Payments";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lịch sử thanh toán - Luxury Hotel</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+
+<body class="bg-[#f4f6fb] min-h-screen">
+
+    @Html.Partial("~/Views/Admin/_AdminSidebar.cshtml")
+
+    <div class="lg:ml-72 min-h-screen">
+
+        <header class="bg-white border-b sticky top-0 z-30">
+            <div class="px-5 lg:px-8 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+                <div>
+                    <p class="text-xs tracking-[2px] font-bold text-indigo-500">
+                        TÀI CHÍNH
+                    </p>
+
+                    <h1 class="text-3xl font-extrabold">
+                        Lịch sử thanh toán
+                    </h1>
+                </div>
+
+                <a href="@Url.Action("ExportPaymentsCsv", "Admin")"
+                   class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2.5 rounded-xl">
+                    <i class="fas fa-file-csv mr-1"></i>
+                    Xuất CSV
+                </a>
+
+            </div>
+        </header>
+
+        <main class="p-5 lg:p-8">
+
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-7">
+
+                <div class="bg-white rounded-2xl border shadow-sm p-6">
+                    <p class="text-gray-500">Số giao dịch trong kết quả</p>
+                    <p class="text-3xl font-extrabold mt-2">@ViewBag.TotalPayments</p>
+                </div>
+
+                <div class="bg-white rounded-2xl border shadow-sm p-6">
+                    <p class="text-gray-500">Tổng đã thanh toán</p>
+                    <p class="text-3xl font-extrabold text-green-700 mt-2">
+                        @Convert.ToDecimal(ViewBag.PaidAmount).ToString("N0")đ
+                    </p>
+                </div>
+
+            </section>
+
+            <section class="bg-white rounded-2xl border shadow-sm p-6 mb-7">
+
+                <form method="get"
+                      action="@Url.Action("Payments", "Admin")">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+                        <input type="text"
+                               name="keyword"
+                               value="@ViewBag.Keyword"
+                               placeholder="Tên, SĐT hoặc email..."
+                               class="border rounded-xl px-4 py-3" />
+
+                        <select name="status"
+                                class="border rounded-xl px-4 py-3">
+                            <option value="">-- Tất cả trạng thái --</option>
+                            <option value="Đã thanh toán" @(Convert.ToString(ViewBag.Status) == "Đã thanh toán" ? "selected" : "")>Đã thanh toán</option>
+                            <option value="Chờ thanh toán" @(Convert.ToString(ViewBag.Status) == "Chờ thanh toán" ? "selected" : "")>Chờ thanh toán</option>
+                            <option value="Đã hủy" @(Convert.ToString(ViewBag.Status) == "Đã hủy" ? "selected" : "")>Đã hủy</option>
+                        </select>
+
+                        <input type="date"
+                               name="fromDate"
+                               value="@ViewBag.FromDate"
+                               class="border rounded-xl px-4 py-3" />
+
+                        <input type="date"
+                               name="toDate"
+                               value="@ViewBag.ToDate"
+                               class="border rounded-xl px-4 py-3" />
+
+                    </div>
+
+                    <div class="flex gap-3 mt-4">
+                        <button type="submit"
+                                class="bg-indigo-600 text-white font-bold px-5 py-3 rounded-xl">
+                            Lọc dữ liệu
+                        </button>
+
+                        <a href="@Url.Action("Payments", "Admin")"
+                           class="bg-gray-200 text-gray-700 font-bold px-5 py-3 rounded-xl">
+                            Xóa lọc
+                        </a>
+                    </div>
+
+                </form>
+
+            </section>
+
+            <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+
+                <div class="overflow-x-auto">
+
+                    <table class="w-full min-w-[1250px]">
+
+                        <thead class="bg-[#111827] text-white">
+                            <tr>
+                                <th class="p-4 text-left">Booking</th>
+                                <th class="p-4 text-left">Khách hàng</th>
+                                <th class="p-4 text-left">Phòng</th>
+                                <th class="p-4 text-right">Số tiền</th>
+                                <th class="p-4 text-left">Phương thức</th>
+                                <th class="p-4 text-center">Trạng thái</th>
+                                <th class="p-4 text-left">Thời gian</th>
+                                <th class="p-4 text-left">Mã GD</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @if (Model != null && Model.Any())
+                            {
+                                foreach (var item in Model)
+                                {
+                                    <tr class="border-b hover:bg-gray-50">
+
+                                        <td class="p-4">
+                                            <a href="@Url.Action("BookingDetails", "Admin", new { id = item.BookingId })"
+                                               class="text-indigo-600 font-extrabold hover:underline">
+                                                #@item.BookingId
+                                            </a>
+                                        </td>
+
+                                        <td class="p-4">
+                                            <p class="font-bold">@item.CustomerName</p>
+                                            <p class="text-sm text-gray-500">@item.CustomerPhone</p>
+                                            <p class="text-sm text-gray-400">@item.CustomerEmail</p>
+                                        </td>
+
+                                        <td class="p-4">@item.RoomName</td>
+
+                                        <td class="p-4 text-right font-extrabold text-green-700">
+                                            @item.Amount.ToString("N0")đ
+                                        </td>
+
+                                        <td class="p-4">@item.Method</td>
+
+                                        <td class="p-4 text-center">
+                                            <span class="px-3 py-1 rounded-full text-sm font-bold @(item.Status == "Đã thanh toán" ? "bg-green-100 text-green-700" : item.Status == "Đã hủy" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700")">
+                                                @item.Status
+                                            </span>
+                                        </td>
+
+                                        <td class="p-4">@item.PaidAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="p-4">@item.TransactionCode</td>
+
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8" class="p-12 text-center text-gray-400">
+                                        Không có dữ liệu thanh toán.
+                                    </td>
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+</html>

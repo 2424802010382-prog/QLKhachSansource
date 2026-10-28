@@ -1,0 +1,503 @@
+﻿@{
+    string adminPage =
+        ViewBag.AdminPage != null
+        ? ViewBag.AdminPage.ToString()
+        : "";
+}
+
+<aside class="fixed
+              top-0
+              left-0
+              bottom-0
+              w-72
+              bg-gradient-to-b
+              from-[#111827]
+              via-[#172554]
+              to-[#312e81]
+              text-white
+              z-50
+              hidden
+              lg:flex
+              flex-col
+              shadow-2xl">
+
+    <!-- LOGO -->
+    <div class="px-6 py-7 border-b border-white/10">
+
+        <a href="@Url.Action("Index", "Admin")"
+           class="flex items-center gap-3">
+
+            <div class="w-12
+                        h-12
+                        rounded-2xl
+                        bg-gradient-to-br
+                        from-yellow-400
+                        to-orange-500
+                        flex
+                        items-center
+                        justify-center
+                        text-gray-900
+                        text-xl
+                        shadow-lg">
+
+                <i class="fas fa-hotel"></i>
+
+            </div>
+
+            <div>
+
+                <div class="text-xl font-extrabold">
+                    LUXURY ADMIN
+                </div>
+
+                <div class="text-xs
+                            text-blue-200
+                            tracking-[2px]
+                            mt-1">
+
+                    HOTEL MANAGEMENT
+
+                </div>
+
+            </div>
+
+        </a>
+
+    </div>
+
+
+    <!-- MENU -->
+    <div class="flex-1
+                overflow-y-auto
+                px-4
+                py-6">
+
+
+        <!-- TỔNG QUAN -->
+
+        <p class="px-3
+                  mb-3
+                  text-xs
+                  font-extrabold
+                  tracking-[2px]
+                  text-blue-300">
+
+            TỔNG QUAN
+
+        </p>
+
+
+        <a href="@Url.Action("Index", "Admin")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "Dashboard"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-gauge-high w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Dashboard
+            </span>
+
+        </a>
+
+
+
+        <!-- QUẢN LÝ KHÁCH SẠN -->
+
+        <p class="px-3
+                  mt-7
+                  mb-3
+                  text-xs
+                  font-extrabold
+                  tracking-[2px]
+                  text-blue-300">
+
+            QUẢN LÝ KHÁCH SẠN
+
+        </p>
+
+
+        <a href="@Url.Action("Index", "Admin")#bookings"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  text-blue-100
+                  hover:bg-white/10
+                  hover:text-white
+                  transition">
+
+            <i class="fas fa-calendar-check w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Đặt phòng
+            </span>
+
+        </a>
+
+
+        <a href="@Url.Action("Rooms", "Admin")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "Rooms"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-bed w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Quản lý phòng
+            </span>
+
+        </a>
+
+
+        <a href="@Url.Action("CurrentGuests", "Admin")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "CurrentGuests"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-person-shelter w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Khách đang ở
+            </span>
+
+        </a>
+
+
+
+        <!-- NGƯỜI DÙNG -->
+
+        <p class="px-3
+                  mt-7
+                  mb-3
+                  text-xs
+                  font-extrabold
+                  tracking-[2px]
+                  text-blue-300">
+
+            QUẢN LÝ NGƯỜI DÙNG
+
+        </p>
+
+
+        <a href="@Url.Action(
+                    "Users",
+                    "Admin",
+                    new { role = "Customer" }
+                )"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "Customers"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-users w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Khách hàng
+            </span>
+
+        </a>
+
+
+        <a href="@Url.Action(
+                    "Users",
+                    "Admin",
+                    new { role = "Staff" }
+                )"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "Staff"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-user-tie w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Nhân viên
+            </span>
+
+        </a>
+
+
+        <a href="@Url.Action("Users", "Admin")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "Users"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-user-gear w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Tất cả tài khoản
+            </span>
+
+        </a>
+
+
+
+        <!-- DỊCH VỤ -->
+
+        <p class="px-3
+                  mt-7
+                  mb-3
+                  text-xs
+                  font-extrabold
+                  tracking-[2px]
+                  text-blue-300">
+
+            DỊCH VỤ & ƯU ĐÃI
+
+        </p>
+
+
+        <a href="@Url.Action("Services", "Admin")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "Services"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-bell-concierge w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Dịch vụ
+            </span>
+
+        </a>
+
+
+        <a href="@Url.Action("Promotions", "Admin")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "Promotions"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-tags w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Khuyến mãi
+            </span>
+
+        </a>
+
+
+
+        <!-- NHÀ HÀNG -->
+
+        <p class="px-3
+                  mt-7
+                  mb-3
+                  text-xs
+                  font-extrabold
+                  tracking-[2px]
+                  text-blue-300">
+
+            NHÀ HÀNG
+
+        </p>
+
+
+        <a href="@Url.Action(
+                    "AdminOrders",
+                    "Restaurant"
+                )"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  text-blue-100
+                  hover:bg-white/10
+                  hover:text-white
+                  transition">
+
+            <i class="fas fa-receipt w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Đơn gọi món
+            </span>
+
+        </a>
+
+
+        <a href="@Url.Action(
+                    "ManageFoods",
+                    "Restaurant"
+                )"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  text-blue-100
+                  hover:bg-white/10
+                  hover:text-white
+                  transition">
+
+            <i class="fas fa-utensils w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Thực đơn
+            </span>
+
+        </a>
+
+
+
+        <!-- THỐNG KÊ -->
+
+        <p class="px-3
+                  mt-7
+                  mb-3
+                  text-xs
+                  font-extrabold
+                  tracking-[2px]
+                  text-blue-300">
+
+            THỐNG KÊ
+
+        </p>
+
+
+        <a href="@Url.Action("Revenue", "Admin")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "Revenue"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-chart-line w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Doanh thu
+            </span>
+
+        </a>
+
+    </div>
+
+
+    <!-- ADMIN INFO -->
+
+    <div class="p-4
+                border-t
+                border-white/10">
+
+        <div class="bg-white/10
+                    rounded-2xl
+                    p-4">
+
+            <div class="flex
+                        items-center
+                        gap-3">
+
+                <div class="w-10
+                            h-10
+                            rounded-full
+                            bg-yellow-400
+                            text-gray-900
+                            flex
+                            items-center
+                            justify-center">
+
+                    <i class="fas fa-user-shield"></i>
+
+                </div>
+
+                <div class="min-w-0">
+
+                    <div class="font-bold
+                                truncate">
+
+                        @(Session["FullName"] != null
+                            ? Session["FullName"].ToString()
+                            : "Quản trị viên")
+
+                    </div>
+
+                    <div class="text-xs
+                                text-blue-200">
+
+                        Administrator
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</aside>

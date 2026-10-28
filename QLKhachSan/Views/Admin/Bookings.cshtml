@@ -1,0 +1,217 @@
+@model IEnumerable<QLKhachSan.Models.Booking>
+@using System
+@using System.Linq
+
+@{
+    Layout = null;
+    ViewBag.AdminPage = "Bookings";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý Đặt phòng - Admin Luxury Hotel</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+
+<body class="bg-[#f4f6fb] min-h-screen">
+
+    @Html.Partial("~/Views/Admin/_AdminSidebar.cshtml")
+
+    <div class="lg:ml-72 min-h-screen">
+
+        <header class="bg-white border-b sticky top-0 z-30">
+            <div class="px-5 lg:px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <p class="text-xs tracking-[2px] font-bold text-indigo-500">
+                        QUẢN LÝ ĐẶT PHÒNG
+                    </p>
+                    <h1 class="text-3xl font-extrabold">
+                        Danh sách Đặt phòng
+                    </h1>
+                </div>
+            </div>
+        </header>
+
+        <main class="p-5 lg:p-8">
+
+            <!-- Thống kê -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-7">
+                <div class="bg-white rounded-2xl border shadow-sm p-6">
+                    <p class="text-gray-500 font-medium">Tổng số đặt phòng</p>
+                    <p class="text-3xl font-extrabold mt-2 text-indigo-600">@ViewBag.TotalBookings</p>
+                </div>
+                <div class="bg-white rounded-2xl border shadow-sm p-6">
+                    <p class="text-gray-500 font-medium">Chờ xác nhận</p>
+                    <p class="text-3xl font-extrabold mt-2 text-amber-500">@ViewBag.PendingBookings</p>
+                </div>
+                <div class="bg-white rounded-2xl border shadow-sm p-6">
+                    <p class="text-gray-500 font-medium">Đang ở tại khách sạn</p>
+                    <p class="text-3xl font-extrabold mt-2 text-emerald-600">@ViewBag.CurrentGuests</p>
+                </div>
+                <div class="bg-white rounded-2xl border shadow-sm p-6">
+                    <p class="text-gray-500 font-medium">Đã trả phòng</p>
+                    <p class="text-3xl font-extrabold mt-2 text-gray-700">@ViewBag.CheckedOutBookings</p>
+                </div>
+            </section>
+
+            <!-- Bộ lọc tìm kiếm -->
+            <section class="bg-white rounded-2xl border shadow-sm p-6 mb-7">
+                <form method="get" action="@Url.Action("Bookings", "Admin")" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-600">Từ khóa (Tên, SĐT, Email)</label>
+                        <input type="text" name="keyword" value="@ViewBag.Keyword" placeholder="Nhập từ khóa..." class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-600">Trạng thái</label>
+                        <select name="status" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">-- Tất cả trạng thái --</option>
+                            <option value="Chờ xác nhận" @(ViewBag.Status == "Chờ xác nhận" ? "selected" : "")>Chờ xác nhận</option>
+                            <option value="Đã xác nhận" @(ViewBag.Status == "Đã xác nhận" ? "selected" : "")>Đã xác nhận</option>
+                            <option value="Đang ở" @(ViewBag.Status == "Đang ở" ? "selected" : "")>Đang ở</option>
+                            <option value="Đã trả phòng" @(ViewBag.Status == "Đã trả phòng" ? "selected" : "")>Đã trả phòng</option>
+                            <option value="Đã hủy" @(ViewBag.Status == "Đã hủy" ? "selected" : "")>Đã hủy</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-600">Từ ngày</label>
+                        <input type="date" name="fromDate" value="@ViewBag.FromDate" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl flex-1">
+                            <i class="fas fa-search mr-1"></i> Lọc
+                        </button>
+                        <a href="@Url.Action("Bookings", "Admin")" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-4 py-2.5 rounded-xl text-center">
+                            Đặt lại
+                        </a>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Bảng dữ liệu -->
+            <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[1100px]">
+                        <thead class="bg-[#111827] text-white">
+                            <tr>
+                                <th class="p-4 text-left">Mã & Khách hàng</th>
+                                <th class="p-4 text-left">Phòng</th>
+                                <th class="p-4 text-center">Thời gian lưu trú</th>
+                                <th class="p-4 text-right">Tổng tiền</th>
+                                <th class="p-4 text-center">Thanh toán</th>
+                                <th class="p-4 text-center">Trạng thái</th>
+                                <th class="p-4 text-center">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @if (Model == null || !Model.Any())
+                            {
+                                <tr>
+                                    <td colspan="7" class="p-8 text-center text-gray-500">
+                                        Không tìm thấy đơn đặt phòng nào.
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var b in Model)
+                                {
+                                    string badgeClass = "bg-gray-100 text-gray-800";
+                                    if (b.Status == "Chờ xác nhận") { badgeClass = "bg-amber-100 text-amber-800"; }
+                                    else if (b.Status == "Đã xác nhận") { badgeClass = "bg-blue-100 text-blue-800"; }
+                                    else if (b.Status == "Đang ở") { badgeClass = "bg-emerald-100 text-emerald-800"; }
+                                    else if (b.Status == "Đã trả phòng") { badgeClass = "bg-purple-100 text-purple-800"; }
+                                    else if (b.Status == "Đã hủy") { badgeClass = "bg-rose-100 text-rose-800"; }
+
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="p-4">
+                                            <div class="font-bold text-indigo-600">#@b.BookingId</div>
+                                            <div class="font-bold text-gray-900">@b.CustomerName</div>
+                                            <div class="text-xs text-gray-500">@b.CustomerPhone • @b.CustomerEmail</div>
+                                        </td>
+                                        <td class="p-4">
+                                            <div class="font-semibold text-gray-800">@(b.Room != null ? b.Room.RoomName : "Phòng #" + b.RoomId)</div>
+                                            <div class="text-xs text-gray-500">Số lượng: @b.RoomCount phòng (@b.GuestCount khách)</div>
+                                        </td>
+                                        <td class="p-4 text-center text-sm">
+                                            <div>@b.CheckInDate.ToString("dd/MM/yyyy")</div>
+                                            <div class="text-xs text-gray-400">đến</div>
+                                            <div>@b.CheckOutDate.ToString("dd/MM/yyyy")</div>
+                                        </td>
+                                        <td class="p-4 text-right font-bold text-indigo-700">
+                                            @b.TotalAmount.ToString("N0")đ
+                                        </td>
+                                        <td class="p-4 text-center">
+                                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                                @b.PaymentMethod
+                                            </span>
+                                        </td>
+                                        <td class="p-4 text-center">
+                                            <span class="px-3 py-1 rounded-full text-xs font-bold @badgeClass">
+                                                @b.Status
+                                            </span>
+                                        </td>
+                                        <td class="p-4 text-center">
+                                            <div class="flex items-center justify-center gap-2">
+                                                <a href="@Url.Action("BookingDetails", "Admin", new { id = b.BookingId })"
+                                                   class="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg" title="Xem chi tiết">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+
+                                                @if (b.Status == "Chờ xác nhận")
+                                                {
+                                                    using (Html.BeginForm("Confirm", "Admin", new { id = b.BookingId }, FormMethod.Post, new { @class = "inline" }))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg" title="Xác nhận">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                    }
+                                                    using (Html.BeginForm("Cancel", "Admin", new { id = b.BookingId }, FormMethod.Post, new { @class = "inline" }))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg" title="Hủy" onclick="return confirm('Bạn có chắc muốn hủy đơn này?');">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    }
+                                                }
+                                                else if (b.Status == "Đã xác nhận")
+                                                {
+                                                    using (Html.BeginForm("CheckIn", "Admin", new { id = b.BookingId }, FormMethod.Post, new { @class = "inline" }))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg" title="Nhận phòng (Check-in)">
+                                                            <i class="fas fa-key"></i>
+                                                        </button>
+                                                    }
+                                                }
+                                                else if (b.Status == "Đang ở")
+                                                {
+                                                    using (Html.BeginForm("CheckOut", "Admin", new { id = b.BookingId }, FormMethod.Post, new { @class = "inline" }))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="p-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg" title="Trả phòng (Check-out)">
+                                                            <i class="fas fa-sign-out-alt"></i>
+                                                        </button>
+                                                    }
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+</body>
+</html>

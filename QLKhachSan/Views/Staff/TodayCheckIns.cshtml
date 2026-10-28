@@ -1,0 +1,502 @@
+﻿@model IEnumerable<QLKhachSan.Models.Booking>
+
+@using System.Linq
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html lang="vi">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        Nhận phòng hôm nay - Nhân viên
+    </title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+</head>
+
+
+<body class="bg-gray-100 min-h-screen">
+
+
+    <!-- HEADER -->
+
+    <header class="bg-[#111827]
+                   text-white
+                   shadow-lg">
+
+        <div class="max-w-7xl
+                    mx-auto
+                    px-6
+                    py-5
+                    flex
+                    items-center
+                    justify-between">
+
+            <div>
+
+                <p class="text-yellow-400
+                          text-xs
+                          tracking-[3px]">
+
+                    LUXURY HOTEL
+
+                </p>
+
+                <h1 class="text-2xl
+                           font-extrabold">
+
+                    NHẬN PHÒNG HÔM NAY
+
+                </h1>
+
+                <p class="text-gray-400
+                          text-sm">
+
+                    Danh sách khách dự kiến nhận phòng
+
+                </p>
+
+            </div>
+
+
+            <a href="@Url.Action(
+                        "Index",
+                        "Staff"
+                     )"
+               class="bg-yellow-500
+                      hover:bg-yellow-600
+                      text-black
+                      px-4
+                      py-2.5
+                      rounded-xl
+                      font-bold">
+
+                <i class="fas
+                          fa-arrow-left
+                          mr-1">
+                </i>
+
+                Trang nhân viên
+
+            </a>
+
+        </div>
+
+    </header>
+
+
+
+    <main class="max-w-7xl
+                 mx-auto
+                 px-5
+                 py-8">
+        @if (
+    TempData["StaffSuccess"] != null
+)
+        {
+            <div class="mb-5
+                bg-green-50
+                border
+                border-green-200
+                text-green-700
+                rounded-xl
+                px-5
+                py-4
+                font-semibold">
+
+                <i class="fas
+                  fa-circle-check
+                  mr-2">
+                </i>
+
+                @TempData["StaffSuccess"]
+
+            </div>
+        }
+
+
+        @if (
+            TempData["StaffError"] != null
+        )
+        {
+            <div class="mb-5
+                bg-red-50
+                border
+                border-red-200
+                text-red-700
+                rounded-xl
+                px-5
+                py-4
+                font-semibold">
+
+                <i class="fas
+                  fa-circle-exclamation
+                  mr-2">
+                </i>
+
+                @TempData["StaffError"]
+
+            </div>
+        }
+
+
+        <!-- TIÊU ĐỀ -->
+
+        <div class="mb-6">
+
+            <h2 class="text-3xl
+                       font-extrabold
+                       text-gray-900">
+
+                Khách nhận phòng ngày
+                @DateTime.Today.ToString("dd/MM/yyyy")
+
+            </h2>
+
+            <p class="text-gray-500
+                      mt-1">
+
+                Tổng cộng:
+                <strong>
+                    @(Model != null ? Model.Count() : 0)
+                </strong>
+                đơn
+
+            </p>
+
+        </div>
+
+
+
+        @if (
+            Model == null ||
+            !Model.Any()
+        )
+        {
+            <div class="bg-white
+                        rounded-2xl
+                        shadow-sm
+                        border
+                        p-12
+                        text-center">
+
+                <i class="fas
+                          fa-bed
+                          text-6xl
+                          text-gray-300">
+                </i>
+
+                <h3 class="text-xl
+                           font-bold
+                           mt-4">
+
+                    Hôm nay chưa có khách nhận phòng
+
+                </h3>
+
+                <p class="text-gray-500
+                          mt-2">
+
+                    Các đơn đã xác nhận có ngày nhận phòng hôm nay
+                    sẽ xuất hiện tại đây.
+
+                </p>
+
+            </div>
+        }
+        else
+        {
+            <div class="bg-white
+                        rounded-2xl
+                        shadow-sm
+                        border
+                        overflow-hidden">
+
+
+                <div class="overflow-x-auto">
+
+                    <table class="w-full
+                                  min-w-[1100px]">
+
+
+                        <thead class="bg-gray-800
+                                      text-white">
+
+                            <tr>
+
+                                <th class="p-4 text-left">
+                                    Mã
+                                </th>
+
+                                <th class="p-4 text-left">
+                                    Khách hàng
+                                </th>
+
+                                <th class="p-4 text-left">
+                                    Phòng
+                                </th>
+
+                                <th class="p-4 text-center">
+                                    SL phòng
+                                </th>
+
+                                <th class="p-4 text-center">
+                                    Số khách
+                                </th>
+
+                                <th class="p-4 text-center">
+                                    Ngày trả
+                                </th>
+
+                                <th class="p-4 text-center">
+                                    Thanh toán
+                                </th>
+
+                                <th class="p-4 text-center">
+                                    Trạng thái
+                                </th>
+                                <th class="p-4 text-center">
+                                    Thao tác
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (
+                                var booking
+                                in Model
+                            )
+                            {
+                                var payment =
+                                    booking.ThanhToans
+                                           .OrderByDescending(
+                                               x =>
+                                               x.NgayThanhToan
+                                           )
+                                           .FirstOrDefault();
+
+                                string paymentStatus =
+                                    payment != null
+                                    ? payment.TrangThai
+                                    : "Chưa có";
+
+
+                                <tr class="border-b
+                                           hover:bg-gray-50">
+
+
+                                    <td class="p-4
+                                               font-bold">
+
+                                        #@booking.BookingId
+
+                                    </td>
+
+
+                                    <td class="p-4">
+
+                                        <p class="font-bold">
+
+                                            @booking.CustomerName
+
+                                        </p>
+
+                                        <p class="text-sm
+                                                  text-gray-500">
+
+                                            @booking.CustomerPhone
+
+                                        </p>
+
+                                        <p class="text-sm
+                                                  text-gray-500">
+
+                                            @booking.CustomerEmail
+
+                                        </p>
+
+                                    </td>
+
+
+                                    <td class="p-4">
+
+                                        @if (
+                                            booking.Room != null
+                                        )
+                                        {
+                                            <strong>
+
+                                                @booking.Room.RoomName
+
+                                            </strong>
+                                        }
+
+                                    </td>
+
+
+                                    <td class="p-4
+                                               text-center
+                                               font-bold">
+
+                                        @booking.RoomCount
+
+                                    </td>
+
+
+                                    <td class="p-4
+                                               text-center">
+
+                                        @booking.GuestCount
+
+                                    </td>
+
+
+                                    <td class="p-4
+                                               text-center
+                                               whitespace-nowrap">
+
+                                        @booking.CheckOutDate.ToString(
+                                            "dd/MM/yyyy"
+                                        )
+
+                                    </td>
+
+
+                                    <td class="p-4
+                                               text-center">
+
+                                        @if (
+                                            paymentStatus ==
+                                            "Đã thanh toán"
+                                        )
+                                        {
+                                            <span class="bg-green-100
+                                                         text-green-700
+                                                         rounded-full
+                                                         px-3
+                                                         py-1
+                                                         font-bold
+                                                         text-sm
+                                                         whitespace-nowrap">
+
+                                                Đã thanh toán
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="bg-orange-100
+                                                         text-orange-700
+                                                         rounded-full
+                                                         px-3
+                                                         py-1
+                                                         font-bold
+                                                         text-sm
+                                                         whitespace-nowrap">
+
+                                                @paymentStatus
+
+                                            </span>
+                                        }
+
+                                    </td>
+
+
+                                    <td class="p-4
+                                               text-center">
+
+                                        <span class="bg-blue-100
+                                                     text-blue-700
+                                                     rounded-full
+                                                     px-3
+                                                     py-1
+                                                     font-bold
+                                                     text-sm
+                                                     whitespace-nowrap">
+
+                                            Chờ nhận phòng
+
+                                        </span>
+
+                                    </td>
+                                    <td class="p-4
+           text-center
+           min-w-[180px]">
+
+                                        <form method="post"
+                                              action="@Url.Action(
+                      "CheckInBooking",
+                      "Staff"
+                  )">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@booking.BookingId" />
+
+
+                                            <button type="submit"
+                                                    onclick="return confirm(
+                    'Xác nhận khách đã nhận phòng cho đơn #@booking.BookingId?'
+                );"
+                                                    class="bg-green-600
+                       hover:bg-green-700
+                       text-white
+                       font-bold
+                       px-4
+                       py-2
+                       rounded-lg
+                       whitespace-nowrap">
+
+                                                <i class="fas
+                      fa-door-open
+                      mr-1">
+                                                </i>
+
+                                                Xác nhận nhận phòng
+
+                                            </button>
+
+                                        </form>
+
+                                    </td>
+
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+        }
+
+
+    </main>
+
+
+</body>
+
+</html>

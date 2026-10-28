@@ -1,0 +1,159 @@
+﻿@model QLKhachSan.Models.RoomCalendarPageViewModel
+@using System.Linq
+
+@{
+    Layout = null;
+    ViewBag.AdminPage = "RoomCalendar";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lịch phòng - Luxury Hotel</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+
+<body class="bg-[#f4f6fb] min-h-screen">
+
+    @Html.Partial("~/Views/Admin/_AdminSidebar.cshtml")
+
+    <div class="lg:ml-72 min-h-screen">
+
+        <header class="bg-white border-b sticky top-0 z-30">
+            <div class="px-5 lg:px-8 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+                <div>
+                    <p class="text-xs tracking-[2px] font-bold text-indigo-500">
+                        LỊCH PHÒNG
+                    </p>
+
+                    <h1 class="text-3xl font-extrabold">
+                        Tình trạng phòng theo ngày
+                    </h1>
+                </div>
+
+                <form method="get"
+                      action="@Url.Action("RoomCalendar", "Admin")"
+                      class="flex gap-3">
+
+                    <input type="date"
+                           name="date"
+                           value="@Model.SelectedDate.ToString("yyyy-MM-dd")"
+                           class="border rounded-xl px-4 py-2.5" />
+
+                    <button type="submit"
+                            class="bg-indigo-600 text-white font-bold px-4 py-2.5 rounded-xl">
+                        Xem
+                    </button>
+
+                </form>
+
+            </div>
+        </header>
+
+        <main class="p-5 lg:p-8">
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+                @foreach (var room in Model.Rooms)
+                {
+                    <article class="bg-white rounded-3xl border shadow-sm overflow-hidden">
+
+                        <div class="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b">
+
+                            <div>
+                                <p class="text-xs text-indigo-600 font-bold tracking-[1px]">@room.RoomType</p>
+                                <h2 class="text-2xl font-extrabold">@room.RoomName</h2>
+                                <p class="text-gray-500 mt-1">@room.Price.ToString("N0")đ / đêm</p>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <div class="bg-gray-100 rounded-xl px-4 py-3 text-center">
+                                    <p class="text-xs text-gray-500">Tổng</p>
+                                    <p class="text-xl font-extrabold">@room.TotalUnits</p>
+                                </div>
+
+                                <div class="bg-green-50 rounded-xl px-4 py-3 text-center">
+                                    <p class="text-xs text-green-700">Còn</p>
+                                    <p class="text-xl font-extrabold text-green-700">@room.AvailableUnits</p>
+                                </div>
+
+                                <div class="bg-orange-50 rounded-xl px-4 py-3 text-center">
+                                    <p class="text-xs text-orange-700">Đã giữ</p>
+                                    <p class="text-xl font-extrabold text-orange-700">@room.ReservedUnits</p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="p-6">
+
+                            @if (room.Bookings != null && room.Bookings.Any())
+                            {
+                                <div class="space-y-3">
+
+                                    @foreach (var booking in room.Bookings)
+                                    {
+                                        <a href="@Url.Action("BookingDetails", "Admin", new { id = booking.BookingId })"
+                                           class="block border rounded-2xl p-4 hover:border-indigo-300 hover:bg-indigo-50 transition">
+
+                                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+
+                                                <div>
+                                                    <p class="font-extrabold">
+                                                        #@booking.BookingId - @booking.CustomerName
+                                                    </p>
+
+                                                    <p class="text-sm text-gray-500 mt-1">
+                                                        @booking.CheckInDate.ToString("dd/MM/yyyy")
+                                                        →
+                                                        @booking.CheckOutDate.ToString("dd/MM/yyyy")
+                                                    </p>
+                                                </div>
+
+                                                <div class="flex items-center gap-3">
+                                                    <span class="bg-gray-100 px-3 py-1 rounded-lg text-sm font-bold">
+                                                        @booking.RoomCount phòng
+                                                    </span>
+
+                                                    <span class="px-3 py-1 rounded-full text-sm font-bold
+                                                        @(booking.Status == "Đang ở" ? "bg-blue-100 text-blue-700" :
+                                                          booking.Status == "Đã xác nhận" ? "bg-green-100 text-green-700" :
+                                                          "bg-yellow-100 text-yellow-700")">
+                                                        @booking.Status
+                                                    </span>
+                                                </div>
+
+                                            </div>
+
+                                        </a>
+                                    }
+
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-10 text-gray-400">
+                                    <i class="fas fa-bed text-4xl"></i>
+                                    <p class="mt-3">Không có booking trong ngày này.</p>
+                                </div>
+                            }
+
+                        </div>
+
+                    </article>
+                }
+
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+</html>

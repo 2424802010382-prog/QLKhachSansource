@@ -91,227 +91,225 @@
                 }
 
 
-                <form action="@Url.Action(
-                          "EditFood",
-                          "Restaurant"
-                      )"
-                      method="post">
-                    enctype="multipart/form-data"
+            <form action="@Url.Action(
+                  "EditFood",
+                  "Restaurant"
+              )"
+                  method="post"
+                  enctype="multipart/form-data">
 
 
-                    <input type="hidden"
-                           name="maMonAn"
-                           value="@Model.MaMonAn" />
-                    <input type="hidden"
-                           name="hinhAnhCu"
-                           value="@Model.HinhAnh" />
+                <input type="hidden"
+                       name="maMonAn"
+                       value="@Model.MaMonAn" />
+                <input type="hidden"
+                       name="hinhAnhCu"
+                       value="@Model.HinhAnh" />
 
 
-                    <div class="mb-5">
+                <div class="mb-5">
 
-                        <label class="block
+                    <label class="block
                               font-bold
                               mb-2">
 
-                            Danh mục *
+                        Danh mục *
 
-                        </label>
+                    </label>
 
 
-                        <select name="maDanhMuc"
-                                required
-                                class="w-full
+                    <select name="maDanhMuc"
+                            required
+                            class="w-full
                                border
                                rounded-xl
                                px-4
                                py-3">
 
-                            @if (
-                                categories != null
+                        @if (
+                            categories != null
+                        )
+                        {
+                            foreach (
+                                var category
+                                in categories
                             )
                             {
-                                foreach (
-                                    var category
-                                    in categories
+                                if (
+                                    Model.MaDanhMuc ==
+                                    category.MaDanhMuc
                                 )
                                 {
-                                    if (
-                                        Model.MaDanhMuc ==
-                                        category.MaDanhMuc
-                                    )
-                                    {
-                                        <option value="@category.MaDanhMuc"
-                                                selected>
+                                    <option value="@category.MaDanhMuc"
+                                            selected>
 
-                                            @category.TenDanhMuc
+                                        @category.TenDanhMuc
 
-                                        </option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@category.MaDanhMuc">
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="@category.MaDanhMuc">
 
-                                            @category.TenDanhMuc
+                                        @category.TenDanhMuc
 
-                                        </option>
-                                    }
+                                    </option>
                                 }
                             }
+                        }
 
-                        </select>
+                    </select>
 
-                    </div>
+                </div>
 
 
-                    <div class="mb-5">
+                <div class="mb-5">
 
-                        <label class="block font-bold mb-2">
-                            Tên món *
-                        </label>
+                    <label class="block font-bold mb-2">
+                        Tên món *
+                    </label>
 
-                        <input type="text"
-                               name="tenMonAn"
-                               value="@Model.TenMonAn"
-                               required
-                               class="w-full
+                    <input type="text"
+                           name="tenMonAn"
+                           value="@Model.TenMonAn"
+                           required
+                           class="w-full
                               border
                               rounded-xl
                               px-4
                               py-3" />
 
-                    </div>
+                </div>
 
 
-                    <div class="mb-5">
+                <div class="mb-5">
 
-                        <label class="block font-bold mb-2">
-                            Mô tả
-                        </label>
+                    <label class="block font-bold mb-2">
+                        Mô tả
+                    </label>
 
-                        <textarea name="moTa"
-                                  rows="4"
-                                  class="w-full
+                    <textarea name="moTa"
+                              rows="4"
+                              class="w-full
                                  border
                                  rounded-xl
                                  px-4
                                  py-3">@Model.MoTa</textarea>
 
-                    </div>
+                </div>
 
 
-                    <div class="grid
+                <div class="grid
                         grid-cols-1
                         md:grid-cols-2
                         gap-5">
 
 
-                        <div>
+                    <div>
 
-                            <label class="block font-bold mb-2">
-                                Giá *
-                            </label>
+                        <label class="block font-bold mb-2">
+                            Giá *
+                        </label>
 
-                            <input type="number"
-                                   name="gia"
-                                   value="@Model.Gia.ToString("0")"
-                                   min="1000"
-                                   step="1000"
-                                   required
-                                   class="w-full
+                        <input type="number"
+                               name="gia"
+                               value="@Model.Gia.ToString("0")"
+                               min="1000"
+                               step="1000"
+                               required
+                               class="w-full
                                   border
                                   rounded-xl
                                   px-4
                                   py-3" />
 
-                        </div>
+                    </div>
 
 
-                        <div>
+                    <div>
 
-                            <label class="block font-bold mb-2">
-                                Đơn vị
-                            </label>
+                        <label class="block font-bold mb-2">
+                            Đơn vị
+                        </label>
 
-                            <input type="text"
-                                   name="donVi"
-                                   value="@Model.DonVi"
-                                   class="w-full
+                        <input type="text"
+                               name="donVi"
+                               value="@Model.DonVi"
+                               class="w-full
                                   border
                                   rounded-xl
                                   px-4
                                   py-3" />
 
-                        </div>
+                    </div>
 
 
-                        <div>
+                    <div>
 
-                            <label class="block font-bold mb-2">
-                                Thời gian chuẩn bị
-                            </label>
+                        <label class="block font-bold mb-2">
+                            Thời gian chuẩn bị
+                        </label>
 
-                            <input type="number"
-                                   name="thoiGianChuanBi"
-                                   value="@Model.ThoiGianChuanBi"
-                                   class="w-full
+                        <input type="number"
+                               name="thoiGianChuanBi"
+                               value="@Model.ThoiGianChuanBi"
+                               class="w-full
                                   border
                                   rounded-xl
                                   px-4
                                   py-3" />
 
-                        </div>
+                    </div>
 
 
-                        <div>
+                    <div>
 
-                            <label class="block font-bold mb-2">
-                                Link ảnh
-                            </label>
+                        
 
-                            <label class="block
+                        <label class="block
               font-bold
               mb-2">
 
-                                Ảnh món
+                            Ảnh món
 
-                            </label>
+                        </label>
 
 
-                            @if (
-                                !string.IsNullOrWhiteSpace(
-                                    Model.HinhAnh
-                                )
+                        @if (
+                            !string.IsNullOrWhiteSpace(
+                                Model.HinhAnh
                             )
-                            {
-                                <div class="mb-3">
+                        )
+                        {
+                            <div class="mb-3">
 
-                                    <img src="@Model.HinhAnh"
-                                         id="currentFoodImage"
-                                         class="w-full
+                                <img src="@Model.HinhAnh"
+                                     id="currentFoodImage"
+                                     class="w-full
                     max-w-xs
                     h-44
                     object-cover
                     rounded-xl
                     border" />
 
-                                    <p class="text-xs
+                                <p class="text-xs
                   text-gray-400
                   mt-1">
 
-                                        Ảnh hiện tại
+                                    Ảnh hiện tại
 
-                                    </p>
+                                </p>
 
-                                </div>
-                            }
+                            </div>
+                        }
 
 
-                            <input type="file"
-                                   id="hinhAnhFile"
-                                   name="hinhAnhFile"
-                                   accept=".jpg,.jpeg,.png,.webp"
-                                   onchange="previewEditFoodImage(event)"
-                                   class="w-full
+                        <input type="file"
+                               id="hinhAnhFile"
+                               name="hinhAnhFile"
+                               accept=".jpg,.jpeg,.png,.webp"
+                               onchange="previewEditFoodImage(event)"
+                               class="w-full
               border
               rounded-xl
               px-4
@@ -319,118 +317,118 @@
               bg-white" />
 
 
-                            <p class="text-xs
+                        <p class="text-xs
           text-gray-400
           mt-2">
 
-                                Không chọn ảnh mới nếu muốn giữ ảnh hiện tại.
+                            Không chọn ảnh mới nếu muốn giữ ảnh hiện tại.
+
+                        </p>
+
+
+                        <div id="editImagePreviewBox"
+                             class="hidden
+            mt-4">
+
+                            <p class="font-semibold
+              text-sm
+              mb-2">
+
+                                Ảnh mới:
 
                             </p>
 
 
-                            <div id="editImagePreviewBox"
-                                 class="hidden
-            mt-4">
-
-                                <p class="font-semibold
-              text-sm
-              mb-2">
-
-                                    Ảnh mới:
-
-                                </p>
-
-
-                                <img id="editImagePreview"
-                                     class="w-full
+                            <img id="editImagePreview"
+                                 class="w-full
                 max-w-xs
                 h-44
                 object-cover
                 rounded-xl
                 border" />
 
-                            </div>
-
                         </div>
 
                     </div>
 
+                </div>
 
-                    <div class="grid
+
+                <div class="grid
                         grid-cols-1
                         md:grid-cols-2
                         gap-4
                         mt-6">
 
 
-                        <label class="border
+                    <label class="border
                               rounded-xl
                               p-4
                               flex
                               gap-3
                               items-center">
 
-                            <input type="checkbox"
-                                   name="noiBat"
-                                   value="true"
-                                   @(Model.NoiBat ? "checked" : "") />
+                        <input type="checkbox"
+                               name="noiBat"
+                               value="true"
+                               @(Model.NoiBat ? "checked" : "") />
 
-                            Món nổi bật
+                        Món nổi bật
 
-                        </label>
+                    </label>
 
 
-                        <label class="border
+                    <label class="border
                               rounded-xl
                               p-4
                               flex
                               gap-3
                               items-center">
 
-                            <input type="checkbox"
-                                   name="hoatDong"
-                                   value="true"
-                                   @(Model.HoatDong ? "checked" : "") />
+                        <input type="checkbox"
+                               name="hoatDong"
+                               value="true"
+                               @(Model.HoatDong ? "checked" : "") />
 
-                            Đang bán
+                        Đang bán
 
-                        </label>
+                    </label>
 
-                    </div>
+                </div>
 
 
-                    <div class="flex gap-3 mt-7">
+                <div class="flex gap-3 mt-7">
 
-                        <a href="@Url.Action(
+                    <a href="@Url.Action(
                             "ManageFoods",
                             "Restaurant"
                          )"
-                           class="border
+                       class="border
                           rounded-xl
                           px-6
                           py-3
                           font-bold">
 
-                            Quay lại
+                        Quay lại
 
-                        </a>
+                    </a>
 
 
-                        <button type="submit"
-                                class="flex-1
+                    <button type="submit"
+                            class="flex-1
                                bg-yellow-500
                                hover:bg-yellow-600
                                font-extrabold
                                rounded-xl
                                py-3">
 
-                            LƯU THAY ĐỔI
+                        LƯU THAY ĐỔI
 
-                        </button>
+                    </button>
 
-                    </div>
+                </div>
 
-                </form>
+            </form>
 
             </div>
 

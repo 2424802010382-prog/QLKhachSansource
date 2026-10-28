@@ -1,0 +1,687 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html lang="vi">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        Nhân viên - Luxury Hotel
+    </title>
+
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+</head>
+
+
+<body class="bg-gray-100 min-h-screen">
+
+
+    <!-- ===================================================== -->
+    <!-- HEADER -->
+    <!-- ===================================================== -->
+
+    <header class="bg-[#111827]
+                   text-white
+                   shadow-lg">
+
+
+        <div class="max-w-7xl
+                    mx-auto
+                    px-6
+                    py-5
+                    flex
+                    items-center
+                    justify-between">
+
+
+            <div class="flex
+                        items-center
+                        gap-4">
+
+
+                <div class="w-12
+                            h-12
+                            rounded-xl
+                            bg-yellow-500
+                            text-gray-900
+                            flex
+                            items-center
+                            justify-center
+                            text-xl">
+
+                    <i class="fas fa-user-tie"></i>
+
+                </div>
+
+
+                <div>
+
+                    <h1 class="text-2xl
+                               font-extrabold">
+
+                        NHÂN VIÊN KHÁCH SẠN
+
+                    </h1>
+
+
+                    <p class="text-gray-400
+                              text-sm">
+
+                        Luxury Hotel
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="flex
+                        items-center
+                        gap-3">
+
+
+                <a href="@Url.Action(
+                            "Index",
+                            "Home"
+                         )"
+                   class="bg-yellow-500
+                          hover:bg-yellow-600
+                          text-black
+                          font-bold
+                          px-4
+                          py-2.5
+                          rounded-xl">
+
+                    <i class="fas
+                              fa-house
+                              mr-1">
+                    </i>
+
+                    Trang chủ khách sạn
+
+                </a>
+
+
+                <a href="@Url.Action(
+                            "Logout",
+                            "Account"
+                         )"
+                   class="bg-red-500
+                          hover:bg-red-600
+                          text-white
+                          font-bold
+                          px-4
+                          py-2.5
+                          rounded-xl">
+
+                    <i class="fas
+                              fa-right-from-bracket
+                              mr-1">
+                    </i>
+
+                    Đăng xuất
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- ===================================================== -->
+    <!-- CONTENT -->
+    <!-- ===================================================== -->
+
+    <main class="max-w-7xl
+                 mx-auto
+                 px-6
+                 py-10">
+
+
+        <!-- WELCOME -->
+
+        <div class="mb-8">
+
+
+            <p class="text-gray-500">
+
+                Xin chào,
+
+            </p>
+
+
+            <h2 class="text-3xl
+                       font-extrabold
+                       text-gray-900">
+
+                @(Session["FullName"] != null
+                    ? Session["FullName"].ToString()
+                    : Session["Username"].ToString())
+
+            </h2>
+
+
+            <p class="text-gray-500
+                      mt-2">
+
+                Chọn chức năng cần xử lý.
+
+            </p>
+
+        </div>
+        <!-- ===================================================== -->
+        <!-- THỐNG KÊ NHANH -->
+        <!-- ===================================================== -->
+
+        <div class="grid
+            grid-cols-1
+            sm:grid-cols-2
+            xl:grid-cols-4
+            gap-5
+            mb-9">
+
+
+            <!-- ĐƠN CHỜ XÁC NHẬN -->
+
+            <a href="@Url.Action(
+                "Bookings",
+                "Staff",
+                new
+                {
+                    status = "Chờ xác nhận"
+                }
+             )"
+               class="bg-white
+              rounded-2xl
+              border
+              border-gray-200
+              shadow-sm
+              p-5
+              hover:shadow-md
+              transition">
+
+
+                <div class="flex
+                    items-center
+                    justify-between">
+
+
+                    <div>
+
+                        <p class="text-gray-500
+                          text-sm">
+
+                            Đơn phòng chờ xác nhận
+
+                        </p>
+
+
+                        <p class="text-3xl
+                          font-extrabold
+                          text-yellow-600
+                          mt-2">
+
+                            @ViewBag.PendingBookings
+
+                        </p>
+
+                    </div>
+
+
+                    <div class="w-14
+                        h-14
+                        rounded-2xl
+                        bg-yellow-100
+                        text-yellow-600
+                        flex
+                        items-center
+                        justify-center
+                        text-2xl">
+
+                        <i class="fas fa-clock"></i>
+
+                    </div>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- NHẬN PHÒNG HÔM NAY -->
+
+            <a href="@Url.Action(
+            "TodayCheckIns",
+            "Staff"
+         )"
+               class="bg-white
+          rounded-2xl
+          border
+          border-gray-200
+          shadow-sm
+          p-5
+          hover:shadow-md
+          transition
+          cursor-pointer">
+
+
+                <div class="flex
+                    items-center
+                    justify-between">
+
+
+                    <div>
+
+                        <p class="text-gray-500
+                          text-sm">
+
+                            Nhận phòng hôm nay
+
+                        </p>
+
+
+                        <p class="text-3xl
+                          font-extrabold
+                          text-blue-600
+                          mt-2">
+
+                            @ViewBag.TodayCheckIns
+
+                        </p>
+
+                    </div>
+
+
+                    <div class="w-14
+                        h-14
+                        rounded-2xl
+                        bg-blue-100
+                        text-blue-600
+                        flex
+                        items-center
+                        justify-center
+                        text-2xl">
+
+                        <i class="fas fa-door-open"></i>
+
+                    </div>
+
+                </div>
+
+            </a>
+
+
+
+                <!-- ĐƠN MÓN ĐANG CHỜ -->
+
+                <a href="@Url.Action(
+                "FoodOrders",
+                "Staff"
+             )"
+                   class="bg-white
+              rounded-2xl
+              border
+              border-gray-200
+              shadow-sm
+              p-5
+              hover:shadow-md
+              transition">
+
+
+                    <div class="flex
+                    items-center
+                    justify-between">
+
+
+                        <div>
+
+                            <p class="text-gray-500
+                          text-sm">
+
+                                Đơn món đang xử lý
+
+                            </p>
+
+
+                            <p class="text-3xl
+                          font-extrabold
+                          text-orange-600
+                          mt-2">
+
+                                @ViewBag.PendingFoodOrders
+
+                            </p>
+
+                        </div>
+
+
+                        <div class="w-14
+                        h-14
+                        rounded-2xl
+                        bg-orange-100
+                        text-orange-600
+                        flex
+                        items-center
+                        justify-center
+                        text-2xl">
+
+                            <i class="fas fa-utensils"></i>
+
+                        </div>
+
+                    </div>
+
+                </a>
+
+
+
+                <!-- DOANH THU -->
+
+                <div class="bg-white
+                rounded-2xl
+                border
+                border-gray-200
+                shadow-sm
+                p-5">
+
+
+                    <div class="flex
+                    items-center
+                    justify-between
+                    gap-4">
+
+
+                        <div>
+
+                            <p class="text-gray-500
+                          text-sm">
+
+                                Doanh thu hôm nay
+
+                            </p>
+
+
+                            <p class="text-2xl
+                          font-extrabold
+                          text-green-600
+                          mt-2
+                          whitespace-nowrap">
+
+                                @(((decimal)ViewBag.TodayRevenue)
+                        .ToString("N0"))đ
+
+                            </p>
+
+                        </div>
+
+
+                        <div class="w-14
+                        h-14
+                        rounded-2xl
+                        bg-green-100
+                        text-green-600
+                        flex
+                        items-center
+                        justify-center
+                        text-2xl
+                        flex-shrink-0">
+
+                            <i class="fas fa-money-bill-wave"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        <div class="mb-5">
+
+            <h2 class="text-2xl
+               font-extrabold
+               text-gray-900">
+
+                Chức năng nghiệp vụ
+
+            </h2>
+
+            <p class="text-gray-500
+              mt-1">
+
+                Chọn công việc cần thực hiện.
+
+            </p>
+
+        </div>
+        <!-- ================================================= -->
+        <!-- MENU -->
+        <!-- ================================================= -->
+
+        <div class="grid
+                    grid-cols-1
+                    md:grid-cols-2
+                    xl:grid-cols-3
+                    gap-6">
+
+
+
+            <!-- QUẢN LÝ ĐẶT PHÒNG -->
+
+            <div class="bg-white
+                        rounded-2xl
+                        shadow-sm
+                        border
+                        border-gray-200
+                        p-6">
+
+
+                <div class="w-14
+                            h-14
+                            rounded-xl
+                            bg-blue-100
+                            text-blue-600
+                            flex
+                            items-center
+                            justify-center
+                            text-2xl
+                            mb-5">
+
+                    <i class="fas fa-calendar-check"></i>
+
+                </div>
+
+
+                <h3 class="text-xl
+                           font-extrabold">
+
+                    Đơn đặt phòng
+
+                </h3>
+
+
+                <p class="text-gray-500
+                          text-sm
+                          mt-2
+                          mb-5">
+
+                    Xem và xử lý các đơn đặt phòng của khách.
+
+                </p>
+
+
+                <a href="@Url.Action(
+                            "Bookings",
+                            "Staff"
+                         )"
+                   class="inline-flex
+                          items-center
+                          gap-2
+                          text-blue-600
+                          font-bold">
+
+                    Quản lý đơn
+
+                    <i class="fas fa-arrow-right"></i>
+
+                </a>
+
+            </div>
+
+
+
+            <!-- TẠO ĐƠN -->
+
+            <div class="bg-white
+                        rounded-2xl
+                        shadow-sm
+                        border
+                        border-gray-200
+                        p-6">
+
+
+                <div class="w-14
+                            h-14
+                            rounded-xl
+                            bg-green-100
+                            text-green-600
+                            flex
+                            items-center
+                            justify-center
+                            text-2xl
+                            mb-5">
+
+                    <i class="fas fa-plus"></i>
+
+                </div>
+
+
+                <h3 class="text-xl
+                           font-extrabold">
+
+                    Tạo đơn cho khách
+
+                </h3>
+
+
+                <p class="text-gray-500
+                          text-sm
+                          mt-2
+                          mb-5">
+
+                    Hỗ trợ khách đặt phòng trực tiếp tại quầy.
+
+                </p>
+
+
+                <a href="@Url.Action(
+                            "CreateBooking",
+                            "Staff"
+                         )"
+                   class="inline-flex
+                          items-center
+                          gap-2
+                          text-green-600
+                          font-bold">
+
+                    Tạo đơn
+
+                    <i class="fas fa-arrow-right"></i>
+
+                </a>
+
+            </div>
+
+
+
+            <!-- ĐƠN GỌI MÓN -->
+
+            <div class="bg-white
+                        rounded-2xl
+                        shadow-sm
+                        border
+                        border-gray-200
+                        p-6">
+
+
+                <div class="w-14
+                            h-14
+                            rounded-xl
+                            bg-yellow-100
+                            text-yellow-700
+                            flex
+                            items-center
+                            justify-center
+                            text-2xl
+                            mb-5">
+
+                    <i class="fas fa-utensils"></i>
+
+                </div>
+
+
+                <h3 class="text-xl
+                           font-extrabold">
+
+                    Đơn gọi món
+
+                </h3>
+
+
+                <p class="text-gray-500
+                          text-sm
+                          mt-2
+                          mb-5">
+
+                    Xác nhận và cập nhật trạng thái món ăn.
+
+                </p>
+
+
+                <a href="@Url.Action(
+            "FoodOrders",
+            "Staff"
+         )"
+                   class="inline-flex
+          items-center
+          gap-2
+          text-yellow-700
+          font-bold">
+
+                    Xử lý đơn món
+
+                    <i class="fas fa-arrow-right"></i>
+
+                </a>
+                
+
+            </div>
+
+
+        </div>
+
+    </main>
+
+
+</body>
+
+</html>

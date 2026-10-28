@@ -204,9 +204,14 @@ namespace QLKhachSan.Controllers
             }
 
 
-            // =====================================================
-            // KHÁCH HÀNG
-            // =====================================================
+            if (user.Role == "Staff")
+            {
+                return RedirectToAction(
+                    "Index",
+                    "Staff"
+                );
+            }
+
 
             return RedirectToAction(
                 "Index",
@@ -217,9 +222,9 @@ namespace QLKhachSan.Controllers
 
         // =========================================================
         // ĐĂNG KÝ TÀI KHOẢN KHÁCH HÀNG
-        // =========================================================
+            // =========================================================
 
-        [HttpPost]
+            [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Register(
             string fullName,
@@ -542,7 +547,7 @@ namespace QLKhachSan.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Profile(
+        public ActionResult UserProfile(
             AccountProfileViewModel model
         )
         {
@@ -1740,7 +1745,7 @@ namespace QLKhachSan.Controllers
 
 
                 return builder.ToString();
-            }
+            } 
         }
         protected override void Dispose(
             bool disposing

@@ -1224,7 +1224,6 @@
                     </div>
                 </div>
                 <a href="#" onclick="showPage('rooms'); return false;" class="luxury-menu-link px-3 py-2 rounded text-sm font-semibold">Đặt phòng</a>
-                <span class="text-yellow-300 mx-1">|</span>
                 @if (Session["UserId"] == null)
                 {
                     <!-- ===================================================== -->
@@ -1329,79 +1328,45 @@ Session["Role"].ToString() == "Admin"
                         |
                     </span>
                 }
-                <a href="@Url.Action("AdminOrders", "Restaurant")"
-                   class="text-yellow-200
-hover:text-yellow-400
-text-xs
-font-semibold
-whitespace-nowrap">
 
-                    <i class="fas fa-receipt mr-1"></i>
-
-                    Đơn gọi món
-
-                </a>
-
-
-                <span class="text-yellow-500">
-                    |
-                </span>
-                <!-- LỊCH SỬ ĐẶT PHÒNG -->
+                <!-- LỊCH SỬ ĐẶT PHÒNG (CHỈ DÀNH CHO KHÁCH HÀNG THƯỜNG) -->
+                @if (Session["UserId"] != null && (Session["Role"] == null || (Session["Role"].ToString() != "Admin" && Session["Role"].ToString() != "Staff")))
+                {
+                    <span class="text-yellow-500">|</span>
+                    <a href="@Url.Action("Index", "BookingHistory")"
+                       class="text-yellow-200 hover:text-yellow-400 text-sm font-semibold whitespace-nowrap">
+                        <i class="fas fa-clock-rotate-left mr-1"></i> Lịch sử đặt phòng
+                    </a>
+                }
 
                 @if (
-    Session["Role"] != null &&
-    Session["Role"].ToString() == "Admin"
+    Session["Role"] != null
+    &&
+    Session["Role"].ToString() == "Staff"
 )
                 {
-                    <!-- ============================================= -->
-                    <!-- MENU RIÊNG CHO ADMIN -->
-                    <!-- ============================================= -->
-
-                    
-
-
-
-
-
-
-
-
-                    
-
-
-                    
-                    
-                }
-                else
-                {
-                    <!-- ============================================= -->
-                    <!-- KHÁCH HÀNG / TÀI KHOẢN THƯỜNG -->
-                    <!-- ============================================= -->
-
-                    <a href="@Url.Action("Index", "BookingHistory")"
+                    <span class="text-yellow-500">|</span>
+                    <a href="@Url.Action(
+                "Index",
+                "Staff"
+             )"
                        class="text-yellow-200
               hover:text-yellow-400
               text-sm
               font-semibold
-              whitespace-nowrap">
+              whitespace-nowrap
+              flex
+              items-center
+              gap-1">
 
-                        <i class="fas fa-clock-rotate-left mr-1"></i>
+                        <i class="fas fa-gauge-high"></i>
 
-                        Lịch sử đặt phòng
+                        Dashboard nhân viên
 
                     </a>
-
-
-                    <span class="text-yellow-500">
-                        |
-                    </span>
                 }
 
-                <span class="text-yellow-500">
-
-                </span>
-
-
+                <span class="text-yellow-500">|</span>
                 <a href="@Url.Action(
             "Profile",
             "Account"
@@ -1507,9 +1472,9 @@ whitespace-nowrap">
                         <p class="luxury-section-description">Chúng tôi cam kết mang lại không gian sang trọng, tiện nghi bậc nhất và dịch vụ tận tâm, giúp kỳ nghỉ của bạn trở nên khó quên.</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div onclick="showPage('rooms')" class="feature-card luxury-feature-card group text-center cursor-pointer">
-                            <div class="feature-image luxury-feature-image luxury-feature-image-1"><div class="feature-icon luxury-feature-icon"><i class="fas fa-map-marked-alt"></i></div></div>
-                            <div class="feature-content"><h4 class="font-serif font-bold text-2xl mb-3">Vị trí đắc địa</h4><p class="text-sm leading-6">Nằm ngay trung tâm thành phố, thuận tiện di chuyển đến các điểm tham quan nổi tiếng.</p><p class="feature-link mt-5">Xem phòng view đẹp <i class="fas fa-arrow-right ml-1"></i></p></div>
+                        <div onclick="window.location.href='@Url.Action("Index", "Room", new { isLuxury = true })'" class="feature-card luxury-feature-card group text-center cursor-pointer">
+                            <div class="feature-image luxury-feature-image luxury-feature-image-1"><div class="feature-icon luxury-feature-icon"><i class="fas fa-star"></i></div></div>
+                            <div class="feature-content"><h4 class="font-serif font-bold text-2xl mb-3">Phòng LUXURY</h4><p class="text-sm leading-6">Bộ sưu tập các phòng cao cấp Deluxe, Premium, Balcony, Suite & Tổng Thống sang trọng.</p><p class="feature-link mt-5">Xem danh sách phòng Luxury <i class="fas fa-arrow-right ml-1"></i></p></div>
                         </div>
                         <div onclick="openSupport24Modal()"
                              class="feature-card
@@ -2160,222 +2125,6 @@ whitespace-nowrap">
                                 </div>
 
                             </div>
-                            <!-- PHƯƠNG THỨC THANH TOÁN -->
-
-                            <div class="mt-6">
-
-                                <label class="block text-gray-700 font-semibold mb-2">
-
-                                    Phương thức thanh toán
-
-                                </label>
-
-                                <select id="paymentMethod"
-                                        onchange="togglePaymentMethod()"
-                                        class="w-full px-4 py-3
-                       border border-gray-300
-                       rounded-lg">
-
-                                    <option value="Thanh toán tại khách sạn">
-
-                                        Thanh toán tại khách sạn
-
-                                    </option>
-
-                                    <option value="Chuyển khoản">
-
-                                        Chuyển khoản ngân hàng
-
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-                            <!-- ===================================================== -->
-                            <!-- KHU VỰC THANH TOÁN QR -->
-                            <!-- ===================================================== -->
-
-                            <div id="qrPaymentSection"
-                                 class="hidden mt-6 bg-blue-50
-                border-2 border-blue-200
-                rounded-2xl p-6">
-
-                                <h4 class="text-2xl font-bold text-blue-800 text-center mb-4">
-
-                                    <i class="fas fa-qrcode mr-2"></i>
-
-                                    Thanh toán chuyển khoản
-
-                                </h4>
-
-                                <!-- ĐẾM NGƯỢC -->
-
-                                <div class="text-center mb-5">
-
-                                    <p class="text-gray-600 font-semibold">
-
-                                        Thời gian giữ lệnh thanh toán
-
-                                    </p>
-
-                                    <div id="countdownTimer"
-                                         class="text-5xl font-extrabold
-                        text-red-600 mt-2">
-
-                                        10:00
-
-                                    </div>
-
-                                    <p class="text-sm text-gray-500 mt-2">
-
-                                        Vui lòng chuyển khoản trước khi hết thời gian.
-
-                                    </p>
-
-                                </div>
-
-                                <!-- MÃ QR -->
-
-                                <div class="bg-white rounded-xl p-4
-                    text-center shadow-md mb-5">
-
-                                    <img id="qrImage"
-                                         src=""
-                                         alt="Mã QR chuyển khoản ngân hàng"
-                                         class="mx-auto w-64 h-64 object-contain">
-
-                                    <p class="text-gray-500 text-sm mt-2">
-
-                                        Mở ứng dụng ngân hàng và quét mã QR.
-
-                                    </p>
-
-                                </div>
-
-                                <!-- THÔNG TIN NGÂN HÀNG -->
-
-                                <div class="bg-white rounded-xl p-5
-                    space-y-3 shadow-sm">
-
-                                    <h5 class="font-bold text-lg text-gray-800">
-
-                                        Thông tin chuyển khoản
-
-                                    </h5>
-
-                                    <div class="flex justify-between gap-3">
-
-                                        <span class="text-gray-500">
-
-                                            Ngân hàng
-
-                                        </span>
-
-                                        <span class="font-bold">
-
-                                            Vietcombank
-
-                                        </span>
-
-                                    </div>
-
-                                    <div class="flex justify-between gap-3">
-
-                                        <span class="text-gray-500">
-
-                                            Số tài khoản
-
-                                        </span>
-
-                                        <span class="font-bold">
-
-                                            1038619653
-
-                                        </span>
-
-                                    </div>
-
-                                    <div class="flex justify-between gap-3">
-
-                                        <span class="text-gray-500">
-
-                                            Chủ tài khoản
-
-                                        </span>
-
-                                        <span class="font-bold">
-
-                                            LUXURY HOTEL
-
-                                        </span>
-
-                                    </div>
-
-                                    <div class="flex justify-between gap-3">
-
-                                        <span class="text-gray-500">
-
-                                            Số tiền
-
-                                        </span>
-
-                                        <span id="qrAmount"
-                                              class="font-bold text-blue-700">
-
-                                            0đ
-
-                                        </span>
-
-                                    </div>
-
-                                    <div class="flex justify-between gap-3">
-
-                                        <span class="text-gray-500">
-
-                                            Nội dung
-
-                                        </span>
-
-                                        <span id="qrContent"
-                                              class="font-bold text-blue-700">
-
-                                            LUXURYHOTEL
-
-                                        </span>
-
-                                    </div>
-
-                                </div>
-
-                                <!-- TRẠNG THÁI -->
-
-                                <div id="paymentStatus"
-                                     class="mt-5 text-center
-                    text-sm text-gray-600">
-
-                                    Đang chờ thanh toán...
-
-                                </div>
-
-                                <!-- NÚT ĐÃ CHUYỂN KHOẢN -->
-
-                                <button type="button"
-                                        id="paymentDoneButton"
-                                        onclick="confirmPayment()"
-                                        class="w-full mt-5 bg-green-600
-                       text-white font-bold
-                       py-4 rounded-xl
-                       hover:bg-green-700 transition">
-
-                                    <i class="fas fa-check-circle mr-2"></i>
-
-                                    Tôi đã chuyển khoản
-
-                                </button>
-
-                            </div>
-
                             <!-- NÚT XÁC NHẬN -->
 
                             <div class="mt-8 flex flex-col md:flex-row gap-4">
@@ -4814,13 +4563,13 @@ function updateBookingSummary() {
 
 
     // Nếu đang mở QR thì cập nhật lại số tiền QR
-    const paymentMethod =
+    const paymentMethodElem =
         document.getElementById(
             'paymentMethod'
-        ).value;
+        );
 
 
-    if (paymentMethod === 'Chuyển khoản') {
+    if (paymentMethodElem && paymentMethodElem.value === 'Chuyển khoản') {
         generateQRCode();
     }
         }
@@ -5481,9 +5230,7 @@ async function checkRoomAvailability() {
                 ).value.trim(),
 
             PaymentMethod:
-                document.getElementById(
-                    'paymentMethod'
-                ).value,
+                'Thanh toán tại khách sạn',
 
             PromotionCode:
                 appliedPromotion
@@ -5627,7 +5374,15 @@ async function checkRoomAvailability() {
 
             updateBookingSummary();
             setBookingSubmitting(false);
-            showPage('home');
+
+            // Chuyển hướng sang trang Thanh Toán (Payment)
+            if (result.redirectUrl) {
+                window.location.href = result.redirectUrl;
+            } else if (result.bookingId) {
+                window.location.href = '/Booking/Payment?id=' + result.bookingId;
+            } else {
+                showPage('home');
+            }
 
         }
         catch (error) {
@@ -5669,12 +5424,12 @@ async function checkRoomAvailability() {
 
             // Khi chọn phương thức thanh toán
             function togglePaymentMethod() {
+                const paymentMethodElem = document.getElementById("paymentMethod");
+                if (!paymentMethodElem) return;
+                const paymentMethod = paymentMethodElem.value;
 
-                const paymentMethod =
-                    document.getElementById("paymentMethod").value;
-
-                const qrSection =
-                    document.getElementById("qrPaymentSection");
+                const qrSection = document.getElementById("qrPaymentSection");
+                if (!qrSection) return;
 
                 // Nếu chọn chuyển khoản
                 if (paymentMethod === "Chuyển khoản") {
@@ -5737,16 +5492,16 @@ async function checkRoomAvailability() {
                     encodeURIComponent(ACCOUNT_NAME);
 
                 // Hiển thị QR
-                document.getElementById("qrImage").src =
-                    qrUrl;
+                const qrImage = document.getElementById("qrImage");
+                if (qrImage) qrImage.src = qrUrl;
 
                 // Hiển thị số tiền
-                document.getElementById("qrAmount").innerText =
-                    totalAmount.toLocaleString("vi-VN") + "đ";
+                const qrAmount = document.getElementById("qrAmount");
+                if (qrAmount) qrAmount.innerText = totalAmount.toLocaleString("vi-VN") + "đ";
 
                 // Hiển thị nội dung
-                document.getElementById("qrContent").innerText =
-                    transferContent;
+                const qrContent = document.getElementById("qrContent");
+                if (qrContent) qrContent.innerText = transferContent;
 
             }
 
@@ -6572,7 +6327,7 @@ async function checkRoomAvailability() {
                     font-size: 12px;
                     cursor: pointer;
                 ">
-                Giá phòng
+                💰 Giá phòng
             </button>
 
             <button onclick="quickAIMessage('Tôi muốn đặt phòng')"
@@ -6585,7 +6340,7 @@ async function checkRoomAvailability() {
                     font-size: 12px;
                     cursor: pointer;
                 ">
-                Đặt phòng
+                🛏️ Đặt phòng
             </button>
 
             <button onclick="quickAIMessage('Có phòng Deluxe không?')"
@@ -6598,7 +6353,20 @@ async function checkRoomAvailability() {
                     font-size: 12px;
                     cursor: pointer;
                 ">
-                Phòng Deluxe
+                🌟 Phòng Deluxe
+            </button>
+
+            <button onclick="quickAIMessage('Nhà hàng và thực đơn món ăn ra sao?')"
+                    style="
+                    border: 1px solid #bfdbfe;
+                    background: #eff6ff;
+                    color: #1d4ed8;
+                    border-radius: 20px;
+                    padding: 7px 10px;
+                    font-size: 12px;
+                    cursor: pointer;
+                ">
+                🍽️ Nhà hàng
             </button>
 
             <button onclick="quickAIMessage('Thanh toán như thế nào?')"
@@ -6611,7 +6379,20 @@ async function checkRoomAvailability() {
                     font-size: 12px;
                     cursor: pointer;
                 ">
-                Thanh toán
+                💳 Thanh toán
+            </button>
+
+            <button onclick="quickAIMessage('Giờ nhận phòng và trả phòng là mấy giờ?')"
+                    style="
+                    border: 1px solid #bfdbfe;
+                    background: #eff6ff;
+                    color: #1d4ed8;
+                    border-radius: 20px;
+                    padding: 7px 10px;
+                    font-size: 12px;
+                    cursor: pointer;
+                ">
+                🕒 Check-in
             </button>
         </div>
 
@@ -6625,7 +6406,7 @@ async function checkRoomAvailability() {
         ">
             <input type="text"
                    id="aiMessageInput"
-                   placeholder="Nhập câu hỏi của bạn..."
+                   placeholder="Nhập câu hỏi của bạn (Gemini 3.5 Flash Lite)..."
                    onkeydown="if(event.key === 'Enter') sendAIMessage()"
                    style="
                         flex: 1;
@@ -6654,6 +6435,8 @@ async function checkRoomAvailability() {
     </div>
 
     <script>
+        let isAIBusy = false;
+
         // MỞ / ĐÓNG CHATBOT
         function toggleAIChat() {
             const chatBox = document.getElementById("aiChatBox");
@@ -6672,13 +6455,14 @@ async function checkRoomAvailability() {
 
         function quickAIMessage(message) {
             const input = document.getElementById("aiMessageInput");
-
             input.value = message;
-
             sendAIMessage();
         }
-        // GỬI TIN NHẮN
-        function sendAIMessage() {
+
+        // GỬI TIN NHẮN ĐẾN GEMINI 3.5 FLASH LITE
+        async function sendAIMessage() {
+            if (isAIBusy) return;
+
             const input = document.getElementById("aiMessageInput");
             const message = input.value.trim();
 
@@ -6687,189 +6471,143 @@ async function checkRoomAvailability() {
             }
 
             addAIMessage(message, "user");
-
             input.value = "";
 
-            setTimeout(function () {
-                const reply = getAIReply(message);
-                addAIMessage(reply, "bot");
-            }, 600);
+            // Hiển thị trạng thái đang trả lời từ Gemini
+            const typingId = addAITypingIndicator();
+            isAIBusy = true;
+
+            try {
+                const formData = new FormData();
+                formData.append("message", message);
+
+                const response = await fetch('/Gemini/Ask', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                removeAITypingIndicator(typingId);
+
+                if (!response.ok) {
+                    addAIMessage("Lỗi kết nối máy chủ AI (" + response.status + "). Vui lòng thử lại!", "bot");
+                    isAIBusy = false;
+                    return;
+                }
+
+                const data = await response.json();
+                if (data && data.reply) {
+                    addAIMessage(data.reply, "bot");
+                } else {
+                    addAIMessage("Trợ lý AI chưa có câu trả lời. Vui lòng thử lại sau!", "bot");
+                }
+            } catch (err) {
+                removeAITypingIndicator(typingId);
+                console.error("Gemini Chat Error:", err);
+                addAIMessage("Không thể kết nối đến trợ lý AI Gemini 3.5 Flash Lite. Vui lòng kiểm tra lại kết nối mạng!", "bot");
+            } finally {
+                isAIBusy = false;
+            }
+        }
+
+        // HIỂN THỊ TYPING INDICATOR
+        function addAITypingIndicator() {
+            const messages = document.getElementById("aiMessages");
+            const id = "ai-typing-" + Date.now();
+            const row = document.createElement("div");
+            row.id = id;
+            row.style.cssText = "display: flex; gap: 8px; margin-bottom: 15px;";
+            row.innerHTML = `
+                <div style="width: 32px; height: 32px; min-width: 32px; background: #dbeafe; color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div style="background: white; color: #4b5563; padding: 12px; border-radius: 12px; font-size: 13px; font-style: italic; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                    <i class="fas fa-spinner fa-spin me-1 text-primary"></i> Gemini 3.5 Flash Lite đang suy nghĩ...
+                </div>
+            `;
+            messages.appendChild(row);
+            messages.scrollTop = messages.scrollHeight;
+            return id;
+        }
+
+        function removeAITypingIndicator(id) {
+            const elem = document.getElementById(id);
+            if (elem) elem.remove();
         }
 
         // THÊM TIN NHẮN VÀO KHUNG CHAT
         function addAIMessage(message, sender) {
             const messages = document.getElementById("aiMessages");
-
             const messageRow = document.createElement("div");
 
             if (sender === "user") {
                 messageRow.style.cssText = `
-                                                    display: flex;
-                                                    justify-content: flex-end;
-                                                    margin-bottom: 15px;
-                                                `;
+                    display: flex;
+                    justify-content: flex-end;
+                    margin-bottom: 15px;
+                `;
 
                 messageRow.innerHTML = `
-                                                    <div style="
-                                                        background: #2563eb;
-                                                        color: white;
-                                                        padding: 12px;
-                                                        border-radius: 12px;
-                                                        max-width: 80%;
-                                                        font-size: 14px;
-                                                        word-wrap: break-word;
-                                                    ">
-                                                        ${escapeAIText(message)}
-                                                    </div>
-                                                `;
+                    <div style="
+                        background: #2563eb;
+                        color: white;
+                        padding: 12px;
+                        border-radius: 12px;
+                        max-width: 80%;
+                        font-size: 14px;
+                        word-wrap: break-word;
+                    ">
+                        ${escapeAIText(message)}
+                    </div>
+                `;
             } else {
                 messageRow.style.cssText = `
-                                                    display: flex;
-                                                    gap: 8px;
-                                                    margin-bottom: 15px;
-                                                `;
+                    display: flex;
+                    gap: 8px;
+                    margin-bottom: 15px;
+                `;
 
                 messageRow.innerHTML = `
-                                                    <div style="
-                                                        width: 32px;
-                                                        height: 32px;
-                                                        min-width: 32px;
-                                                        background: #dbeafe;
-                                                        color: #2563eb;
-                                                        border-radius: 50%;
-                                                        display: flex;
-                                                        align-items: center;
-                                                        justify-content: center;
-                                                    ">
-                                                        <i class="fas fa-robot"></i>
-                                                    </div>
+                    <div style="
+                        width: 32px;
+                        height: 32px;
+                        min-width: 32px;
+                        background: #dbeafe;
+                        color: #2563eb;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
+                        <i class="fas fa-robot"></i>
+                    </div>
 
-                                                    <div style="
-                                                        background: white;
-                                                        color: #1f2937;
-                                                        padding: 12px;
-                                                        border-radius: 12px;
-                                                        max-width: 80%;
-                                                        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-                                                        font-size: 14px;
-                                                        white-space: pre-line;
-                                                    ">
-                                                        ${escapeAIText(message)}
-                                                    </div>
-                                                `;
+                    <div style="
+                        background: white;
+                        color: #1f2937;
+                        padding: 12px;
+                        border-radius: 12px;
+                        max-width: 80%;
+                        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+                        font-size: 14px;
+                        white-space: pre-line;
+                        line-height: 1.5;
+                    ">
+                        ${formatAIResponse(message)}
+                    </div>
+                `;
             }
 
             messages.appendChild(messageRow);
             messages.scrollTop = messages.scrollHeight;
         }
 
-        // TRẢ LỜI MẪU CỦA CHATBOT
-        function getAIReply(message) {
-            const text = message.toLowerCase();
-
-            if (text.includes("xin chào") ||
-                text.includes("hello") ||
-                text.includes("hi")) {
-
-                return "Xin chào bạn! Tôi có thể giúp bạn tìm phòng, xem giá và đặt phòng tại Luxury Hotel.";
-            }
-
-            if (text.includes("giá phòng") ||
-                text.includes("giá") ||
-                text.includes("bao nhiêu tiền") ||
-                text.includes("phòng bao nhiêu")) {
-
-                return "Giá phòng hiện tại:\n\n" +
-                    "• Standard: 800.000đ/đêm\n" +
-                    "• Twin Room: 1.000.000đ/đêm\n" +
-                    "• Superior: 1.200.000đ/đêm\n" +
-                    "• Family Room: 1.500.000đ/đêm\n" +
-                    "• Deluxe: 2.000.000đ/đêm\n" +
-                    "• Premium: 2.500.000đ/đêm\n" +
-                    "• Luxury Balcony Suite: 3.500.000đ/đêm\n" +
-                    "• Phòng Tổng Thống: 8.000.000đ/đêm\n\n" +
-                    "Bạn có thể nhập tên phòng để xem thêm thông tin.";
-            }
-
-            if (text.includes("deluxe")) {
-
-                return "Phòng Deluxe có giá 2.000.000đ/đêm.\n\n" +
-                    "Phòng phù hợp cho khách muốn có không gian nghỉ dưỡng và ngắm cảnh.\n\n" +
-                    "Bạn hãy bấm nút 'Phòng' trên menu để đặt phòng.";
-            }
-
-            if (text.includes("superior")) {
-
-                return "Phòng Superior có giá 1.200.000đ/đêm.\n\n" +
-                    "Đây là lựa chọn phù hợp cho khách muốn tiết kiệm chi phí.\n\n" +
-                    "Bạn hãy bấm nút 'Phòng' trên menu để đặt phòng.";
-            }
-
-            if (text.includes("luxury") ||
-                text.includes("suite") ||
-                text.includes("cao cấp")) {
-
-                return "Phòng Luxury Balcony Suite có giá 3.500.000đ/đêm.\n\n" +
-                    "Phòng có không gian cao cấp và ban công riêng.\n\n" +
-                    "Bạn hãy bấm nút 'Phòng' trên menu để đặt phòng.";
-            }
-
-            if (text.includes("đặt phòng") ||
-                text.includes("dat phong") ||
-                text.includes("booking") ||
-                text.includes("đặt")) {
-
-                setTimeout(function () {
-                    showPage("rooms");
-                }, 800);
-
-                return "Tôi đã mở trang danh sách phòng cho bạn. Hãy chọn phòng muốn đặt.";
-            }
-
-            if (text.includes("xem phòng") ||
-                text.includes("xem danh sách phòng") ||
-                text.includes("các phòng")) {
-
-                setTimeout(function () {
-                    showPage("rooms");
-                }, 800);
-
-                return "Đây là danh sách các phòng hiện có tại Luxury Hotel.";
-            }
-
-            if (text.includes("thanh toán") ||
-                text.includes("thanh toan") ||
-                text.includes("qr") ||
-                text.includes("chuyển khoản")) {
-
-                return "Khách sạn hỗ trợ thanh toán bằng tiền mặt và chuyển khoản. Bạn có thể chọn phương thức thanh toán khi đặt phòng.";
-            }
-
-            if (text.includes("nhận phòng") ||
-                text.includes("nhan phong") ||
-                text.includes("check-in")) {
-
-                return "Bạn cần nhập ngày nhận phòng và ngày trả phòng trong biểu mẫu đặt phòng. Ngày trả phòng phải sau ngày nhận phòng.";
-            }
-
-            if (text.includes("hủy phòng") ||
-                text.includes("huy phong")) {
-
-                return "Nếu muốn hủy đặt phòng, bạn hãy liên hệ trực tiếp với bộ phận lễ tân để được hỗ trợ.";
-            }
-
-            if (text.includes("cảm ơn") ||
-                text.includes("cam on")) {
-
-                return "Rất vui được hỗ trợ bạn. Chúc bạn có một kỳ nghỉ tuyệt vời!";
-            }
-
-            return "Tôi chưa hiểu rõ câu hỏi của bạn.\n\n" +
-                "Bạn có thể hỏi:\n" +
-                "• Giá phòng bao nhiêu?\n" +
-                "• Tôi muốn đặt phòng\n" +
-                "• Có phòng Deluxe không?\n" +
-                "• Thanh toán như thế nào?";
+        // FORMAT PHẢN HỒI TỪ AI (HỖ TRỢ BOLD, LIST)
+        function formatAIResponse(text) {
+            if (!text) return "";
+            let escaped = escapeAIText(text);
+            // Replace **bold** with <strong>bold</strong>
+            escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            return escaped;
         }
 
         // BẢO VỆ NỘI DUNG HIỂN THỊ

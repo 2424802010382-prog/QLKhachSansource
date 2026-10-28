@@ -1,0 +1,37 @@
+﻿@model IEnumerable<QLKhachSan.Models.DichVu>
+@using System.Linq
+@{ Layout = null; ViewBag.AdminPage = "Services"; }
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quản lý dịch vụ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        .modal-hidden {
+            display: none
+        }
+    </style>
+</head>
+<body class="bg-[#f4f6fb] min-h-screen">
+    @Html.Partial("_AdminSidebar")<div class="lg:ml-72 min-h-screen">
+    <header class="bg-white border-b sticky top-0 z-30"><div class="px-5 lg:px-8 py-4 flex justify-between gap-4"><div><p class="text-xs tracking-[2px] font-bold text-indigo-500">DỊCH VỤ & ƯU ĐÃI</p><h1 class="text-3xl font-extrabold">Quản lý dịch vụ</h1></div><button type="button" onclick="openCreateModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl"><i class="fas fa-plus mr-1"></i>Thêm dịch vụ</button></div></header><main class="p-5 lg:p-8">
+        @if (TempData["AdminSuccess"] != null)
+        {<div class="mb-6 bg-green-50 border border-green-200 text-green-700 rounded-2xl px-5 py-4 font-semibold">@TempData["AdminSuccess"]</div>}@if (TempData["AdminError"] != null)
+        {<div class="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-5 py-4 font-semibold">@TempData["AdminError"]</div>}
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-7"><div class="bg-white rounded-2xl border p-5"><p class="text-gray-500">Tổng dịch vụ</p><p class="text-3xl font-extrabold mt-2">@ViewBag.TotalServices</p></div><div class="bg-white rounded-2xl border p-5"><p class="text-gray-500">Đang hoạt động</p><p class="text-3xl font-extrabold text-green-600 mt-2">@ViewBag.ActiveServices</p></div></section>
+        <section class="bg-white rounded-2xl border p-6 mb-7"><form method="get" action="@Url.Action("Services","Admin")" class="flex gap-3"><input type="text" name="keyword" value="@ViewBag.Keyword" placeholder="Tìm dịch vụ..." class="border rounded-xl px-4 py-3 flex-1" /><button type="submit" class="bg-indigo-600 text-white font-bold px-5 py-3 rounded-xl">Tìm kiếm</button></form></section>
+        <div class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">@if (Model != null)
+        {
+            foreach (var service in Model)
+            {<article class="bg-white rounded-3xl border shadow-sm p-6"><div class="flex justify-between gap-3"><div><p class="text-sm text-indigo-600 font-bold">#@service.MaDichVu</p><h2 class="text-2xl font-extrabold mt-1">@service.TenDichVu</h2></div><span class="h-fit px-3 py-1 rounded-full text-sm font-bold @(service.HoatDong?"bg-green-100 text-green-700":"bg-red-100 text-red-700")">@(service.HoatDong?"Hoạt động":"Ngừng")</span></div><p class="text-gray-500 mt-4 min-h-[48px]">@service.MoTa</p><div class="bg-yellow-50 rounded-2xl p-4 mt-5"><p class="text-sm text-gray-500">Giá</p><p class="text-2xl font-extrabold text-yellow-700">@service.Gia.ToString("N0")đ / @service.DonVi</p></div><div class="grid grid-cols-2 gap-3 mt-5"><button type="button" data-id="@service.MaDichVu" data-name="@service.TenDichVu" data-desc="@service.MoTa" data-price="@service.Gia" data-unit="@service.DonVi" data-active="@service.HoatDong.ToString().ToLower()" onclick="openEditModal(this)" class="bg-indigo-50 text-indigo-700 font-bold py-3 rounded-xl">Chỉnh sửa</button><form method="post" action="@Url.Action("ToggleService","Admin")">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@service.MaDichVu" /><button type="submit" class="w-full font-bold py-3 rounded-xl @(service.HoatDong?"bg-red-50 text-red-700":"bg-green-50 text-green-700")">@(service.HoatDong?"Ngừng":"Kích hoạt")</button></form></div></article>}
+    }</div>
+    </main>
+</div>
+<div id="createModal" class="modal-hidden fixed inset-0 z-[100] bg-black/60 p-4"><div class="min-h-full flex items-center justify-center"><div class="bg-white w-full max-w-xl rounded-3xl overflow-hidden"><div class="bg-[#111827] text-white p-5 flex justify-between"><h2 class="text-xl font-extrabold">Thêm dịch vụ</h2><button type="button" onclick="closeCreateModal()">✕</button></div><form method="post" action="@Url.Action("SaveService","Admin")" class="p-6 space-y-4">@Html.AntiForgeryToken()<input type="hidden" name="hoatDong" value="true" /><input type="text" name="tenDichVu" required placeholder="Tên dịch vụ" class="w-full border rounded-xl px-4 py-3" /><textarea name="moTa" rows="3" placeholder="Mô tả" class="w-full border rounded-xl px-4 py-3"></textarea><input type="number" name="gia" min="0" required placeholder="Giá" class="w-full border rounded-xl px-4 py-3" /><input type="text" name="donVi" required placeholder="Đơn vị: người, lần, lượt..." class="w-full border rounded-xl px-4 py-3" /><button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl">Thêm dịch vụ</button></form></div></div></div>
+<div id="editModal" class="modal-hidden fixed inset-0 z-[100] bg-black/60 p-4"><div class="min-h-full flex items-center justify-center"><div class="bg-white w-full max-w-xl rounded-3xl overflow-hidden"><div class="bg-indigo-700 text-white p-5 flex justify-between"><h2 class="text-xl font-extrabold">Sửa dịch vụ</h2><button type="button" onclick="closeEditModal()">✕</button></div><form method="post" action="@Url.Action("SaveService","Admin")" class="p-6 space-y-4">@Html.AntiForgeryToken()<input type="hidden" id="editId" name="id" /><input type="hidden" id="editActive" name="hoatDong" /><input type="text" id="editName" name="tenDichVu" required class="w-full border rounded-xl px-4 py-3" /><textarea id="editDesc" name="moTa" rows="3" class="w-full border rounded-xl px-4 py-3"></textarea><input type="number" id="editPrice" name="gia" min="0" required class="w-full border rounded-xl px-4 py-3" /><input type="text" id="editUnit" name="donVi" required class="w-full border rounded-xl px-4 py-3" /><button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl">Lưu thay đổi</button></form></div></div></div>
+<script>function openCreateModal(){document.getElementById('createModal').classList.remove('modal-hidden')}function closeCreateModal(){document.getElementById('createModal').classList.add('modal-hidden')}function openEditModal(b){document.getElementById('editId').value=b.dataset.id||'';document.getElementById('editName').value=b.dataset.name||'';document.getElementById('editDesc').value=b.dataset.desc||'';document.getElementById('editPrice').value=b.dataset.price||'';document.getElementById('editUnit').value=b.dataset.unit||'';document.getElementById('editActive').value=b.dataset.active||'true';document.getElementById('editModal').classList.remove('modal-hidden')}function closeEditModal(){document.getElementById('editModal').classList.add('modal-hidden')}</script>
+</body>
+</html>

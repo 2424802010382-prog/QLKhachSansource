@@ -1,0 +1,148 @@
+@model QLKhachSan.Models.Booking
+@{
+    Layout = null;
+    string qrUrl = $"https://img.vietqr.io/image/MB-0123456789-compact.png?amount={Model.TotalAmount}&addInfo=QLKS%20{Model.BookingId}&accountName=LUXURY%20HOTEL";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thanh toán đơn đặt phòng #@Model.BookingId - Luxury Hotel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body class="bg-[#f8f5ee] min-h-screen py-10">
+
+    <div class="container mx-auto px-4 max-w-4xl">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-[#21170f]">Thanh Toán Đặt Phòng</h1>
+            <p class="text-gray-600">Vui lòng chọn phương thức thanh toán để hoàn tất đơn hàng #@Model.BookingId</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Cột thông tin đơn hàng -->
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-[#e7dbc1] md:col-span-1">
+                <h3 class="text-lg font-bold text-[#21170f] mb-4 border-b pb-2">Tóm tắt đơn hàng</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Mã đơn:</span>
+                        <span class="font-bold text-indigo-600">#@Model.BookingId</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Khách hàng:</span>
+                        <span class="font-medium">@Model.CustomerName</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Phòng:</span>
+                        <span class="font-medium">@(Model.Room != null ? Model.Room.RoomName : "Phòng #" + Model.RoomId)</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Nhận - Trả:</span>
+                        <span class="font-medium">@Model.CheckInDate.ToString("dd/MM/yyyy") - @Model.CheckOutDate.ToString("dd/MM/yyyy")</span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="flex justify-between text-base font-bold text-red-600">
+                        <span>Tổng tiền:</span>
+                        <span>@Model.TotalAmount.ToString("N0")đ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phương thức thanh toán -->
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-[#e7dbc1] md:col-span-2">
+                <div class="flex border-b mb-6">
+                    <button id="tabTransfer" onclick="switchTab('transfer')" class="flex-1 py-3 font-bold text-indigo-600 border-b-2 border-indigo-600 text-center">
+                        <i class="fas fa-qrcode mr-2"></i> Chuyển khoản QR
+                    </button>
+                    <button id="tabCash" onclick="switchTab('cash')" class="flex-1 py-3 font-bold text-gray-500 border-b-2 border-transparent text-center">
+                        <i class="fas fa-money-bill-wave mr-2"></i> Tiền mặt tại quầy
+                    </button>
+                </div>
+
+                <!-- Tab Chuyển khoản QR -->
+                <div id="sectionTransfer" class="space-y-6 text-center">
+                    <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 text-sm">
+                        <i class="fas fa-info-circle mr-1"></i> Quét mã QR bên dưới bằng ứng dụng ngân hàng để thanh toán tự động. Hệ thống sẽ tự động xác nhận sau vài giây.
+                    </div>
+
+                    <div class="inline-block p-4 bg-white border-2 border-dashed border-indigo-300 rounded-2xl shadow-sm">
+                        <img src="@qrUrl" alt="VietQR Payment" class="w-64 h-64 mx-auto object-contain">
+                    </div>
+
+                    <div class="text-sm space-y-1 text-gray-700 bg-gray-50 p-4 rounded-xl text-left">
+                        <div class="flex justify-between"><span>Ngân hàng:</span> <strong class="text-gray-900">MB Bank</strong></div>
+                        <div class="flex justify-between"><span>Số tài khoản:</span> <strong class="text-indigo-600">0123456789</strong></div>
+                        <div class="flex justify-between"><span>Chủ tài khoản:</span> <strong class="text-gray-900">LUXURY HOTEL</strong></div>
+                        <div class="flex justify-between"><span>Số tiền:</span> <strong class="text-red-600">@Model.TotalAmount.ToString("N0")đ</strong></div>
+                        <div class="flex justify-between"><span>Nội dung CK:</span> <strong class="text-emerald-600">QLKS @Model.BookingId</strong></div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button onclick="simulatePaid()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition">
+                            <i class="fas fa-check-circle mr-2"></i> Mô phỏng đã chuyển khoản
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Tiền mặt -->
+                <div id="sectionCash" class="hidden space-y-6 text-center py-10">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto text-3xl mb-4">
+                        <i class="fas fa-hand-holding-usd"></i>
+                    </div>
+                    <h3 class="text-xl font-bold">Thanh toán tiền mặt tại quầy lễ tân</h3>
+                    <p class="text-gray-600 max-w-md mx-auto">Bạn có thể thanh toán bằng tiền mặt hoặc thẻ ngân hàng trực tiếp tại quầy lễ tân khi đến nhận phòng (Check-in).</p>
+                    <button onclick="confirmCash()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-xl transition">
+                        Xác nhận đặt phòng (Thanh toán tại quầy)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            if (tab === 'transfer') {
+                $('#sectionTransfer').removeClass('hidden');
+                $('#sectionCash').addClass('hidden');
+                $('#tabTransfer').addClass('text-indigo-600 border-indigo-600').removeClass('text-gray-500 border-transparent');
+                $('#tabCash').removeClass('text-indigo-600 border-indigo-600').addClass('text-gray-500 border-transparent');
+            } else {
+                $('#sectionCash').removeClass('hidden');
+                $('#sectionTransfer').addClass('hidden');
+                $('#tabCash').addClass('text-indigo-600 border-indigo-600').removeClass('text-gray-500 border-transparent');
+                $('#tabTransfer').removeClass('text-indigo-600 border-indigo-600').addClass('text-gray-500 border-transparent');
+            }
+        }
+
+        function confirmCash() {
+            $.post('@Url.Action("ConfirmCashPayment", "Booking", new { id = Model.BookingId })', function(res) {
+                if (res.success && res.redirectUrl) {
+                    window.location.href = res.redirectUrl;
+                } else {
+                    alert(res.message || 'Có lỗi xảy ra.');
+                }
+            });
+        }
+
+        function simulatePaid() {
+            $.post('@Url.Action("SimulateBankTransferPaid", "Booking", new { id = Model.BookingId })', function(res) {
+                if (res.success && res.redirectUrl) {
+                    window.location.href = res.redirectUrl;
+                }
+            });
+        }
+
+        // Auto-polling kiểm tra trạng thái thanh toán mỗi 4 giây
+        setInterval(function() {
+            $.get('@Url.Action("CheckPaymentStatus", "Booking", new { id = Model.BookingId })', function(res) {
+                if (res.success && res.isPaid) {
+                    window.location.href = '@Url.Action("Success", "Booking", new { id = Model.BookingId })';
+                }
+            });
+        }, 4000);
+    </script>
+</body>
+</html>

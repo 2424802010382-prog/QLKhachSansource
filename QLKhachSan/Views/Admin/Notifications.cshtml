@@ -1,0 +1,124 @@
+﻿@model QLKhachSan.Models.AdminNotificationsViewModel
+@using System.Linq
+
+@{
+    Layout = null;
+    ViewBag.AdminPage = "Notifications";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thông báo Admin - Luxury Hotel</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+
+<body class="bg-[#f4f6fb] min-h-screen">
+
+    @Html.Partial("~/Views/Admin/_AdminSidebar.cshtml")
+
+    <div class="lg:ml-72 min-h-screen">
+
+        <header class="bg-white border-b sticky top-0 z-30">
+            <div class="px-5 lg:px-8 py-4">
+                <p class="text-xs tracking-[2px] font-bold text-indigo-500">
+                    TRUNG TÂM THÔNG BÁO
+                </p>
+
+                <h1 class="text-3xl font-extrabold">
+                    Việc cần xử lý
+                </h1>
+
+                <p class="text-gray-500 text-sm mt-1">
+                    Tổng hợp tự động từ dữ liệu booking và thanh toán hiện tại.
+                </p>
+            </div>
+        </header>
+
+        <main class="p-5 lg:p-8">
+
+            <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-7">
+
+                <div class="bg-yellow-50 border border-yellow-200 rounded-2xl p-5">
+                    <p class="text-yellow-700 font-bold">Chờ xác nhận</p>
+                    <p class="text-3xl font-extrabold text-yellow-800 mt-2">@Model.PendingBookingCount</p>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5">
+                    <p class="text-blue-700 font-bold">Nhận phòng hôm nay</p>
+                    <p class="text-3xl font-extrabold text-blue-800 mt-2">@Model.ArrivalCount</p>
+                </div>
+
+                <div class="bg-purple-50 border border-purple-200 rounded-2xl p-5">
+                    <p class="text-purple-700 font-bold">Trả phòng hôm nay</p>
+                    <p class="text-3xl font-extrabold text-purple-800 mt-2">@Model.DepartureCount</p>
+                </div>
+
+                <div class="bg-red-50 border border-red-200 rounded-2xl p-5">
+                    <p class="text-red-700 font-bold">Đang ở chưa thanh toán</p>
+                    <p class="text-3xl font-extrabold text-red-800 mt-2">@Model.UnpaidCount</p>
+                </div>
+
+            </section>
+
+            <div class="space-y-4">
+
+                @if (Model.Items != null && Model.Items.Any())
+                {
+                    foreach (var item in Model.Items)
+                    {
+                        string boxClass =
+                            item.Level == "danger"
+                            ? "bg-red-50 border-red-200"
+                            : item.Level == "warning"
+                              ? "bg-yellow-50 border-yellow-200"
+                              : item.Level == "purple"
+                                ? "bg-purple-50 border-purple-200"
+                                : "bg-blue-50 border-blue-200";
+
+                        <a href="@Url.Action("BookingDetails", "Admin", new { id = item.BookingId })"
+                           class="block border rounded-2xl p-5 hover:shadow-md transition @boxClass">
+
+                            <div class="flex items-start gap-4">
+
+                                <div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-indigo-700 shadow-sm">
+                                    <i class="fas @item.Icon"></i>
+                                </div>
+
+                                <div class="flex-1">
+
+                                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                        <h2 class="font-extrabold text-lg">@item.Title</h2>
+                                        <span class="text-sm text-gray-500">@item.TimeText</span>
+                                    </div>
+
+                                    <p class="text-gray-600 mt-1">@item.Description</p>
+
+                                </div>
+
+                            </div>
+
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="bg-white rounded-3xl border p-14 text-center text-gray-400">
+                        <i class="fas fa-circle-check text-5xl text-green-500"></i>
+                        <p class="mt-4 text-lg">Hiện không có việc cần xử lý.</p>
+                    </div>
+                }
+
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+</html>

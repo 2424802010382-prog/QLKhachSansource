@@ -1,0 +1,230 @@
+﻿@model QLKhachSan.Models.BookingDetailsViewModel
+@using System.Linq
+
+@{
+    Layout = null;
+    var booking = Model.Booking;
+    ViewBag.AdminPage = "";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chi tiết booking #@booking.BookingId - Luxury Hotel</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+
+<body class="bg-[#f4f6fb] min-h-screen">
+
+    @Html.Partial("~/Views/Admin/_AdminSidebar.cshtml")
+
+    <div class="lg:ml-72 min-h-screen">
+
+        <header class="bg-white border-b sticky top-0 z-30">
+            <div class="px-5 lg:px-8 py-4 flex items-center justify-between gap-4">
+
+                <div>
+                    <p class="text-xs tracking-[2px] font-bold text-indigo-500">
+                        BOOKING
+                    </p>
+
+                    <h1 class="text-3xl font-extrabold">
+                        Chi tiết đơn #@booking.BookingId
+                    </h1>
+                </div>
+
+                <a href="@Url.Action("Bookings", "Admin")"
+                   class="bg-gray-100 hover:bg-gray-200 px-4 py-2.5 rounded-xl font-bold">
+                    ← Quay lại đơn phòng
+                </a>
+
+            </div>
+        </header>
+
+        <main class="p-5 lg:p-8">
+
+            <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+                <div class="xl:col-span-2 space-y-6">
+
+                    <div class="bg-white rounded-3xl border shadow-sm p-6">
+
+                        <div class="flex justify-between items-start gap-4">
+                            <div>
+                                <p class="text-gray-500 text-sm">Khách hàng</p>
+                                <h2 class="text-2xl font-extrabold">@booking.CustomerName</h2>
+                            </div>
+
+                            <span class="px-4 py-2 rounded-full font-bold
+                                @(booking.Status == "Đã trả phòng" ? "bg-purple-100 text-purple-700" :
+                                  booking.Status == "Đang ở" ? "bg-blue-100 text-blue-700" :
+                                  booking.Status == "Đã xác nhận" ? "bg-green-100 text-green-700" :
+                                  booking.Status == "Đã hủy" ? "bg-red-100 text-red-700" :
+                                  "bg-yellow-100 text-yellow-700")">
+                                @booking.Status
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+
+                            <div class="bg-gray-50 rounded-2xl p-4">
+                                <p class="text-xs text-gray-400">Số điện thoại</p>
+                                <p class="font-bold mt-1">@booking.CustomerPhone</p>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-2xl p-4">
+                                <p class="text-xs text-gray-400">Email</p>
+                                <p class="font-bold mt-1">@booking.CustomerEmail</p>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-2xl p-4">
+                                <p class="text-xs text-gray-400">Phòng</p>
+                                <p class="font-bold mt-1">
+                                    @(booking.Room != null ? booking.Room.RoomName : "Không xác định")
+                                </p>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-2xl p-4">
+                                <p class="text-xs text-gray-400">Số phòng</p>
+                                <p class="font-bold mt-1">@booking.RoomCount</p>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-2xl p-4">
+                                <p class="text-xs text-gray-400">Nhận phòng</p>
+                                <p class="font-bold mt-1">@booking.CheckInDate.ToString("dd/MM/yyyy")</p>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-2xl p-4">
+                                <p class="text-xs text-gray-400">Trả phòng</p>
+                                <p class="font-bold mt-1">@booking.CheckOutDate.ToString("dd/MM/yyyy")</p>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-2xl p-4">
+                                <p class="text-xs text-gray-400">Phương thức thanh toán</p>
+                                <p class="font-bold mt-1">@booking.PaymentMethod</p>
+                            </div>
+
+                            <div class="bg-yellow-50 rounded-2xl p-4">
+                                <p class="text-xs text-yellow-700">Tổng tiền</p>
+                                <p class="text-xl font-extrabold text-yellow-800 mt-1">
+                                    @booking.TotalAmount.ToString("N0")đ
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
+
+                        <div class="p-6 border-b">
+                            <h2 class="text-xl font-extrabold">
+                                Lịch sử thanh toán
+                            </h2>
+                        </div>
+
+                        @if (booking.ThanhToans != null && booking.ThanhToans.Any())
+                        {
+                            <div class="overflow-x-auto">
+
+                                <table class="w-full min-w-[800px]">
+                                    <thead class="bg-[#111827] text-white">
+                                        <tr>
+                                            <th class="p-4 text-left">Thời gian</th>
+                                            <th class="p-4 text-left">Phương thức</th>
+                                            <th class="p-4 text-right">Số tiền</th>
+                                            <th class="p-4 text-center">Trạng thái</th>
+                                            <th class="p-4 text-left">Ghi chú</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        @foreach (var payment in booking.ThanhToans.OrderByDescending(x => x.NgayThanhToan))
+                                        {
+                                            <tr class="border-b">
+                                                <td class="p-4">@payment.NgayThanhToan.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td class="p-4">@payment.PhuongThucThanhToan</td>
+                                                <td class="p-4 text-right font-extrabold">@payment.SoTien.ToString("N0")đ</td>
+                                                <td class="p-4 text-center">
+                                                    <span class="px-3 py-1 rounded-full font-bold text-sm @(payment.TrangThai == "Đã thanh toán" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700")">
+                                                        @payment.TrangThai
+                                                    </span>
+                                                </td>
+                                                <td class="p-4">@payment.GhiChu</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="p-10 text-center text-gray-400">
+                                Chưa có bản ghi thanh toán.
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+                <div class="space-y-6">
+
+                    <div class="bg-white rounded-3xl border shadow-sm p-6">
+
+                        <h2 class="text-xl font-extrabold">
+                            Thông tin đơn
+                        </h2>
+
+                        <div class="space-y-4 mt-5">
+                            <div>
+                                <p class="text-xs text-gray-400">Ngày tạo</p>
+                                <p class="font-bold">@booking.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                            </div>
+
+                            <div>
+                                <p class="text-xs text-gray-400">Mã booking</p>
+                                <p class="font-bold">#@booking.BookingId</p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="bg-indigo-700 rounded-3xl p-6 text-white">
+
+                        <h2 class="text-xl font-extrabold">
+                            Truy cập nhanh
+                        </h2>
+
+                        <div class="space-y-3 mt-5">
+
+                            <a href="@Url.Action("Payments", "Admin", new { keyword = booking.CustomerEmail })"
+                               class="block bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3 font-bold">
+                                Lịch sử thanh toán khách này
+                            </a>
+
+                            <a href="@Url.Action("RoomCalendar", "Admin", new { date = booking.CheckInDate.ToString("yyyy-MM-dd") })"
+                               class="block bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3 font-bold">
+                                Xem lịch phòng ngày nhận
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+</body>
+</html>

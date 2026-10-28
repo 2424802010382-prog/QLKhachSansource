@@ -1,0 +1,193 @@
+﻿@model QLKhachSan.Models.CustomerDetailsViewModel
+@using System.Linq
+
+@{
+    Layout = null;
+    ViewBag.AdminPage = "Customers";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chi tiết khách hàng - Luxury Hotel</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+
+<body class="bg-[#f4f6fb] min-h-screen">
+
+    @Html.Partial("~/Views/Admin/_AdminSidebar.cshtml")
+
+    <div class="lg:ml-72 min-h-screen">
+
+        <header class="bg-white border-b sticky top-0 z-30">
+            <div class="px-5 lg:px-8 py-4 flex items-center justify-between gap-4">
+
+                <div>
+                    <p class="text-xs tracking-[2px] font-bold text-indigo-500">
+                        HỒ SƠ KHÁCH HÀNG
+                    </p>
+
+                    <h1 class="text-3xl font-extrabold">
+                        @Model.User.FullName
+                    </h1>
+                </div>
+
+                <a href="@Url.Action("Customers", "Admin")"
+                   class="bg-gray-100 hover:bg-gray-200 px-4 py-2.5 rounded-xl font-bold">
+                    ← Danh sách khách
+                </a>
+
+            </div>
+        </header>
+
+        <main class="p-5 lg:p-8">
+
+            <section class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-7">
+
+                <div class="xl:col-span-2 bg-white rounded-3xl border shadow-sm p-6">
+
+                    <h2 class="text-xl font-extrabold mb-5">
+                        Thông tin tài khoản
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        <div class="bg-gray-50 rounded-2xl p-4">
+                            <p class="text-xs text-gray-400">Họ tên</p>
+                            <p class="font-extrabold mt-1">@Model.User.FullName</p>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-2xl p-4">
+                            <p class="text-xs text-gray-400">Email</p>
+                            <p class="font-extrabold mt-1">@Model.User.Email</p>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-2xl p-4">
+                            <p class="text-xs text-gray-400">Username</p>
+                            <p class="font-extrabold mt-1">@Model.User.Username</p>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-2xl p-4">
+                            <p class="text-xs text-gray-400">Ngày tạo</p>
+                            <p class="font-extrabold mt-1">@Model.User.CreatedAt.ToString("dd/MM/yyyy")</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="bg-gradient-to-br from-indigo-700 to-purple-700 rounded-3xl p-6 text-white">
+
+                    <p class="text-indigo-200">Tổng đã thanh toán</p>
+
+                    <p class="text-3xl font-extrabold mt-2">
+                        @Model.TotalPaid.ToString("N0")đ
+                    </p>
+
+                    <p class="text-indigo-200 mt-6">Tổng booking</p>
+
+                    <p class="text-3xl font-extrabold mt-2">
+                        @Model.Bookings.Count
+                    </p>
+
+                </div>
+
+            </section>
+
+            <section class="bg-white rounded-3xl border shadow-sm overflow-hidden">
+
+                <div class="p-6 border-b">
+                    <h2 class="text-xl font-extrabold">
+                        Lịch sử đặt phòng
+                    </h2>
+                </div>
+
+                <div class="overflow-x-auto">
+
+                    <table class="w-full min-w-[1000px]">
+
+                        <thead class="bg-[#111827] text-white">
+                            <tr>
+                                <th class="p-4 text-left">Booking</th>
+                                <th class="p-4 text-left">Phòng</th>
+                                <th class="p-4 text-left">Nhận / trả</th>
+                                <th class="p-4 text-right">Tổng tiền</th>
+                                <th class="p-4 text-center">Trạng thái</th>
+                                <th class="p-4 text-center">Thanh toán</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @if (Model.Bookings != null && Model.Bookings.Any())
+                            {
+                                foreach (var booking in Model.Bookings)
+                                {
+                                    bool paid =
+                                        booking.ThanhToans != null &&
+                                        booking.ThanhToans.Any(t =>
+                                            t.TrangThai == "Đã thanh toán");
+
+                                    <tr class="border-b hover:bg-gray-50">
+
+                                        <td class="p-4">
+                                            <a href="@Url.Action("BookingDetails", "Admin", new { id = booking.BookingId })"
+                                               class="font-extrabold text-indigo-600">
+                                                #@booking.BookingId
+                                            </a>
+                                        </td>
+
+                                        <td class="p-4">
+                                            @(booking.Room != null ? booking.Room.RoomName : "")
+                                        </td>
+
+                                        <td class="p-4">
+                                            @booking.CheckInDate.ToString("dd/MM/yyyy")
+                                            →
+                                            @booking.CheckOutDate.ToString("dd/MM/yyyy")
+                                        </td>
+
+                                        <td class="p-4 text-right font-extrabold">
+                                            @booking.TotalAmount.ToString("N0")đ
+                                        </td>
+
+                                        <td class="p-4 text-center">@booking.Status</td>
+
+                                        <td class="p-4 text-center">
+                                            <span class="px-3 py-1 rounded-full text-sm font-bold @(paid ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700")">
+                                                @(paid ? "Đã thanh toán" : "Chưa thanh toán")
+                                            </span>
+                                        </td>
+
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6"
+                                        class="p-12 text-center text-gray-400">
+                                        Khách hàng chưa có booking.
+                                    </td>
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,173 @@
+﻿@model IEnumerable<QLKhachSan.Models.AdminCustomerSummaryViewModel>
+@using System
+@using System.Linq
+
+@{
+    Layout = null;
+    ViewBag.AdminPage = "Customers";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Khách hàng nâng cao - Luxury Hotel</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+
+<body class="bg-[#f4f6fb] min-h-screen">
+
+    @Html.Partial("~/Views/Admin/_AdminSidebar.cshtml")
+
+    <div class="lg:ml-72 min-h-screen">
+
+        <header class="bg-white border-b sticky top-0 z-30">
+            <div class="px-5 lg:px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+                <div>
+                    <p class="text-xs tracking-[2px] font-bold text-indigo-500">
+                        KHÁCH HÀNG
+                    </p>
+
+                    <h1 class="text-3xl font-extrabold">
+                        Phân tích khách hàng
+                    </h1>
+                </div>
+
+                <a href="@Url.Action("ExportCustomersCsv", "Admin")"
+                   class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2.5 rounded-xl">
+                    <i class="fas fa-file-csv mr-1"></i>
+                    Xuất CSV
+                </a>
+
+            </div>
+        </header>
+
+        <main class="p-5 lg:p-8">
+
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-7">
+
+                <div class="bg-white rounded-2xl border shadow-sm p-6">
+                    <p class="text-gray-500">Khách hàng trong kết quả</p>
+                    <p class="text-3xl font-extrabold mt-2">@ViewBag.CustomerCount</p>
+                </div>
+
+                <div class="bg-white rounded-2xl border shadow-sm p-6">
+                    <p class="text-gray-500">Tổng chi tiêu đã thanh toán</p>
+                    <p class="text-3xl font-extrabold text-green-700 mt-2">
+                        @Convert.ToDecimal(ViewBag.TotalCustomerRevenue).ToString("N0")đ
+                    </p>
+                </div>
+
+            </section>
+
+            <section class="bg-white rounded-2xl border shadow-sm p-6 mb-7">
+
+                <form method="get"
+                      action="@Url.Action("Customers", "Admin")"
+                      class="flex gap-3">
+
+                    <input type="text"
+                           name="keyword"
+                           value="@ViewBag.Keyword"
+                           placeholder="Tên, email hoặc username..."
+                           class="border rounded-xl px-4 py-3 flex-1" />
+
+                    <button type="submit"
+                            class="bg-indigo-600 text-white font-bold px-5 py-3 rounded-xl">
+                        Tìm kiếm
+                    </button>
+
+                </form>
+
+            </section>
+
+            <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+
+                <div class="overflow-x-auto">
+
+                    <table class="w-full min-w-[1100px]">
+
+                        <thead class="bg-[#111827] text-white">
+                            <tr>
+                                <th class="p-4 text-left">Khách hàng</th>
+                                <th class="p-4 text-center">Lượt đặt</th>
+                                <th class="p-4 text-center">Đã trả phòng</th>
+                                <th class="p-4 text-right">Đã thanh toán</th>
+                                <th class="p-4 text-left">Lần đặt gần nhất</th>
+                                <th class="p-4 text-center">Trạng thái</th>
+                                <th class="p-4 text-center">Chi tiết</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @if (Model != null && Model.Any())
+                            {
+                                foreach (var customer in Model)
+                                {
+                                    <tr class="border-b hover:bg-gray-50">
+
+                                        <td class="p-4">
+                                            <p class="font-extrabold">@customer.FullName</p>
+                                            <p class="text-sm text-gray-500">@customer.Email</p>
+                                            <p class="text-xs text-gray-400">@customer.Username</p>
+                                        </td>
+
+                                        <td class="p-4 text-center font-bold">@customer.BookingCount</td>
+                                        <td class="p-4 text-center font-bold">@customer.CompletedBookingCount</td>
+
+                                        <td class="p-4 text-right font-extrabold text-green-700">
+                                            @customer.TotalPaid.ToString("N0")đ
+                                        </td>
+
+                                        <td class="p-4">
+                                            @(customer.LastBookingAt.HasValue
+                                                ? customer.LastBookingAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                                : "Chưa đặt")
+                                        </td>
+
+                                        <td class="p-4 text-center">
+                                            <span class="px-3 py-1 rounded-full font-bold text-sm @(customer.IsActive ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600")">
+                                                @(customer.IsActive ? "Hoạt động" : "Đã khóa")
+                                            </span>
+                                        </td>
+
+                                        <td class="p-4 text-center">
+                                            <a href="@Url.Action("CustomerDetails", "Admin", new { id = customer.UserId })"
+                                               class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg">
+                                                Xem
+                                            </a>
+                                        </td>
+
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="7"
+                                        class="p-12 text-center text-gray-400">
+                                        Không có khách hàng phù hợp.
+                                    </td>
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+</html>

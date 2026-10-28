@@ -1,0 +1,962 @@
+﻿@model IEnumerable<QLKhachSan.Models.RestaurantOrderHistoryViewModel>
+
+@using System.Linq
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html lang="vi">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        Đơn gọi món - Nhân viên
+    </title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+</head>
+
+
+<body class="bg-gray-100 min-h-screen">
+
+
+    <header class="bg-[#111827]
+               text-white
+               shadow-lg">
+
+        <div class="max-w-7xl
+                mx-auto
+                px-6
+                py-5
+                flex
+                items-center
+                justify-between">
+
+            <div>
+
+                <p class="text-yellow-400
+                      text-xs
+                      tracking-[3px]">
+
+                    LUXURY HOTEL
+
+                </p>
+
+                <h1 class="text-2xl
+                       font-extrabold">
+
+                    QUẢN LÝ ĐƠN GỌI MÓN
+
+                </h1>
+
+                <p class="text-gray-400
+                      text-sm">
+
+                    Khu vực nhân viên nhà hàng
+
+                </p>
+
+            </div>
+
+
+            <div class="flex
+                    items-center
+                    gap-3">
+
+                <a href="@Url.Action(
+                        "Index",
+                        "Staff"
+                     )"
+                   class="bg-yellow-500
+                      hover:bg-yellow-600
+                      text-black
+                      font-bold
+                      px-4
+                      py-2.5
+                      rounded-xl">
+
+                    <i class="fas
+                          fa-arrow-left
+                          mr-1">
+                    </i>
+
+                    Trang nhân viên
+
+                </a>
+
+
+                <a href="@Url.Action(
+                        "Logout",
+                        "Account"
+                     )"
+                   class="bg-red-500
+                      hover:bg-red-600
+                      text-white
+                      font-bold
+                      px-4
+                      py-2.5
+                      rounded-xl">
+
+                    <i class="fas
+                          fa-right-from-bracket
+                          mr-1">
+                    </i>
+
+                    Đăng xuất
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+
+    <main class="max-w-7xl
+             mx-auto
+             px-5
+             py-8">
+
+
+        @if (
+            TempData["StaffFoodSuccess"] != null
+        )
+        {
+            <div class="bg-green-50
+                    border
+                    border-green-200
+                    text-green-700
+                    rounded-xl
+                    p-4
+                    mb-5
+                    font-semibold">
+
+                <i class="fas
+                      fa-circle-check
+                      mr-2">
+                </i>
+
+                @TempData["StaffFoodSuccess"]
+
+            </div>
+        }
+
+
+        @if (
+            TempData["StaffFoodError"] != null
+        )
+        {
+            <div class="bg-red-50
+                    border
+                    border-red-200
+                    text-red-700
+                    rounded-xl
+                    p-4
+                    mb-5
+                    font-semibold">
+
+                <i class="fas
+                      fa-circle-exclamation
+                      mr-2">
+                </i>
+
+                @TempData["StaffFoodError"]
+
+            </div>
+        }
+
+
+
+        <div class="mb-7">
+
+            <h2 class="text-3xl
+                   font-extrabold">
+
+                Danh sách đơn gọi món
+
+            </h2>
+
+            <p class="text-gray-500
+                  mt-1">
+
+                Xử lý đơn ăn tại nhà hàng và giao lên phòng.
+
+            </p>
+
+        </div>
+
+
+
+        @if (
+            Model == null ||
+            !Model.Any()
+        )
+        {
+            <div class="bg-white
+                    rounded-2xl
+                    shadow-sm
+                    p-12
+                    text-center">
+
+                <i class="fas
+                      fa-utensils
+                      text-6xl
+                      text-gray-300">
+                </i>
+
+                <p class="text-xl
+                      font-bold
+                      mt-4">
+
+                    Chưa có đơn gọi món
+
+                </p>
+
+            </div>
+        }
+        else
+        {
+            <div class="space-y-6">
+
+                @foreach (
+                    var order
+                    in Model
+                )
+                {
+                    <div class="bg-white
+                            rounded-2xl
+                            shadow-sm
+                            overflow-hidden">
+
+
+                        <!-- HEADER -->
+
+                        <div class="p-5
+                                border-b
+                                flex
+                                flex-col
+                                md:flex-row
+                                md:items-center
+                                md:justify-between
+                                gap-4">
+
+                            <div>
+
+                                <div class="flex
+                                        items-center
+                                        gap-3
+                                        flex-wrap">
+
+                                    <h3 class="text-2xl
+                                           font-extrabold">
+
+                                        Đơn #@order.MaDon
+
+                                    </h3>
+
+
+                                    @if (
+order.TrangThai ==
+"Chờ xác nhận"
+)
+                                    {
+                                        <span class="bg-yellow-100
+                 text-yellow-700
+                 px-3
+                 py-1
+                 rounded-full
+                 text-sm
+                 font-bold
+                 whitespace-nowrap">
+
+                                            Chờ xác nhận
+
+                                        </span>
+                                    }
+                                    else if (
+                                        order.TrangThai ==
+                                        "Đã xác nhận"
+                                    )
+                                    {
+                                        <span class="bg-blue-100
+                 text-blue-700
+                 px-3
+                 py-1
+                 rounded-full
+                 text-sm
+                 font-bold
+                 whitespace-nowrap">
+
+                                            Đã xác nhận
+
+                                        </span>
+                                    }
+                                    else if (
+                                        order.TrangThai ==
+                                        "Đang chuẩn bị"
+                                    )
+                                    {
+                                        <span class="bg-orange-100
+                 text-orange-700
+                 px-3
+                 py-1
+                 rounded-full
+                 text-sm
+                 font-bold
+                 whitespace-nowrap">
+
+                                            Đang chuẩn bị
+
+                                        </span>
+                                    }
+                                    else if (
+                                        order.TrangThai ==
+                                        "Đang phục vụ"
+                                        ||
+                                        order.TrangThai ==
+                                        "Đang giao"
+                                    )
+                                    {
+                                        <span class="bg-purple-100
+                 text-purple-700
+                 px-3
+                 py-1
+                 rounded-full
+                 text-sm
+                 font-bold
+                 whitespace-nowrap">
+
+                                            @order.TrangThai
+
+                                        </span>
+                                    }
+                                    else if (
+                                        order.TrangThai ==
+                                        "Hoàn tất"
+                                    )
+                                    {
+                                        <span class="bg-green-100
+                 text-green-700
+                 px-3
+                 py-1
+                 rounded-full
+                 text-sm
+                 font-bold
+                 whitespace-nowrap">
+
+                                            Hoàn tất
+
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bg-red-100
+                 text-red-700
+                 px-3
+                 py-1
+                 rounded-full
+                 text-sm
+                 font-bold
+                 whitespace-nowrap">
+
+                                            @order.TrangThai
+
+                                        </span>
+                                    }
+
+                                </div>
+
+
+                                <p class="text-gray-500
+                                      text-sm
+                                      mt-2">
+
+                                    @order.CreatedAt.ToString(
+                                        "dd/MM/yyyy HH:mm"
+                                    )
+
+                                </p>
+
+                            </div>
+
+
+                            <div class="text-left
+                                    md:text-right">
+
+                                <p class="text-sm
+                                      text-gray-400">
+
+                                    Tổng tiền
+
+                                </p>
+
+                                <p class="text-2xl
+                                      font-extrabold
+                                      text-yellow-700">
+
+                                    @order.TongTien.ToString("N0")đ
+
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- BODY -->
+
+                        <div class="p-5
+                                grid
+                                grid-cols-1
+                                lg:grid-cols-3
+                                gap-7">
+
+
+                            <!-- KHÁCH -->
+
+                            <div>
+
+                                <h4 class="font-extrabold
+                                       mb-4">
+
+                                    <i class="fas
+                                          fa-user
+                                          text-yellow-600
+                                          mr-2">
+                                    </i>
+
+                                    Thông tin khách
+
+                                </h4>
+
+
+                                <p class="mb-2">
+
+                                    <span class="text-gray-400">
+                                        Họ tên:
+                                    </span>
+
+                                    <strong>
+                                        @order.HoTen
+                                    </strong>
+
+                                </p>
+
+
+                                <p class="mb-2">
+
+                                    <span class="text-gray-400">
+                                        SĐT:
+                                    </span>
+
+                                    @order.SoDienThoai
+
+                                </p>
+
+
+                                <p class="mb-2">
+
+                                    <span class="text-gray-400">
+                                        Hình thức:
+                                    </span>
+
+                                    <strong>
+                                        @order.HinhThuc
+                                    </strong>
+
+                                </p>
+
+
+                                @if (
+                                    order.HinhThuc ==
+                                    "Ăn tại nhà hàng"
+                                )
+                                {
+                                    <p class="mb-2">
+
+                                        <span class="text-gray-400">
+                                            Bàn:
+                                        </span>
+
+                                        <strong>
+                                            @order.SoBan
+                                        </strong>
+
+                                    </p>
+                                }
+                                else
+                                {
+                                    <p class="mb-2">
+
+                                        <span class="text-gray-400">
+                                            Phòng:
+                                        </span>
+
+                                        <strong>
+                                            @order.SoPhong
+                                        </strong>
+
+                                    </p>
+                                }
+
+
+                                @if (
+                                    !string.IsNullOrWhiteSpace(
+                                        order.GhiChu
+                                    )
+                                )
+                                {
+                                    <div class="mt-4
+                                            bg-gray-50
+                                            border
+                                            rounded-xl
+                                            p-3">
+
+                                        <p class="text-xs
+                                              text-gray-400">
+
+                                            Ghi chú
+
+                                        </p>
+
+                                        <p class="text-sm
+                                              mt-1">
+
+                                            @order.GhiChu
+
+                                        </p>
+
+                                    </div>
+                                }
+
+                            </div>
+
+
+
+                            <!-- DANH SÁCH MÓN -->
+
+                            <div>
+
+                                <h4 class="font-extrabold
+                                       mb-4">
+
+                                    <i class="fas
+                                          fa-bowl-food
+                                          text-yellow-600
+                                          mr-2">
+                                    </i>
+
+                                    Danh sách món
+
+                                </h4>
+
+
+                                @if (
+                                    order.Items != null &&
+                                    order.Items.Any()
+                                )
+                                {
+                                    <div class="space-y-3">
+
+                                        @foreach (
+                                            var item
+                                            in order.Items
+                                        )
+                                        {
+                                            <div class="flex
+                                                    items-start
+                                                    justify-between
+                                                    gap-4
+                                                    border-b
+                                                    pb-2">
+
+                                                <div>
+
+                                                    <p class="font-semibold">
+
+                                                        @item.TenMonAn
+
+                                                    </p>
+
+                                                    <p class="text-xs
+                                                          text-gray-400">
+
+                                                        @item.DonGia.ToString("N0")đ
+                                                        ×
+                                                        @item.SoLuong
+
+                                                    </p>
+
+                                                </div>
+
+
+                                                <strong class="text-yellow-700
+                                                           whitespace-nowrap">
+
+                                                    @item.ThanhTien.ToString("N0")đ
+
+                                                </strong>
+
+                                            </div>
+                                        }
+
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="text-gray-400">
+                                        Không có chi tiết món.
+                                    </p>
+                                }
+
+                            </div>
+
+
+
+                            <!-- XỬ LÝ -->
+
+                            <div>
+
+                                <h4 class="font-extrabold
+                                       mb-4">
+
+                                    <i class="fas
+                                          fa-gears
+                                          text-yellow-600
+                                          mr-2">
+                                    </i>
+
+                                    Xử lý đơn
+
+                                </h4>
+
+
+                                @if (
+order.TrangThai ==
+"Hoàn tất"
+)
+                                {
+                                    <div class="bg-green-100
+                text-green-700
+                font-bold
+                text-center
+                rounded-xl
+                px-4
+                py-3">
+
+                                        <i class="fas fa-circle-check mr-1"></i>
+
+                                        Đơn đã hoàn tất
+
+                                    </div>
+                                }
+                                else if (
+                                    order.TrangThai ==
+                                    "Đã hủy"
+                                )
+                                {
+                                    <div class="bg-red-100
+                text-red-700
+                font-bold
+                text-center
+                rounded-xl
+                px-4
+                py-3">
+
+                                        <i class="fas fa-ban mr-1"></i>
+
+                                        Đơn đã hủy
+
+                                    </div>
+                                }
+                                else
+                                {
+                                    <form method="post"
+                                          action="@Url.Action(
+                  "UpdateFoodOrderStatus",
+                  "Staff"
+              )">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@order.MaDon" />
+
+
+                                        <label class="block
+                      text-sm
+                      font-bold
+                      mb-2">
+
+                                            Chuyển sang trạng thái
+
+                                        </label>
+
+
+                                        <select name="status"
+                                                class="w-full
+                       border
+                       rounded-xl
+                       px-4
+                       py-3
+                       mb-3"
+                                                required>
+
+                                            <option value="">
+                                                -- Chọn trạng thái tiếp theo --
+                                            </option>
+
+
+                                            @if (
+                                                order.TrangThai ==
+                                                "Chờ xác nhận"
+                                            )
+                                            {
+                                                <option value="Đã xác nhận">
+                                                    Đã xác nhận
+                                                </option>
+
+                                                <option value="Đã hủy">
+                                                    Hủy đơn
+                                                </option>
+                                            }
+                                            else if (
+                                                order.TrangThai ==
+                                                "Đã xác nhận"
+                                            )
+                                            {
+                                                <option value="Đang chuẩn bị">
+                                                    Đang chuẩn bị
+                                                </option>
+
+                                                <option value="Đã hủy">
+                                                    Hủy đơn
+                                                </option>
+                                            }
+                                            else if (
+                                                order.TrangThai ==
+                                                "Đang chuẩn bị"
+                                            )
+                                            {
+                                                if (
+                                                    order.HinhThuc ==
+                                                    "Ăn tại nhà hàng"
+                                                )
+                                                {
+                                                    <option value="Đang phục vụ">
+                                                        Đang phục vụ
+                                                    </option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="Đang giao">
+                                                        Đang giao
+                                                    </option>
+                                                }
+
+                                                <option value="Đã hủy">
+                                                    Hủy đơn
+                                                </option>
+                                            }
+                                            else if (
+                                                order.TrangThai ==
+                                                "Đang phục vụ"
+                                                ||
+                                                order.TrangThai ==
+                                                "Đang giao"
+                                            )
+                                            {
+                                                <option value="Hoàn tất">
+                                                    Hoàn tất
+                                                </option>
+                                            }
+
+                                        </select>
+
+
+                                        <button type="submit"
+                                                onclick="return confirm(
+                    'Xác nhận cập nhật trạng thái đơn #@order.MaDon?'
+                );"
+                                                class="w-full
+                       bg-yellow-500
+                       hover:bg-yellow-600
+                       text-black
+                       font-bold
+                       py-3
+                       rounded-xl">
+
+                                            <i class="fas fa-rotate mr-1"></i>
+
+                                            Cập nhật trạng thái
+
+                                        </button>
+
+                                    </form>
+                                }
+
+
+                                <!-- THANH TOÁN -->
+
+                            <div class="mt-6
+                                        border-t
+                                        pt-5">
+
+                                <p class="text-sm
+                                          font-bold
+                                          mb-2">
+
+                                    Thanh toán
+
+                                </p>
+
+
+                                <p class="text-sm
+                                          text-gray-500
+                                          mb-3">
+
+                                    Phương thức:
+                                    <strong>
+                                        @order.PhuongThucThanhToan
+                                    </strong>
+
+                                </p>
+
+
+                                @if (
+order.TrangThaiThanhToan ==
+"Đã thanh toán"
+)
+                                {
+                                    <div class="bg-green-100
+                text-green-700
+                text-center
+                font-bold
+                rounded-xl
+                py-3
+                whitespace-nowrap">
+
+                                        <i class="fas
+                  fa-circle-check
+                  mr-1">
+                                        </i>
+
+                                        Đã thanh toán
+
+                                    </div>
+                                }
+                                else if (
+                                    order.TrangThai ==
+                                    "Đã hủy"
+                                )
+                                {
+                                    <div class="bg-red-100
+                text-red-700
+                text-center
+                font-bold
+                rounded-xl
+                py-3">
+
+                                        <i class="fas fa-ban mr-1"></i>
+
+                                        Đơn đã hủy
+
+                                    </div>
+
+                                    <p class="text-xs
+              text-gray-400
+              text-center
+              mt-2">
+
+                                        Không thể xác nhận thanh toán.
+
+                                    </p>
+                                }
+                                else
+                                {
+                                    <div class="bg-orange-100
+                text-orange-700
+                text-center
+                font-bold
+                rounded-xl
+                py-3
+                mb-3
+                whitespace-nowrap">
+
+                                        @order.TrangThaiThanhToan
+
+                                    </div>
+
+
+                                    <form method="post"
+                                          action="@Url.Action(
+                  "ConfirmFoodPayment",
+                  "Staff"
+              )">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@order.MaDon" />
+
+
+                                        <button type="submit"
+                                                onclick="return confirm(
+                    'Xác nhận đơn #@order.MaDon đã thanh toán?'
+                );"
+                                                class="w-full
+                       bg-green-600
+                       hover:bg-green-700
+                       text-white
+                       font-bold
+                       py-3
+                       rounded-xl
+                       whitespace-nowrap">
+
+                                            <i class="fas
+                      fa-money-bill-wave
+                      mr-1">
+                                            </i>
+
+                                            Xác nhận thanh toán
+
+                                        </button>
+
+                                    </form>
+                                }
+
+                            </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </main>
+
+
+</body>
+
+</html>

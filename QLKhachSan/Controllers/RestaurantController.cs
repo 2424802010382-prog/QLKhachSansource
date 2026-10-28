@@ -724,6 +724,78 @@ namespace QLKhachSan.Controllers
                 }
             }
         }
+
+        // =========================================================
+        // ĐẶT MÓN GIAO LÊN PHÒNG VÀ LIÊN KẾT HÓA ĐƠN PHÒNG
+        // =========================================================
+
+        [HttpPost]
+        public JsonResult PlaceRoomServiceOrder(RestaurantOrderRequest request)
+        {
+            if (request == null || request.Items == null || !request.Items.Any())
+            {
+                return Json(new { success = false, message = "Đơn gọi món không hợp lệ." });
+            }
+
+            string soPhong = (request.SoPhong ?? "").Trim();
+
+            if (string.IsNullOrWhiteSpace(soPhong))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập số phòng nhận món." });
+            }
+
+            using (var transaction = db.Database.BeginTransaction())
+            {
+                try
+                {
+                    // Kiểm tra phòng đang có khách ở
+                    var activeBooking = db.Bookings
+                        .Include("Room")
+                        .FirstOrDefault(b => b.Room.RoomName == soPhong && (b.Status == "Đang ở" || b.Status == "Đã xác nhận"));
+
+                    if (activeBooking == null)
+                    {
+                        return Json(new { success = false, message = $"Phòng [{soPhong}] hiện không có khách đang lưu trú hoặc chưa nhận phòng!" });
+                    }
+
+                    decimal foodTotal = 0;
+                    var itemRequests = request.Items.GroupBy(x => x.MaMonAn).Select(g => new { MaMonAn = g.Key, SoLuong = g.Sum(x => x.SoLuong) }).ToList();
+
+                    foreach (var item in itemRequests)
+                    {
+                        var food = db.Database.SqlQuery<FoodPriceRow>("SELECT MaMonAn, Gia FROM MonAn WHERE MaMonAn = @p0", item.MaMonAn).FirstOrDefault();
+                        if (food != null)
+                        {
+                            foodTotal += food.Gia * item.SoLuong;
+                        }
+                    }
+
+                    // Cộng dồn vào tổng tiền phòng
+                    activeBooking.TotalAmount += foodTotal;
+
+                    // Tạo bản ghi dịch vụ F&B gắn với Booking (Sử dụng đúng các thuộc tính chuẩn của Model DatPhongDichVu)
+                    var dichVuDat = new DatPhongDichVu
+                    {
+                        BookingId = activeBooking.BookingId,
+                        MaDichVu = 1,
+                        SoLuong = 1,
+                        DonGia = foodTotal,
+                        ThanhTien = foodTotal
+                    };
+                    db.DatPhongDichVus.Add(dichVuDat);
+                    db.SaveChanges();
+
+                    transaction.Commit();
+
+                    return Json(new { success = true, message = $"Đã đặt món thành công cho phòng {soPhong} và cộng dồn vào hóa đơn tổng của phòng!" });
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return Json(new { success = false, message = "Lỗi xử lý gọi món phòng: " + ex.Message });
+                }
+            }
+        }
         // =========================================================
         // LỊCH SỬ GỌI MÓN CỦA KHÁCH
         // =========================================================

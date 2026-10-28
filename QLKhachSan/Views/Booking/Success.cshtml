@@ -1,0 +1,64 @@
+@model QLKhachSan.Models.Booking
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đặt phòng thành công #@Model.BookingId - Luxury Hotel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+<body class="bg-[#f8f5ee] min-h-screen flex items-center justify-center py-10">
+
+    <div class="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-[#e7dbc1] max-w-xl w-full text-center mx-4">
+        <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl mb-6 shadow-inner">
+            <i class="fas fa-check"></i>
+        </div>
+
+        <h1 class="text-3xl font-extrabold text-[#21170f] mb-2">Chuyển Khoản Thành Công!</h1>
+        <p class="text-gray-600 mb-6">Thanh toán của bạn đã được xác nhận. Đơn đặt phòng hiện đang ở trạng thái <strong class="text-amber-600">Chờ xác nhận</strong> từ nhân viên khách sạn.</p>
+
+        <div class="bg-gray-50 p-6 rounded-2xl text-left space-y-3 mb-8 border">
+            <div class="flex justify-between">
+                <span class="text-gray-500">Mã đơn đặt phòng:</span>
+                <span class="font-bold text-indigo-600">#@Model.BookingId</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Họ tên khách hàng:</span>
+                <span class="font-semibold text-gray-900">@Model.CustomerName</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Phòng đã đặt:</span>
+                <span class="font-semibold text-gray-900">@(Model.Room != null ? Model.Room.RoomName : "Phòng #" + Model.RoomId)</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Thời gian lưu trú:</span>
+                <span class="font-semibold text-gray-900">@Model.CheckInDate.ToString("dd/MM/yyyy") - @Model.CheckOutDate.ToString("dd/MM/yyyy")</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Phương thức thanh toán:</span>
+                <span class="font-semibold text-gray-900">@Model.PaymentMethod</span>
+            </div>
+            <hr>
+            <div class="flex justify-between text-lg font-bold text-emerald-700">
+                <span>Tổng thanh toán:</span>
+                <span>@Model.TotalAmount.ToString("N0")đ</span>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="@Url.Action("Index", "BookingHistory")" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-md">
+                <i class="fas fa-clock-rotate-left mr-2"></i> Xem lịch sử đặt phòng
+            </a>
+            <a href="@Url.Action("Index", "Home")" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-6 py-3 rounded-xl transition">
+                <i class="fas fa-home mr-2"></i> Về trang chủ
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

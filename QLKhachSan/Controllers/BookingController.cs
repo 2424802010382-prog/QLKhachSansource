@@ -14,6 +14,50 @@ namespace QLKhachSan.Controllers
 
 
         // =========================================================
+        // LẤY DANH SÁCH PHÒNG TRỐNG THEO THỜI GIAN (CHỐNG TRÙNG LỊCH)
+        // =========================================================
+
+        [HttpGet]
+        public JsonResult GetAvailableRooms(DateTime checkIn, DateTime checkOut, int? capacity)
+        {
+            if (checkIn.Date < DateTime.Today || checkOut.Date <= checkIn.Date)
+            {
+                return Json(new { success = false, message = "Khoảng thời gian không hợp lệ." }, JsonRequestBehavior.AllowGet);
+            }
+
+            try
+            {
+                var allRooms = db.Rooms.Where(r => r.IsActive).ToList();
+
+                var bookedRoomIds = db.Bookings
+                    .Where(b => b.Status != "Đã hủy" && b.CheckInDate < checkOut && b.CheckOutDate > checkIn)
+                    .Select(b => b.RoomId)
+                    .Distinct()
+                    .ToList();
+
+                var availableRooms = allRooms
+                    .Where(r => !bookedRoomIds.Contains(r.RoomId) && (!capacity.HasValue || r.Capacity >= capacity.Value))
+                    .Select(r => new {
+                        roomId = r.RoomId,
+                        roomName = r.RoomName,
+                        roomType = r.RoomType,
+                        price = r.Price,
+                        capacity = r.Capacity,
+                        description = r.Description,
+                        imageUrl = r.ImageUrl
+                    })
+                    .ToList();
+
+                return Json(new { success = true, rooms = availableRooms }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+
+        // =========================================================
         // LẤY DANH SÁCH DỊCH VỤ
         // =========================================================
 
@@ -1015,7 +1059,7 @@ namespace QLKhachSan.Controllers
 
 
                     // =============================================
-                    // TRẢ VỀ INDEX
+                    // TRẢ VỀ KẾT QUẢ VÀ REDIRECT SANG TRANG THANH TOÁN
                     // =============================================
 
                     return Json(new
@@ -1037,8 +1081,11 @@ namespace QLKhachSan.Controllers
                         totalAmount =
                             totalAmount,
 
+                        redirectUrl =
+                            Url.Action("Payment", "Booking", new { id = booking.BookingId }),
+
                         message =
-                            "Đặt phòng thành công."
+                            "Đặt phòng thành công. Đang chuyển đến trang thanh toán..."
                     });
                 }
                 catch (Exception ex)
@@ -1200,6 +1247,108 @@ namespace QLKhachSan.Controllers
 
                 JsonRequestBehavior.AllowGet
             );
+        }
+
+
+        // =========================================================
+        // TRANG CHỌN PHƯƠNG THỨC THANH TOÁN
+        // =========================================================
+        [HttpGet]
+        public ActionResult Payment(int id)
+        {
+            var booking = db.Bookings.Include("Room").FirstOrDefault(b => b.BookingId == id);
+            if (booking == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            return View(booking);
+        }
+
+        // =========================================================
+        // XÁC NHẬN THANH TOÁN TIỀN MẶT TẠI QUẦY
+        // =========================================================
+        [HttpPost]
+        public JsonResult ConfirmCashPayment(int id)
+        {
+            var booking = db.Bookings.Find(id);
+            if (booking == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy đơn đặt phòng." });
+            }
+
+            booking.PaymentMethod = "Thanh toán tại khách sạn";
+            booking.Status = "Chờ xác nhận";
+
+            var payment = db.ThanhToans.FirstOrDefault(p => p.BookingId == id);
+            if (payment != null)
+            {
+                payment.PhuongThucThanhToan = "Thanh toán tại khách sạn";
+                payment.TrangThai = "Chờ thanh toán tại quầy";
+            }
+
+            db.SaveChanges();
+
+            return Json(new { success = true, redirectUrl = Url.Action("Success", "Booking", new { id = booking.BookingId }) });
+        }
+
+        // =========================================================
+        // KIỂM TRA TRẠNG THÁI THANH TOÁN (AJAX POLLING)
+        // =========================================================
+        [HttpGet]
+        public JsonResult CheckPaymentStatus(int id)
+        {
+            var payment = db.ThanhToans.FirstOrDefault(p => p.BookingId == id);
+            var booking = db.Bookings.Find(id);
+
+            if (booking == null || payment == null)
+            {
+                return Json(new { success = false, isPaid = false }, JsonRequestBehavior.AllowGet);
+            }
+
+            bool isPaid = payment.TrangThai == "Đã thanh toán";
+            return Json(new { success = true, isPaid = isPaid, status = booking.Status }, JsonRequestBehavior.AllowGet);
+        }
+
+        // =========================================================
+        // XÁC NHẬN / MÔ PHỎNG CHUYỂN KHOẢN THÀNH CÔNG
+        // =========================================================
+        [HttpPost]
+        public JsonResult SimulateBankTransferPaid(int id)
+        {
+            var booking = db.Bookings.Find(id);
+            var payment = db.ThanhToans.FirstOrDefault(p => p.BookingId == id);
+
+            if (booking == null || payment == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy đơn hàng." });
+            }
+
+            // NGHIỆP VỤ QUAN TRỌNG: Cập nhật đúng phương thức thanh toán là "Chuyển khoản"
+            // và trạng thái thanh toán thành "Đã thanh toán".
+            // TUYỆT ĐỐI KHÔNG tự động chuyển booking.Status thành "Đã xác nhận".
+            booking.PaymentMethod = "Chuyển khoản";
+            payment.PhuongThucThanhToan = "Chuyển khoản";
+            payment.TrangThai = "Đã thanh toán";
+            payment.NgayThanhToan = DateTime.Now;
+            booking.Status = "Chờ xác nhận";
+
+            db.SaveChanges();
+
+            return Json(new { success = true, redirectUrl = Url.Action("Success", "Booking", new { id = booking.BookingId }) });
+        }
+
+        // =========================================================
+        // TRANG THÀNH CÔNG (SUCCESS)
+        // =========================================================
+        [HttpGet]
+        public ActionResult Success(int id)
+        {
+            var booking = db.Bookings.Include("Room").FirstOrDefault(b => b.BookingId == id);
+            if (booking == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            return View(booking);
         }
 
 
