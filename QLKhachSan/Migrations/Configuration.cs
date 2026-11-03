@@ -9,7 +9,8 @@
     {
         public Configuration()
         {
-            AutomaticMigrationsEnabled = false;
+            AutomaticMigrationsEnabled = true;
+            AutomaticMigrationDataLossAllowed = true;
         }
 
         protected override void Seed(QLKhachSan.Models.HotelDbContext context)
@@ -247,6 +248,52 @@
                         HoatDong = true
                     }
                 );
+            }
+
+
+            // Seed 40 physical rooms (5 rooms per room type)
+            if (!context.PhysicalRooms.Any())
+            {
+                var dbRooms = context.Rooms.ToList();
+                int floor = 1;
+                foreach (var room in dbRooms)
+                {
+                    for (int i = 1; i <= 5; i++)
+                    {
+                        string roomNum = (floor * 100 + i).ToString();
+                        context.PhysicalRooms.Add(new QLKhachSan.Models.PhysicalRoom
+                        {
+                            RoomTypeId = room.RoomId,
+                            RoomNumber = roomNum,
+                            Floor = floor,
+                            Status = "Trống",
+                            IsActive = true,
+                            CreatedAt = DateTime.Now
+                        });
+                    }
+                    floor++;
+                }
+            }
+
+            // Seed 12 default permissions
+            if (!context.Permissions.Any())
+            {
+                var defaultPerms = new[]
+                {
+                    new QLKhachSan.Models.Permission { PermissionCode = "rooms.view", PermissionName = "Xem danh sách phòng", Category = "Phòng" },
+                    new QLKhachSan.Models.Permission { PermissionCode = "rooms.manage", PermissionName = "Quản lý phòng (Thêm/Sửa/Trạng thái)", Category = "Phòng" },
+                    new QLKhachSan.Models.Permission { PermissionCode = "bookings.view", PermissionName = "Xem danh sách đặt phòng", Category = "Đặt phòng" },
+                    new QLKhachSan.Models.Permission { PermissionCode = "bookings.approve", PermissionName = "Xác nhận hoặc hủy đặt phòng", Category = "Đặt phòng" },
+                    new QLKhachSan.Models.Permission { PermissionCode = "bookings.checkin", PermissionName = "Nhận phòng (Check-in)", Category = "Đặt phòng" },
+                    new QLKhachSan.Models.Permission { PermissionCode = "bookings.checkout", PermissionName = "Trả phòng (Check-out)", Category = "Đặt phòng" },
+                    new QLKhachSan.Models.Permission { PermissionCode = "customers.view", PermissionName = "Xem danh sách khách hàng", Category = "Khách hàng" },
+                    new QLKhachSan.Models.Permission { PermissionCode = "services.manage", PermissionName = "Quản lý dịch vụ", Category = "Dịch vụ" },
+                    new QLKhachSan.Models.Permission { PermissionCode = "restaurant.manage", PermissionName = "Quản lý nhà hàng & món ăn", Category = "Nhà hàng" },
+                    new QLKhachSan.Models.Permission { PermissionCode = "restaurant.orders", PermissionName = "Xem và xử lý đơn gọi món F&B", Category = "Nhà hàng" },
+                    new QLKhachSan.Models.Permission { PermissionCode = "payments.manage", PermissionName = "Quản lý hóa đơn & thanh toán", Category = "Tài chính" },
+                    new QLKhachSan.Models.Permission { PermissionCode = "revenue.view", PermissionName = "Xem báo cáo doanh thu", Category = "Tài chính" }
+                };
+                context.Permissions.AddOrUpdate(p => p.PermissionCode, defaultPerms);
             }
 
 

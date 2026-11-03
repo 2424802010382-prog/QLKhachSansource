@@ -105,6 +105,11 @@ namespace QLKhachSan.Controllers
                   )
                   .ToList();
 
+            foreach (var f in foods)
+            {
+                f.HinhAnh = GetSmartFoodImage(f.TenMonAn, f.HinhAnh);
+            }
+
 
             // =====================================================
             // 3. TẠO MODEL
@@ -137,6 +142,12 @@ namespace QLKhachSan.Controllers
             RestaurantOrderRequest request
         )
         {
+            string role = Session["Role"] != null ? Session["Role"].ToString() : "";
+            if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase) || role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return Json(new { success = false, message = "Tài khoản quản trị hoặc nhân viên không được phép đặt món với tư cách khách hàng." });
+            }
+
             // =====================================================
             // 1. KIỂM TRA REQUEST
             // =====================================================
@@ -310,8 +321,40 @@ namespace QLKhachSan.Controllers
                     success = false,
 
                     message =
-                        "Vui lòng nhập số phòng."
+                        "Vui lòng chọn phòng lưu trú."
                 });
+            }
+
+            if (hinhThuc == "Giao lên phòng")
+            {
+                if (string.IsNullOrWhiteSpace(soPhong))
+                {
+                    return Json(new { success = false, message = "Vui lòng chọn phòng lưu trú." });
+                }
+
+                string userEmail = Session["Email"]?.ToString()?.Trim()?.ToLowerInvariant();
+
+                if (string.IsNullOrEmpty(userEmail))
+                {
+                    return Json(new { success = false, message = "Vui lòng đăng nhập để đặt món giao lên phòng." });
+                }
+
+                var validBooking = db.Bookings
+                    .Include("Room")
+                    .ToList()
+                    .FirstOrDefault(b =>
+                        b.Room != null &&
+                        b.Room.RoomName.Trim().Equals(soPhong, StringComparison.OrdinalIgnoreCase) &&
+                        b.Status != "Đã hủy" &&
+                        b.CheckOutDate.Date >= DateTime.Today &&
+                        !string.IsNullOrEmpty(b.CustomerEmail) &&
+                        b.CustomerEmail.Trim().ToLower() == userEmail
+                    );
+
+                if (validBooking == null)
+                {
+                    return Json(new { success = false, message = $"Phòng [{soPhong}] không thuộc đơn đặt phòng hợp lệ của bạn hoặc bạn chưa nhận phòng!" });
+                }
             }
 
 
@@ -732,6 +775,12 @@ namespace QLKhachSan.Controllers
         [HttpPost]
         public JsonResult PlaceRoomServiceOrder(RestaurantOrderRequest request)
         {
+            string role = Session["Role"] != null ? Session["Role"].ToString() : "";
+            if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase) || role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return Json(new { success = false, message = "Tài khoản quản trị hoặc nhân viên không được phép đặt món với tư cách khách hàng." });
+            }
+
             if (request == null || request.Items == null || !request.Items.Any())
             {
                 return Json(new { success = false, message = "Đơn gọi món không hợp lệ." });
@@ -1140,6 +1189,15 @@ namespace QLKhachSan.Controllers
             string status
         )
         {
+            if (id <= 0)
+            {
+                int.TryParse(Request["id"], out id);
+            }
+            if (string.IsNullOrEmpty(status))
+            {
+                status = Request["status"];
+            }
+
             // =====================================================
             // QUYỀN
             // =====================================================
@@ -1245,6 +1303,15 @@ namespace QLKhachSan.Controllers
             string status
         )
         {
+            if (id <= 0)
+            {
+                int.TryParse(Request["id"], out id);
+            }
+            if (string.IsNullOrEmpty(status))
+            {
+                status = Request["status"];
+            }
+
             string role =
                 Session["Role"] != null
                 ? Session["Role"].ToString()
@@ -1370,6 +1437,11 @@ namespace QLKhachSan.Controllers
               "
                   )
                   .ToList();
+
+            foreach (var f in foods)
+            {
+                f.HinhAnh = GetSmartFoodImage(f.TenMonAn, f.HinhAnh);
+            }
 
 
             return View(
@@ -2058,6 +2130,81 @@ HttpPostedFileBase hinhAnhFile, string donVi,
             return RedirectToAction(
                 "ManageFoods"
             );
+        }
+
+        private string GetSmartFoodImage(string tenMonAn, string currentHinhAnh)
+        {
+            if (!string.IsNullOrWhiteSpace(currentHinhAnh) && (currentHinhAnh.StartsWith("http") || currentHinhAnh.StartsWith("/")))
+            {
+                return currentHinhAnh;
+            }
+
+            string name = (tenMonAn ?? "").ToLowerInvariant();
+
+            if (name.Contains("salad") || name.Contains("rau"))
+                return "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("bò") || name.Contains("steak") || name.Contains("bít tết"))
+                return "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("cá hồi") || name.Contains("salmon"))
+                return "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("phở") || name.Contains("mì") || name.Contains("bún") || name.Contains("hủ tiếu") || name.Contains("soup") || name.Contains("súp"))
+                return "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("gà") || name.Contains("chicken"))
+                return "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("cơm") || name.Contains("rice"))
+                return "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("tôm") || name.Contains("hải sản") || name.Contains("cua") || name.Contains("mực"))
+                return "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("pizza") || name.Contains("burger"))
+                return "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("bánh") || name.Contains("chè") || name.Contains("kem") || name.Contains("dessert") || name.Contains("cake"))
+                return "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("nước") || name.Contains("sinh tố") || name.Contains("nước ép") || name.Contains("cocktail") || name.Contains("rượu") || name.Contains("trà") || name.Contains("coffee") || name.Contains("cà phê"))
+                return "https://images.unsplash.com/photo-1541658016709-82535e94bc69?auto=format&fit=crop&w=800&q=80";
+
+            return "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80";
+        }
+
+        [HttpGet]
+        public JsonResult GetMyActiveRooms()
+        {
+            try
+            {
+                string email = Session["Email"]?.ToString()?.Trim()?.ToLowerInvariant();
+
+                if (string.IsNullOrEmpty(email))
+                {
+                    return Json(new { success = false, rooms = new List<object>() }, JsonRequestBehavior.AllowGet);
+                }
+
+                var query = db.Bookings
+                    .Include("Room")
+                    .Where(b => b.Status != "Đã hủy" && b.CheckOutDate.Date >= DateTime.Today);
+
+                var bookings = query.ToList().Where(b =>
+                    !string.IsNullOrEmpty(b.CustomerEmail) &&
+                    b.CustomerEmail.Trim().ToLower() == email
+                ).ToList();
+
+                var activeRooms = bookings
+                    .Select(b => new {
+                        bookingId = b.BookingId,
+                        roomId = b.RoomId,
+                        roomName = b.Room != null ? b.Room.RoomName : ("Phòng #" + b.RoomId),
+                        roomType = b.Room != null ? b.Room.RoomType : "",
+                        status = b.Status,
+                        checkIn = b.CheckInDate.ToString("dd/MM/yyyy"),
+                        checkOut = b.CheckOutDate.ToString("dd/MM/yyyy")
+                    })
+                    .Distinct()
+                    .ToList();
+
+                return Json(new { success = true, rooms = activeRooms }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi tải phòng: " + ex.Message }, JsonRequestBehavior.AllowGet);
+            }
         }
 
 

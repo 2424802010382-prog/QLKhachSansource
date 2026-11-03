@@ -30,7 +30,7 @@ namespace QLKhachSan.Controllers
                 var allRooms = db.Rooms.Where(r => r.IsActive).ToList();
 
                 var bookedRoomIds = db.Bookings
-                    .Where(b => b.Status != "Đã hủy" && b.CheckInDate < checkOut && b.CheckOutDate > checkIn)
+                    .Where(b => (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") && b.CheckInDate < checkOut && b.CheckOutDate > checkIn)
                     .Select(b => b.RoomId)
                     .Distinct()
                     .ToList();
@@ -224,6 +224,16 @@ namespace QLKhachSan.Controllers
             {
                 try
                 {
+                    string role = Session["Role"] != null ? Session["Role"].ToString() : "";
+                    if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase) || role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Json(new
+                        {
+                            success = false,
+                            message = "Tài khoản quản trị hoặc nhân viên không được phép đặt phòng với tư cách khách hàng."
+                        });
+                    }
+
                     // =============================================
                     // KIỂM TRA REQUEST
                     // =============================================
@@ -476,6 +486,30 @@ namespace QLKhachSan.Controllers
                     if (availableRooms < 0)
                     {
                         availableRooms = 0;
+                    }
+
+
+                    // =============================================
+                    // KIỂM TRA PHÒNG VẬT LÝ KHẢ DỤNG (CHỐNG TRÙNG LỊCH)
+                    // =============================================
+                    if (!string.IsNullOrWhiteSpace(request.RoomNumber))
+                    {
+                        string targetRoomNum = request.RoomNumber.Trim();
+                        bool physicalConflict = db.Bookings
+                            .Where(b => b.RoomId == request.RoomId && (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") && request.CheckInDate < b.CheckOutDate && request.CheckOutDate > b.CheckInDate)
+                            .ToList()
+                            .Any(b => !string.IsNullOrEmpty(b.SpecialRequest) && PhysicalRoomHelper.IsBookingAssignedToRoom(b.SpecialRequest, targetRoomNum));
+
+                        if (physicalConflict)
+                        {
+                            return Json(new
+                            {
+                                success = false,
+                                message = $"Phòng số [{targetRoomNum}] đã có khách đặt trong khoảng thời gian này. Vui lòng chọn số phòng khác."
+                            });
+                        }
+
+                        request.SpecialRequest = $"[Phòng: {targetRoomNum}] " + (request.SpecialRequest ?? "");
                     }
 
 
@@ -886,6 +920,8 @@ namespace QLKhachSan.Controllers
 
                     db.SaveChanges();
 
+                    PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
+
 
                     // =============================================
                     // LƯU CÁC DỊCH VỤ ĐÃ CHỌN
@@ -1204,8 +1240,7 @@ namespace QLKhachSan.Controllers
                     b.RoomId ==
                     roomId &&
 
-                    b.Status !=
-                    "Đã hủy" &&
+                    (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") &&
 
                     checkInDate <
                     b.CheckOutDate &&
@@ -1349,6 +1384,75 @@ namespace QLKhachSan.Controllers
                 return RedirectToAction("Index", "Home");
             }
             return View(booking);
+        }
+
+
+        [HttpGet]
+        public JsonResult GetAvailablePhysicalRooms(int roomId, DateTime checkIn, DateTime checkOut)
+        {
+            try
+            {
+                var physicalRooms = db.Set<PhysicalRoom>()
+                    .Where(pr => pr.RoomTypeId == roomId && pr.IsActive)
+                    .OrderBy(pr => pr.RoomNumber)
+                    .ToList();
+
+                var activeBookings = db.Bookings
+                    .Where(b => b.RoomId == roomId && (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") && b.CheckInDate < checkOut && b.CheckOutDate > checkIn)
+                    .ToList();
+
+                var bookedRoomNumbers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                int untaggedBookingCount = 0;
+
+                foreach (var b in activeBookings)
+                {
+                    if (!string.IsNullOrEmpty(b.SpecialRequest) && b.SpecialRequest.Contains("[Phòng:"))
+                    {
+                        bool foundTag = false;
+                        foreach (var pr in physicalRooms)
+                        {
+                            if (PhysicalRoomHelper.IsBookingAssignedToRoom(b.SpecialRequest, pr.RoomNumber.Trim()))
+                            {
+                                bookedRoomNumbers.Add(pr.RoomNumber.Trim());
+                                foundTag = true;
+                            }
+                        }
+                        if (!foundTag)
+                        {
+                            untaggedBookingCount += (b.RoomCount > 0 ? b.RoomCount : 1);
+                        }
+                    }
+                    else
+                    {
+                        untaggedBookingCount += (b.RoomCount > 0 ? b.RoomCount : 1);
+                    }
+                }
+
+                int lockedUntagged = 0;
+                var available = physicalRooms
+                    .Select(pr => {
+                        string rNum = pr.RoomNumber.Trim();
+                        bool isB = bookedRoomNumbers.Contains(rNum);
+                        if (!isB && lockedUntagged < untaggedBookingCount)
+                        {
+                            isB = true;
+                            lockedUntagged++;
+                        }
+                        return new {
+                            physicalRoomId = pr.PhysicalRoomId,
+                            roomNumber = pr.RoomNumber,
+                            floor = pr.Floor,
+                            isBooked = isB
+                        };
+                    })
+                    .ToList();
+
+                return Json(new { success = true, physicalRooms = available }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
         }
 
 

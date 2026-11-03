@@ -5,6 +5,7 @@
 
 @{
     Layout = null;
+    bool isStaffOrAdmin = Session["Role"] != null && (Session["Role"].ToString().Equals("Staff", StringComparison.OrdinalIgnoreCase) || Session["Role"].ToString().Equals("Admin", StringComparison.OrdinalIgnoreCase));
 }
 
 <!DOCTYPE html>
@@ -174,69 +175,72 @@
                     Trang chủ
 
                 </a>
-                @if (Session["UserId"] != null)
+                @if (!isStaffOrAdmin)
                 {
-                    <a href="@Url.Action(
-                "History",
-                "Restaurant"
-             )"
-                       class="hidden
-              md:inline-flex
-              items-center
-              gap-2
-              text-sm
-              text-yellow-100
-              hover:text-yellow-400">
+                    if (Session["UserId"] != null)
+                    {
+                        <a href="@Url.Action(
+                    "History",
+                    "Restaurant"
+                 )"
+                           class="hidden
+                  md:inline-flex
+                  items-center
+                  gap-2
+                  text-sm
+                  text-yellow-100
+                  hover:text-yellow-400">
 
-                        <i class="fas fa-clock-rotate-left"></i>
+                            <i class="fas fa-clock-rotate-left"></i>
 
-                        Lịch sử gọi món
+                            Lịch sử gọi món
 
-                    </a>
+                        </a>
+                    }
+
+                    <!-- CART BUTTON -->
+
+                    <button type="button"
+                            onclick="openCart()"
+                            class="relative
+                                   bg-yellow-500
+                                   hover:bg-yellow-400
+                                   text-black
+                                   font-bold
+                                   px-4
+                                   py-2.5
+                                   rounded-xl
+                                   transition">
+
+                        <i class="fas
+                                  fa-cart-shopping
+                                  mr-2">
+                        </i>
+
+                        Giỏ món
+
+
+                        <span id="cartCount"
+                              class="absolute
+                                     -top-2
+                                     -right-2
+                                     min-w-6
+                                     h-6
+                                     px-1
+                                     bg-red-600
+                                     text-white
+                                     rounded-full
+                                     text-xs
+                                     flex
+                                     items-center
+                                     justify-center">
+
+                            0
+
+                        </span>
+
+                    </button>
                 }
-
-                <!-- CART BUTTON -->
-
-                <button type="button"
-                        onclick="openCart()"
-                        class="relative
-                               bg-yellow-500
-                               hover:bg-yellow-400
-                               text-black
-                               font-bold
-                               px-4
-                               py-2.5
-                               rounded-xl
-                               transition">
-
-                    <i class="fas
-                              fa-cart-shopping
-                              mr-2">
-                    </i>
-
-                    Giỏ món
-
-
-                    <span id="cartCount"
-                          class="absolute
-                                 -top-2
-                                 -right-2
-                                 min-w-6
-                                 h-6
-                                 px-1
-                                 bg-red-600
-                                 text-white
-                                 rounded-full
-                                 text-xs
-                                 flex
-                                 items-center
-                                 justify-center">
-
-                        0
-
-                    </span>
-
-                </button>
 
             </div>
 
@@ -688,33 +692,36 @@
 
                             <!-- ADD -->
 
-                            <button type="button"
-                                    class="add-food-button
-                                           bg-yellow-500
-                                           hover:bg-yellow-600
-                                           text-gray-900
-                                           font-bold
-                                           px-4
-                                           py-3
-                                           rounded-xl
-                                           transition"
-                                    data-id="@food.MaMonAn"
-                                    data-name="@food.TenMonAn"
-                                    data-price="@food.Gia.ToString(
-                                                    "0",
-                                                    CultureInfo.InvariantCulture
-                                                )"
-                                    data-unit="@food.DonVi"
-                                    onclick="addFoodFromButton(this)">
+                            @if (!isStaffOrAdmin)
+                            {
+                                <button type="button"
+                                        class="add-food-button
+                                               bg-yellow-500
+                                               hover:bg-yellow-600
+                                               text-gray-900
+                                               font-bold
+                                               px-4
+                                               py-3
+                                               rounded-xl
+                                               transition"
+                                        data-id="@food.MaMonAn"
+                                        data-name="@food.TenMonAn"
+                                        data-price="@food.Gia.ToString(
+                                                        "0",
+                                                        CultureInfo.InvariantCulture
+                                                    )"
+                                        data-unit="@food.DonVi"
+                                        onclick="addFoodFromButton(this)">
 
-                                <i class="fas
-                                          fa-plus
-                                          mr-1">
-                                </i>
+                                    <i class="fas
+                                              fa-plus
+                                              mr-1">
+                                    </i>
 
-                                Thêm
+                                    Thêm
 
-                            </button>
+                                </button>
+                            }
 
                         </div>
 
@@ -1023,16 +1030,25 @@
                     </label>
 
 
-                    <input type="text"
-                           id="orderTableNumber"
-                           maxlength="20"
-                           class="w-full
-                              border
-                              border-gray-300
-                              rounded-xl
-                              px-4
-                              py-3"
-                           placeholder="Ví dụ: Bàn 05" />
+                    <select id="orderTableNumber"
+                            class="w-full
+                               border
+                               border-gray-300
+                               rounded-xl
+                               px-4
+                               py-3">
+                        <option value="">-- Chọn bàn ăn --</option>
+                        <option value="Bàn 01 (2 người)">Bàn 01 (2 người)</option>
+                        <option value="Bàn 02 (2 người)">Bàn 02 (2 người)</option>
+                        <option value="Bàn 03 (4 người)">Bàn 03 (4 người)</option>
+                        <option value="Bàn 04 (4 người)">Bàn 04 (4 người)</option>
+                        <option value="Bàn 05 (6 người)">Bàn 05 (6 người)</option>
+                        <option value="Bàn 06 (6 người)">Bàn 06 (6 người)</option>
+                        <option value="Bàn VIP 01 (8 người)">Bàn VIP 01 (8 người)</option>
+                        <option value="Bàn VIP 02 (10 người)">Bàn VIP 02 (10 người)</option>
+                        <option value="Bàn Ngoài Sân 01">Bàn Ngoài Sân 01</option>
+                        <option value="Bàn Ngoài Sân 02">Bàn Ngoài Sân 02</option>
+                    </select>
 
                 </div>
 
@@ -1053,16 +1069,15 @@
                     </label>
 
 
-                    <input type="text"
-                           id="orderRoomNumber"
-                           maxlength="20"
-                           class="w-full
-                              border
-                              border-gray-300
-                              rounded-xl
-                              px-4
-                              py-3"
-                           placeholder="Ví dụ: 305" />
+                    <select id="orderRoomNumber"
+                            class="w-full
+                               border
+                               border-gray-300
+                               rounded-xl
+                               px-4
+                               py-3">
+                        <option value="">-- Đang tải danh sách phòng của bạn... --</option>
+                    </select>
 
                 </div>
 
@@ -2225,6 +2240,8 @@ function updateOrderTypeFields() {
             'hidden'
         );
 
+        loadMyActiveRooms();
+
     }
     else {
 
@@ -2239,6 +2256,27 @@ function updateOrderTypeFields() {
 
     }
 
+}
+
+function loadMyActiveRooms() {
+    const select = document.getElementById('orderRoomNumber');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">-- Đang tải phòng của bạn... --</option>';
+
+    $.get('@Url.Action("GetMyActiveRooms", "Restaurant")', function(res) {
+        if (res.success && res.rooms && res.rooms.length > 0) {
+            let html = '<option value="">-- Chọn phòng lưu trú của bạn --</option>';
+            res.rooms.forEach(r => {
+                html += `<option value="${r.roomName}">Phòng ${r.roomName} (${r.roomType} - Từ ${r.checkIn} đến ${r.checkOut})</option>`;
+            });
+            select.innerHTML = html;
+        } else {
+            select.innerHTML = '<option value="">-- Bạn chưa có phòng đang lưu trú hợp lệ --</option>';
+        }
+    }).fail(function() {
+        select.innerHTML = '<option value="">-- Không thể tải danh sách phòng --</option>';
+    });
 }
 
 

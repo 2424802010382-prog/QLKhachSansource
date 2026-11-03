@@ -25,6 +25,8 @@ namespace QLKhachSan.Models
 
         public string SpecialRequest { get; set; }
 
+        public string RoomNumber { get; set; }
+
         public string PaymentMethod { get; set; }
 
         public string PromotionCode { get; set; }

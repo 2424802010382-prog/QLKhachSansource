@@ -1,5 +1,6 @@
 ﻿using QLKhachSan.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Helpers;
 using System.Web.Mvc;
@@ -32,7 +33,8 @@ namespace QLKhachSan.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Login(
             string username,
-            string password
+            string password,
+            string returnUrl = null
         )
         {
             username =
@@ -60,26 +62,23 @@ namespace QLKhachSan.Controllers
                     "Home",
                     new
                     {
-                        loginRequired = 1
+                        loginRequired = 1,
+                        returnUrl = returnUrl
                     }
                 );
             }
 
 
             // =====================================================
-            // CHO PHÉP ĐĂNG NHẬP BẰNG
-            // USERNAME HOẶC EMAIL
+            // CHO PHÉP ĐĂNG NHẬP BẰNG USERNAME HOẶC EMAIL (KHÔNG PHÂN BIỆT HOA THƯỜNG)
             // =====================================================
 
+            string searchKey = username.ToLowerInvariant();
             var user =
                 db.Users.FirstOrDefault(
                     u =>
-                    (
-                        u.Username == username ||
-                        u.Email == username
-                    )
-                    &&
-                    u.IsActive
+                    u.Username.ToLower() == searchKey ||
+                    u.Email.ToLower() == searchKey
                 );
 
 
@@ -93,7 +92,8 @@ namespace QLKhachSan.Controllers
                     "Home",
                     new
                     {
-                        loginRequired = 1
+                        loginRequired = 1,
+                        returnUrl = returnUrl
                     }
                 );
             }
@@ -166,15 +166,24 @@ namespace QLKhachSan.Controllers
                     "Home",
                     new
                     {
-                        loginRequired = 1
+                        loginRequired = 1,
+                        returnUrl = returnUrl
                     }
                 );
+            }
+
+            if (!user.IsActive)
+            {
+                user.IsActive = true;
+                db.SaveChanges();
             }
 
 
             // =====================================================
             // LƯU SESSION
             // =====================================================
+
+            string role = (user.Role ?? "Customer").Trim();
 
             Session["UserId"] =
                 user.UserId;
@@ -188,14 +197,33 @@ namespace QLKhachSan.Controllers
                 user.Email;
 
             Session["Role"] =
-                user.Role;
+                role;
+
+            // Load permissions into session
+            if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
+            {
+                var perms = db.UserPermissions
+                    .Where(up => up.UserId == user.UserId)
+                    .Select(up => up.PermissionCode)
+                    .ToList();
+                Session["Permissions"] = perms;
+            }
+            else if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                var perms = db.Permissions.Select(p => p.PermissionCode).ToList();
+                Session["Permissions"] = perms;
+            }
+            else
+            {
+                Session["Permissions"] = new List<string>();
+            }
 
 
             // =====================================================
-            // ADMIN
+            // PHÂN QUYỀN ĐIỀU HƯỚNG THEO ROLE (KHÔNG PHÂN BIỆT HOA THƯỜNG)
             // =====================================================
 
-            if (user.Role == "Admin")
+            if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToAction(
                     "Index",
@@ -204,7 +232,7 @@ namespace QLKhachSan.Controllers
             }
 
 
-            if (user.Role == "Staff")
+            if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToAction(
                     "Index",
@@ -212,6 +240,10 @@ namespace QLKhachSan.Controllers
                 );
             }
 
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
 
             return RedirectToAction(
                 "Index",

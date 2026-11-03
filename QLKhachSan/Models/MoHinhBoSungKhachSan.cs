@@ -2,177 +2,127 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Data.Entity;
 
 namespace QLKhachSan.Models
 {
-    // =====================================================
-    // BẢNG DỊCH VỤ
-    // =====================================================
-
-    [Table("DichVu")]
-    public class DichVu
+    public static class PhysicalRoomHelper
     {
-        [Key]
-        public int MaDichVu { get; set; }
-
-        [Required]
-        [StringLength(100)]
-        public string TenDichVu { get; set; }
-
-        [StringLength(500)]
-        public string MoTa { get; set; }
-
-        public decimal Gia { get; set; }
-
-        [StringLength(50)]
-        public string DonVi { get; set; }
-
-        public bool HoatDong { get; set; }
-
-        public virtual ICollection<DatPhongDichVu>
-            DatPhongDichVus
-        { get; set; }
-
-        public DichVu()
+        public static bool IsBookingAssignedToRoom(string specialRequest, string targetRoomNumber)
         {
-            DatPhongDichVus =
-                new HashSet<DatPhongDichVu>();
+            if (string.IsNullOrEmpty(specialRequest)) return false;
+            try
+            {
+                int idx = 0;
+                while ((idx = specialRequest.IndexOf("[Phòng:", idx, StringComparison.OrdinalIgnoreCase)) != -1)
+                {
+                    int start = idx + 7;
+                    int end = specialRequest.IndexOf("]", start);
+                    if (end > start)
+                    {
+                        string rNum = specialRequest.Substring(start, end - start).Trim();
+                        if (string.Equals(rNum, targetRoomNumber, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                    idx = start;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        public static void SyncPhysicalRoomStatuses(HotelDbContext db)
+        {
+            try
+            {
+                DateTime today = DateTime.Today;
+
+                var physicalRooms = db.PhysicalRooms.ToList();
+                var activeBookings = db.Bookings
+                    .Where(b => (b.Status == "Đang ở" || b.Status == "Đã xác nhận" || b.Status == "Chờ xác nhận") && DbFunctions.TruncateTime(b.CheckOutDate) >= today)
+                    .ToList();
+
+                foreach (var pr in physicalRooms)
+                {
+                    if (pr.Status == "Bảo trì") continue;
+
+                    string roomNum = pr.RoomNumber.Trim();
+                    var matchedBooking = activeBookings.FirstOrDefault(b =>
+                        b.RoomId == pr.RoomTypeId &&
+                        !string.IsNullOrEmpty(b.SpecialRequest) &&
+                        IsBookingAssignedToRoom(b.SpecialRequest, roomNum)
+                    );
+
+                    string newStatus = "Trống";
+                    if (matchedBooking != null)
+                    {
+                        if (matchedBooking.Status == "Đang ở") newStatus = "Đang ở";
+                        else if (matchedBooking.Status == "Đã xác nhận") newStatus = "Đã đặt";
+                        else if (matchedBooking.Status == "Chờ xác nhận") newStatus = "Chờ xác nhận";
+                    }
+
+                    if (pr.Status != newStatus)
+                    {
+                        pr.Status = newStatus;
+                    }
+                }
+
+                db.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("SyncPhysicalRoomStatuses Error: " + ex.Message);
+            }
         }
     }
 
 
     // =====================================================
-    // BẢNG KHUYẾN MÃI
+    // BẢNG QUYỀN HẠN (PERMISSIONS)
     // =====================================================
 
-    [Table("KhuyenMai")]
-    public class KhuyenMai
+    [Table("Permissions")]
+    public class Permission
     {
         [Key]
-        public int MaKhuyenMai { get; set; }
-
-        [Required]
-        [StringLength(30)]
-        public string MaCode { get; set; }
+        public int PermissionId { get; set; }
 
         [Required]
         [StringLength(100)]
-        public string TenKhuyenMai { get; set; }
+        public string PermissionCode { get; set; }
 
-        [StringLength(500)]
-        public string MoTa { get; set; }
-
-        // PhanTram hoặc SoTien
         [Required]
-        [StringLength(20)]
-        public string LoaiGiamGia { get; set; }
+        [StringLength(200)]
+        public string PermissionName { get; set; }
 
-        public decimal GiaTriGiam { get; set; }
-
-        public decimal DonToiThieu { get; set; }
-
-        public decimal? GiamToiDa { get; set; }
-
-        public DateTime NgayBatDau { get; set; }
-
-        public DateTime NgayKetThuc { get; set; }
-
-        public int? SoLuotSuDungToiDa { get; set; }
-
-        public int SoLuotDaSuDung { get; set; }
-
-        public bool HoatDong { get; set; }
-    }
-
-
-    // =====================================================
-    // BẢNG ĐẶT PHÒNG - DỊCH VỤ
-    // =====================================================
-
-    [Table("DatPhongDichVu")]
-    public class DatPhongDichVu
-    {
-        [Key]
-        public int MaDatPhongDichVu { get; set; }
-
-        // Khóa ngoại tới bảng Bookings
-        public int BookingId { get; set; }
-
-        // Khóa ngoại tới bảng DichVu
-        public int MaDichVu { get; set; }
-
-        public int SoLuong { get; set; }
-
-        public decimal DonGia { get; set; }
-
-        public decimal ThanhTien { get; set; }
-
-        [ForeignKey("BookingId")]
-        public virtual Booking DatPhong { get; set; }
-
-        [ForeignKey("MaDichVu")]
-        public virtual DichVu DichVu { get; set; }
-    }
-
-
-    // =====================================================
-    // BẢNG THANH TOÁN
-    // =====================================================
-
-    [Table("ThanhToan")]
-    public class ThanhToan
-    {
-        [Key]
-        public int MaThanhToan { get; set; }
-
-        // Khóa ngoại tới Booking
-        public int BookingId { get; set; }
-
-        [StringLength(50)]
-        public string PhuongThucThanhToan { get; set; }
-
-        public decimal SoTien { get; set; }
-
-        public DateTime NgayThanhToan { get; set; }
-
-        [StringLength(30)]
-        public string TrangThai { get; set; }
-
+        [Required]
         [StringLength(100)]
-        public string MaGiaoDich { get; set; }
-
-        [StringLength(500)]
-        public string GhiChu { get; set; }
-
-        [ForeignKey("BookingId")]
-        public virtual Booking DatPhong { get; set; }
+        public string Category { get; set; }
     }
 
 
     // =====================================================
-    // BẢNG ĐÁNH GIÁ
+    // BẢNG PHÂN QUYỀN NHÂN VIÊN (USER PERMISSIONS)
     // =====================================================
 
-    [Table("DanhGia")]
-    public class DanhGia
+    [Table("UserPermissions")]
+    public class UserPermission
     {
         [Key]
-        public int MaDanhGia { get; set; }
+        public int UserPermissionId { get; set; }
 
-        // Khóa ngoại tới Booking
-        public int BookingId { get; set; }
+        public int UserId { get; set; }
 
-        [Range(1, 5)]
-        public int SoSao { get; set; }
+        [Required]
+        [StringLength(100)]
+        public string PermissionCode { get; set; }
 
-        [StringLength(1000)]
-        public string BinhLuan { get; set; }
+        public DateTime GrantedAt { get; set; }
 
-        public DateTime NgayDanhGia { get; set; }
-
-        public bool HoatDong { get; set; }
-
-        [ForeignKey("BookingId")]
-        public virtual Booking DatPhong { get; set; }
+        [ForeignKey("UserId")]
+        public virtual User User { get; set; }
     }
 }

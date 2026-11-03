@@ -1166,9 +1166,9 @@
                 <div><h1 class="luxury-logo text-xl md:text-2xl font-extrabold">LUXURY HOTEL</h1><p class="text-yellow-300 text-[10px] tracking-[3px]">LUXURY &amp; COMFORT</p></div>
             </a>
             <div class="flex items-center gap-1">
-                <a href="#" onclick="showPage('home'); return false;" class="luxury-menu-link px-3 py-2 rounded text-sm font-semibold">Trang chủ</a>
+                <a href="#" onclick="showPage('home'); return false;" class="luxury-menu-link px-3 py-2 rounded text-sm font-semibold"><i class="fas fa-house mr-1"></i> Trang chủ</a>
                 <div class="room-dropdown">
-                    <button type="button" class="luxury-menu-link room-dropdown-button px-3 py-2 rounded text-sm font-semibold">Phòng <i class="fas fa-chevron-down text-xs ml-1"></i></button>
+                    <button type="button" class="luxury-menu-link room-dropdown-button px-3 py-2 rounded text-sm font-semibold"><i class="fas fa-bed mr-1"></i> Phòng <i class="fas fa-chevron-down text-xs ml-1"></i></button>
                     <div class="room-dropdown-menu">
                         <button type="button"
                                 onclick="openRoomDetail('DELUXE')"
@@ -1223,7 +1223,11 @@
                         </button>
                     </div>
                 </div>
-                <a href="#" onclick="showPage('rooms'); return false;" class="luxury-menu-link px-3 py-2 rounded text-sm font-semibold">Đặt phòng</a>
+                @if (Session["Role"] == null || (Session["Role"].ToString() != "Staff" && Session["Role"].ToString() != "Admin"))
+                {
+                    <a href="#" onclick="showPage('rooms'); return false;" class="luxury-menu-link px-3 py-2 rounded text-sm font-semibold"><i class="fas fa-calendar-check mr-1"></i> Đặt phòng</a>
+                    <a href="#" onclick="goToRestaurant(event); return false;" class="luxury-menu-link px-3 py-2 rounded text-sm font-semibold"><i class="fas fa-utensils mr-1"></i> Đặt món ăn</a>
+                }
                 @if (Session["UserId"] == null)
                 {
                     <!-- ===================================================== -->
@@ -1239,7 +1243,7 @@
                        px-4 py-2 rounded
                        font-semibold text-sm">
 
-                            Đăng nhập
+                            <i class="fas fa-right-to-bracket mr-1"></i> Đăng nhập
 
                         </button>
 
@@ -1250,7 +1254,7 @@
                        px-4 py-2 rounded
                        font-semibold text-sm">
 
-                            Đăng ký
+                            <i class="fas fa-user-plus mr-1"></i> Đăng ký
 
                         </button>
 
@@ -1494,6 +1498,131 @@ Session["Role"].ToString() == "Admin"
                 </div>
             </section>
 
+            <!-- KHÁM PHÁ CÁC LOẠI PHÒNG (8 LOẠI PHÒNG - SLIDER ẢNH & CHI TIẾT - CHỈ HIỆN KHI CHƯA ĐĂNG NHẬP) -->
+            @if (Session["UserId"] == null)
+            {
+                <section class="discover-rooms-section bg-[#f8f5ee] py-16 px-4 border-t border-[#e7dbc1]">
+                    <div class="container mx-auto">
+                        <div class="text-center mb-12">
+                            <p class="section-kicker text-amber-700 font-semibold tracking-widest text-xs uppercase mb-2">DANH MỤC PHÒNG NGHỈ</p>
+                            <h3 class="luxury-section-title text-3xl md:text-4xl font-serif font-bold text-[#21170f]">Khám Phá Các Loại Phòng</h3>
+                            <p class="luxury-section-description text-gray-600 max-w-2xl mx-auto mt-2 text-sm">
+                                Xem bộ sưu tập hình ảnh chân thực của 8 loại phòng sang trọng tại Luxury Hotel trước khi chọn căn phòng ưng ý cho kỳ nghỉ của bạn.
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            @foreach (var room in Model)
+                            {
+                                var primaryImg = !string.IsNullOrEmpty(room.ImageUrl) ? room.ImageUrl : "https://images.unsplash.com/photo-1566665797739-1674de7a421a?q=80&w=900";
+                                var imageList = new List<string> { primaryImg };
+                                string rTypeUpper = (room.RoomType ?? "").ToUpper();
+
+                                if (rTypeUpper.Contains("DELUXE")) {
+                                    imageList.Add("https://images.unsplash.com/photo-1591088398332-8a7791972843?q=80&w=900");
+                                    imageList.Add("https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=900");
+                                } else if (rTypeUpper.Contains("PREMIUM")) {
+                                    imageList.Add("https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=900");
+                                    imageList.Add("https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=900");
+                                } else if (rTypeUpper.Contains("SUITE") || rTypeUpper.Contains("BALCONY")) {
+                                    imageList.Add("https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=900");
+                                    imageList.Add("https://images.unsplash.com/photo-1566665797739-1674de7a421a?q=80&w=900");
+                                } else if (rTypeUpper.Contains("PRESIDENT") || rTypeUpper.Contains("TONG THONG")) {
+                                    imageList.Add("https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=900");
+                                    imageList.Add("https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=900");
+                                } else if (rTypeUpper.Contains("SUPERIOR")) {
+                                    imageList.Add("https://images.unsplash.com/photo-1591088398332-8a7791972843?q=80&w=900");
+                                } else if (rTypeUpper.Contains("TWIN")) {
+                                    imageList.Add("https://images.unsplash.com/photo-1566665797739-1674de7a421a?q=80&w=900");
+                                } else if (rTypeUpper.Contains("FAMILY")) {
+                                    imageList.Add("https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=900");
+                                } else {
+                                    imageList.Add("https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=900");
+                                }
+
+                                var jsonImages = Newtonsoft.Json.JsonConvert.SerializeObject(imageList);
+
+                                <div class="bg-white rounded-2xl border border-[#e7dbc1] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden group">
+                                    <!-- SLIDER CONTAINER -->
+                                    <div class="relative w-full h-56 bg-gray-900 overflow-hidden"
+                                         id="slider-container-@room.RoomId"
+                                         data-images='@jsonImages'
+                                         data-current-index="0">
+
+                                        <img id="slider-img-@room.RoomId"
+                                             src="@primaryImg"
+                                             alt="@room.RoomName"
+                                             class="w-full h-full object-cover transition-opacity duration-300 group-hover:scale-105" />
+
+                                        <!-- BADGE SỐ THỨ TỰ ẢNH -->
+                                        <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-300 text-[11px] font-bold px-2.5 py-1 rounded-full shadow border border-amber-400/30">
+                                            <i class="fas fa-camera mr-1"></i><span id="slider-count-@room.RoomId">1/@imageList.Count</span>
+                                        </div>
+
+                                        <!-- NÚT CHUYỂN ẢNH MŨI TÊN TRÁI / PHẢI -->
+                                        @if (imageList.Count > 1)
+                                        {
+                                            <button type="button"
+                                                    onclick="prevRoomImage(@room.RoomId, event)"
+                                                    title="Xem ảnh trước"
+                                                    class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/80 text-white flex items-center justify-center transition border border-white/20 shadow-md">
+                                                <i class="fas fa-chevron-left text-xs"></i>
+                                            </button>
+                                            <button type="button"
+                                                    onclick="nextRoomImage(@room.RoomId, event)"
+                                                    title="Xem ảnh tiếp theo"
+                                                    class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/80 text-white flex items-center justify-center transition border border-white/20 shadow-md">
+                                                <i class="fas fa-chevron-right text-xs"></i>
+                                            </button>
+                                        }
+                                    </div>
+
+                                    <!-- THÔNG TIN PHÒNG -->
+                                    <div class="p-5 flex-grow flex flex-col justify-between">
+                                        <div>
+                                            <div class="flex justify-between items-center mb-2">
+                                                <span class="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                                                    @room.RoomType
+                                                </span>
+                                                <span class="text-xs text-gray-500 font-semibold">
+                                                    <i class="fas fa-users text-amber-600 mr-1"></i> @room.Capacity người
+                                                </span>
+                                            </div>
+
+                                            <h4 class="text-xl font-bold font-serif text-[#21170f] mb-2 line-clamp-1">
+                                                @room.RoomName
+                                            </h4>
+
+                                            <p class="text-xs text-gray-600 line-clamp-2 mb-4 leading-relaxed">
+                                                @room.Description
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <div class="border-t border-gray-100 pt-3 mb-4 flex justify-between items-baseline">
+                                                <span class="text-xs text-gray-500 font-medium">Giá chỉ từ</span>
+                                                <div>
+                                                    <span class="text-lg font-extrabold text-[#d4af37]">@room.Price.ToString("N0")đ</span>
+                                                    <span class="text-[11px] text-gray-500">/đêm</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- NÚT XEM CHI TIẾT PHÒNG -->
+                                            <button type="button"
+                                                    onclick="viewRoomDetails(@room.RoomId, '@Url.Action("Details", "Room", new { id = room.RoomId })')"
+                                                    class="w-full bg-gradient-to-r from-[#241c17] to-[#3a2e26] hover:from-[#d4af37] hover:to-[#f5d77a] text-[#f8f1e7] hover:text-[#21170f] font-bold py-2.5 px-4 rounded-xl text-xs transition-all duration-300 shadow flex items-center justify-center gap-2 group/btn">
+                                                <i class="fas fa-eye text-amber-400 group-hover/btn:text-[#21170f] transition"></i>
+                                                <span>XEM CHI TIẾT PHÒNG</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </section>
+            }
+
         </div>
 
         <!-- ========================================================= -->
@@ -1712,19 +1841,29 @@ Session["Role"].ToString() == "Admin"
 
                                 <label class="block text-gray-700 font-semibold mb-2">
 
-                                    Phòng đã chọn
+                                    Phòng đã chọn *
 
                                 </label>
 
-                                <input type="text"
-                                       id="selectedRoom"
-                                       readonly
-                                       class="w-full px-4 py-3
-                                          border border-gray-300
-                                          rounded-lg bg-gray-100
-                                          text-gray-700">
-                                <input type="hidden"
-                                       id="selectedRoomId">
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <input type="text"
+                                           id="selectedRoom"
+                                           readonly
+                                           placeholder="Chưa chọn số phòng"
+                                           class="w-full px-4 py-3
+                                              border border-gray-300
+                                              rounded-lg bg-gray-100
+                                              text-gray-700">
+                                    <input type="hidden"
+                                           id="selectedRoomId">
+                                    <input type="hidden"
+                                           id="selectedRoomNumber">
+                                    <button type="button"
+                                            onclick="openRoomSelectionModal()"
+                                            class="bg-gradient-to-r from-[#d4af37] to-[#f5d77a] text-[#21170f] font-bold px-6 py-3 rounded-lg hover:opacity-90 transition whitespace-nowrap shadow-sm">
+                                        <i class="fas fa-door-open mr-1"></i> Chọn số phòng
+                                    </button>
+                                </div>
 
                             </div>
 
@@ -2221,6 +2360,12 @@ Session["Role"].ToString() == "Admin"
                 </p>
 
             </div>
+            <!-- THÔNG BÁO YÊU CẦU ĐĂNG NHẬP ĐỂ XEM CHI TIẾT PHÒNG -->
+            <div id="loginNotice" class="hidden mb-5 p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 font-semibold flex items-center gap-2 shadow-sm">
+                <i class="fas fa-circle-info text-amber-600 text-base flex-shrink-0"></i>
+                <span id="loginNoticeText">Vui lòng đăng nhập để xem chi tiết phòng.</span>
+            </div>
+
             @if (TempData["LoginError"] != null)
             {
                 <div class="mb-5
@@ -2281,6 +2426,7 @@ Session["Role"].ToString() == "Admin"
                   method="post">
 
                 @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" id="loginReturnUrl" value="" />
                 <!-- Email -->
                 <div class="mb-5">
 
@@ -3390,6 +3536,9 @@ if (rebookRoomId) {
 
                     modal.classList.remove('flex');
 
+                    const noticeEl = document.getElementById('loginNotice');
+                    if (noticeEl) noticeEl.classList.add('hidden');
+
                 }, 300);
 
             }
@@ -3773,7 +3922,7 @@ function openRoomDetail(roomType) {
 
 
     // ===================================================
-    // CHUYỂN SANG RoomController -> Details
+    // CHUYỂN SANG XEM CHI TIẾT
     // ===================================================
 
     const detailsUrl =
@@ -3783,10 +3932,143 @@ function openRoomDetail(roomType) {
             foundRoomId
         );
 
-
-    window.location.href =
-        detailsUrl;
+    viewRoomDetails(foundRoomId, detailsUrl);
 }
+
+/* =======================================================
+   SLIDER & CHI TIẾT PHÒNG - MỚI
+======================================================= */
+function nextRoomImage(roomId, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    const container = document.getElementById('slider-container-' + roomId);
+    if (!container) return;
+    let images = [];
+    try {
+        images = JSON.parse(container.getAttribute('data-images') || '[]');
+    } catch(e) { }
+
+    if (!images || images.length <= 1) return;
+
+    let currentIndex = parseInt(container.getAttribute('data-current-index') || '0', 10);
+    currentIndex = (currentIndex + 1) % images.length;
+
+    container.setAttribute('data-current-index', currentIndex);
+    const imgEl = document.getElementById('slider-img-' + roomId);
+    const countEl = document.getElementById('slider-count-' + roomId);
+
+    if (imgEl) {
+        imgEl.style.opacity = '0.3';
+        setTimeout(function() {
+            imgEl.src = images[currentIndex];
+            imgEl.style.opacity = '1';
+        }, 120);
+    }
+    if (countEl) {
+        countEl.textContent = (currentIndex + 1) + '/' + images.length;
+    }
+}
+
+function prevRoomImage(roomId, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    const container = document.getElementById('slider-container-' + roomId);
+    if (!container) return;
+    let images = [];
+    try {
+        images = JSON.parse(container.getAttribute('data-images') || '[]');
+    } catch(e) { }
+
+    if (!images || images.length <= 1) return;
+
+    let currentIndex = parseInt(container.getAttribute('data-current-index') || '0', 10);
+    currentIndex = (currentIndex - 1 + images.length) % images.length;
+
+    container.setAttribute('data-current-index', currentIndex);
+    const imgEl = document.getElementById('slider-img-' + roomId);
+    const countEl = document.getElementById('slider-count-' + roomId);
+
+    if (imgEl) {
+        imgEl.style.opacity = '0.3';
+        setTimeout(function() {
+            imgEl.src = images[currentIndex];
+            imgEl.style.opacity = '1';
+        }, 120);
+    }
+    if (countEl) {
+        countEl.textContent = (currentIndex + 1) + '/' + images.length;
+    }
+}
+
+function viewRoomDetails(roomId, detailUrl) {
+    const isUserLoggedIn = @(Session["UserId"] != null ? "true" : "false");
+    const targetUrl = detailUrl || ('@Url.Action("Details", "Room")' + '?id=' + roomId);
+
+    if (isUserLoggedIn) {
+        window.location.href = targetUrl;
+    } else {
+        const returnInput = document.getElementById('loginReturnUrl');
+        if (returnInput) {
+            returnInput.value = targetUrl;
+        }
+
+        const noticeEl = document.getElementById('loginNotice');
+        if (noticeEl) {
+            noticeEl.classList.remove('hidden');
+        }
+
+        openLoginModal();
+    }
+}
+
+function goToRestaurant(event) {
+    if (event) event.preventDefault();
+    const isUserLoggedIn = @(Session["UserId"] != null ? "true" : "false");
+    const targetUrl = '@Url.Action("Index", "Restaurant")';
+
+    if (isUserLoggedIn) {
+        window.location.href = targetUrl;
+    } else {
+        const returnInput = document.getElementById('loginReturnUrl');
+        if (returnInput) {
+            returnInput.value = targetUrl;
+        }
+
+        const noticeEl = document.getElementById('loginNotice');
+        if (noticeEl) {
+            noticeEl.classList.remove('hidden');
+            const noticeText = document.getElementById('loginNoticeText');
+            if (noticeText) {
+                noticeText.textContent = 'Vui lòng đăng nhập để sử dụng tính năng Đặt món ăn.';
+            }
+        }
+
+        openLoginModal();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const loginRequired = urlParams.get('loginRequired');
+    const returnUrl = urlParams.get('returnUrl');
+
+    if (returnUrl) {
+        const returnInput = document.getElementById('loginReturnUrl');
+        if (returnInput) returnInput.value = returnUrl;
+    }
+
+    if (loginRequired === '1') {
+        const noticeEl = document.getElementById('loginNotice');
+        if (noticeEl && returnUrl) {
+            noticeEl.classList.remove('hidden');
+        }
+        openLoginModal();
+    }
+});
 
             /* =======================================================
     ĐẶT PHÒNG
@@ -5044,6 +5326,10 @@ async function checkRoomAvailability() {
                 'selectedRoomId'
             ).value = roomId;
 
+            if (typeof resetSelectedRoomNumber === 'function') {
+                resetSelectedRoomNumber();
+            }
+
 
             // =======================================================
             // 6. HIỂN THỊ TÊN PHÒNG
@@ -5229,6 +5515,9 @@ async function checkRoomAvailability() {
                     'specialRequest'
                 ).value.trim(),
 
+            RoomNumber:
+                document.getElementById('selectedRoomNumber').value.trim(),
+
             PaymentMethod:
                 'Thanh toán tại khách sạn',
 
@@ -5246,10 +5535,17 @@ async function checkRoomAvailability() {
 
         if (!data.RoomId) {
 
-            alert('Vui lòng chọn phòng trước!');
+            showLuxuryAlert('Vui lòng chọn phòng trước!', 'Thông báo', 'warning');
 
             showPage('rooms');
 
+            return;
+        }
+
+        const roomNum = document.getElementById('selectedRoomNumber').value.trim();
+        if (!roomNum) {
+            showLuxuryAlert('Vui lòng chọn số phòng cụ thể trước khi xác nhận đặt phòng!', 'Thông báo', 'warning');
+            openRoomSelectionModal();
             return;
         }
 
@@ -5327,62 +5623,54 @@ async function checkRoomAvailability() {
                     result.discountAmount || 0
                 ).toLocaleString('vi-VN');
 
+            const successHtml =
+                '<strong>Mã đặt phòng:</strong> #' + result.bookingId + '<br>' +
+                '<strong>Tiền giảm:</strong> ' + discount + 'đ<br>' +
+                '<strong>Tổng thanh toán:</strong> ' + total + 'đ<br>' +
+                '<strong>Trạng thái:</strong> Chờ xác nhận';
 
-            alert(
-                'ĐẶT PHÒNG THÀNH CÔNG!\n\n' +
-                'Mã đặt phòng: #' +
-                result.bookingId + '\n' +
-
-                'Tiền giảm: ' +
-                discount + 'đ\n' +
-
-                'Tổng thanh toán: ' +
-                total + 'đ\n' +
-
-                'Trạng thái: Chờ xác nhận'
-            );
+            showLuxuryAlert(successHtml, 'ĐẶT PHÒNG THÀNH CÔNG!', 'success', function() {
+                document
+                    .getElementById('bookingForm')
+                    .reset();
 
 
-            document
-                .getElementById('bookingForm')
-                .reset();
+                document
+                    .getElementById('selectedRoomId')
+                    .value = '';
+                resetPaymentState();
 
+                selectedRoomPrice = 0;
+                selectedRoomCapacity = 0;
 
-            document
-                .getElementById('selectedRoomId')
-                .value = '';
-            resetPaymentState();
+                appliedPromotion = null;
+                const capacityMessage =
+                    document.getElementById(
+                        'capacityMessage'
+                    );
 
-            selectedRoomPrice = 0;
-            selectedRoomCapacity = 0;
+                if (capacityMessage) {
 
-            appliedPromotion = null;
-            const capacityMessage =
+                    capacityMessage.innerText = '';
+
+                }
+
                 document.getElementById(
-                    'capacityMessage'
-                );
+                    'promotionMessage'
+                ).innerText = '';
 
-            if (capacityMessage) {
+                updateBookingSummary();
+                setBookingSubmitting(false);
 
-                capacityMessage.innerText = '';
-
-            }
-
-            document.getElementById(
-                'promotionMessage'
-            ).innerText = '';
-
-            updateBookingSummary();
-            setBookingSubmitting(false);
-
-            // Chuyển hướng sang trang Thanh Toán (Payment)
-            if (result.redirectUrl) {
-                window.location.href = result.redirectUrl;
-            } else if (result.bookingId) {
-                window.location.href = '/Booking/Payment?id=' + result.bookingId;
-            } else {
-                showPage('home');
-            }
+                // Chuyển hướng sang trang Thanh Toán (Payment)
+                if (result.redirectUrl) {
+                    window.location.href = result.redirectUrl;
+                } else if (result.bookingId) {
+                    window.location.href = '/Booking/Payment?id=' + result.bookingId;
+                } else {
+                    showPage('home');
+                }
+            });
 
         }
         catch (error) {
@@ -7079,8 +7367,215 @@ function escapeDiningHtml(value) {
 
 }
 
+let tempSelectedRoomNumber = null;
+
+let roomCache = {};
+
+function openRoomSelectionModal() {
+    const roomId = document.getElementById('selectedRoomId').value;
+    const checkIn = document.getElementById('checkInDate').value;
+    const checkOut = document.getElementById('checkOutDate').value;
+    const roomName = document.getElementById('selectedRoom').value.split(' - Phòng')[0];
+
+    if (!roomId) {
+        showLuxuryAlert('Vui lòng chọn loại phòng trước khi chọn số phòng!', 'Thông báo', 'warning');
+        showPage('rooms');
+        return;
+    }
+
+    if (!checkIn || !checkOut) {
+        showLuxuryAlert('Vui lòng chọn ngày nhận phòng và ngày trả phòng trước!', 'Thông báo', 'warning');
+        return;
+    }
+
+    if (checkOut <= checkIn) {
+        showLuxuryAlert('Ngày trả phòng phải sau ngày nhận phòng!', 'Thông báo', 'warning');
+        return;
+    }
+
+    const typeNameEl = document.getElementById('modalRoomTypeName');
+    const selectedDisplayEl = document.getElementById('modalSelectedRoomDisplay');
+    const selectedNumInput = document.getElementById('selectedRoomNumber');
+
+    if (typeNameEl) typeNameEl.innerText = roomName || 'Phòng Luxury';
+    if (selectedDisplayEl && selectedNumInput) {
+        selectedDisplayEl.innerText = selectedNumInput.value ? 'Phòng ' + selectedNumInput.value : 'Chưa chọn';
+    }
+
+    const modal = document.getElementById('roomSelectionModal');
+    const grid = document.getElementById('physicalRoomsGrid');
+
+    if (modal) modal.classList.remove('hidden');
+    if (grid) grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-300"><i class="fas fa-spinner fa-spin mr-2"></i> Đang tải danh sách phòng...</div>';
+
+    const cacheKey = roomId + '_' + checkIn + '_' + checkOut;
+    if (roomCache[cacheKey]) {
+        renderPhysicalRoomsGrid(roomCache[cacheKey], grid);
+        return;
+    }
+
+    const url = '@Url.Action("GetAvailablePhysicalRooms", "Booking")' + '?roomId=' + encodeURIComponent(roomId) + '&checkIn=' + encodeURIComponent(checkIn) + '&checkOut=' + encodeURIComponent(checkOut);
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(res => {
+            if (res && res.success && res.physicalRooms) {
+                roomCache[cacheKey] = res.physicalRooms;
+                renderPhysicalRoomsGrid(res.physicalRooms, grid);
+            } else {
+                if (grid) grid.innerHTML = '<div class="col-span-full text-center py-8 text-rose-400">' + (res.message || 'Không tìm thấy phòng trống trong hệ thống.') + '</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching physical rooms:', error);
+            if (grid) grid.innerHTML = '<div class="col-span-full text-center py-8 text-rose-400">Không thể kết nối máy chủ để tải danh sách phòng. Vui lòng thử lại!</div>';
+        });
+}
+
+function renderPhysicalRoomsGrid(physicalRooms, grid) {
+    if (!grid) return;
+    let html = '';
+    const selectedNumInput = document.getElementById('selectedRoomNumber');
+    const currentSelectedNum = selectedNumInput ? selectedNumInput.value : '';
+
+    if (!physicalRooms || physicalRooms.length === 0) {
+        grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-400">Chưa có dữ liệu phòng vật lý cho loại phòng này.</div>';
+        return;
+    }
+
+    for (let i = 0; i < physicalRooms.length; i++) {
+        const pr = physicalRooms[i];
+        const isBooked = pr.isBooked;
+        const isSelected = pr.roomNumber === currentSelectedNum;
+
+        let cardClass = isBooked
+            ? 'bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-60'
+            : 'bg-[#2c2018] border-[#d4af37]/30 text-[#f8f1e7] hover:border-[#d4af37] cursor-pointer room-card-item';
+
+        if (isSelected && !isBooked) {
+            cardClass += ' ring-2 ring-yellow-400 bg-[#38281f]';
+            tempSelectedRoomNumber = pr.roomNumber;
+        }
+
+        html += `
+            <div class="border rounded-xl p-4 text-center transition ${cardClass}"
+                 data-room-number="${pr.roomNumber}"
+                 data-booked="${isBooked}"
+                 onclick="selectPhysicalRoom(this)">
+                <div class="text-2xl mb-2 ${isBooked ? 'text-gray-600' : 'text-yellow-400'}">
+                    <i class="fas fa-${isBooked ? 'lock' : 'bed'}"></i>
+                </div>
+                <div class="font-bold text-lg">Phòng ${pr.roomNumber}</div>
+                <div class="text-xs text-gray-400 mt-1">Tầng ${pr.floor}</div>
+                <div class="text-xs mt-2 font-semibold ${isBooked ? 'text-rose-400' : 'text-emerald-400'}">
+                    ${isBooked ? 'Đã được đặt' : 'Còn trống'}
+                </div>
+            </div>
+        `;
+    }
+    grid.innerHTML = html;
+}
+
+function closeRoomSelectionModal() {
+    const modal = document.getElementById('roomSelectionModal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function selectPhysicalRoom(el) {
+    if (el.getAttribute('data-booked') === 'true') {
+        showLuxuryAlert('Phòng này đã được đặt trong khoảng thời gian bạn chọn. Vui lòng chọn phòng khác.', 'Phòng bận', 'warning');
+        return;
+    }
+
+    document.querySelectorAll('.room-card-item').forEach(card => {
+        card.classList.remove('ring-2', 'ring-yellow-400', 'bg-[#38281f]');
+    });
+
+    el.classList.add('ring-2', 'ring-yellow-400', 'bg-[#38281f]');
+    tempSelectedRoomNumber = el.getAttribute('data-room-number');
+
+    const display = document.getElementById('modalSelectedRoomDisplay');
+    if (display) display.innerText = 'Phòng ' + tempSelectedRoomNumber;
+}
+
+function confirmRoomSelection() {
+    if (!tempSelectedRoomNumber) {
+        showLuxuryAlert('Vui lòng chọn một số phòng cụ thể!', 'Thông báo', 'warning');
+        return;
+    }
+
+    const selectedRoomInput = document.getElementById('selectedRoom');
+    const selectedNumInput = document.getElementById('selectedRoomNumber');
+
+    if (selectedRoomInput && selectedNumInput) {
+        const currentBaseName = selectedRoomInput.value.split(' - Phòng')[0];
+        selectedRoomInput.value = currentBaseName + ' - Phòng ' + tempSelectedRoomNumber;
+        selectedNumInput.value = tempSelectedRoomNumber;
+    }
+
+    closeRoomSelectionModal();
+}
+
+function resetSelectedRoomNumber() {
+    const selectedNumInput = document.getElementById('selectedRoomNumber');
+    const selectedRoomInput = document.getElementById('selectedRoom');
+
+    if (selectedNumInput) selectedNumInput.value = '';
+    if (selectedRoomInput) {
+        const baseName = selectedRoomInput.value.split(' - Phòng')[0];
+        if (baseName) {
+            selectedRoomInput.value = baseName;
+        }
+    }
+    roomCache = {};
+}
+
     </script>
 
+    <!-- MODAL CHỌN SỐ PHÒNG -->
+    <div id="roomSelectionModal" class="fixed inset-0 z-[99999] bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#241c17] border border-[#d4af37]/40 text-[#f8f1e7] rounded-2xl max-w-2xl w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b border-[#d4af37]/20 pb-3">
+                <h3 class="text-2xl font-serif font-bold text-[#f5d77a]">
+                    <i class="fas fa-door-open mr-2 text-[#d4af37]"></i> CHỌN SỐ PHÒNG
+                </h3>
+                <button type="button" onclick="closeRoomSelectionModal()" class="text-gray-400 hover:text-white text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="mb-4">
+                <p class="text-sm text-gray-300">Loại phòng: <strong id="modalRoomTypeName" class="text-yellow-400">---</strong></p>
+                <p class="text-xs text-gray-400 mt-1">Vui lòng chọn một số phòng còn trống cho thời gian lưu trú đã chọn.</p>
+            </div>
+
+            <!-- Lưới phòng vật lý -->
+            <div id="physicalRoomsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 max-h-[350px] overflow-y-auto p-2">
+                <!-- Render qua JS -->
+            </div>
+
+            <div class="bg-[#2c2018] p-4 rounded-xl border border-[#d4af37]/20 mb-6 flex justify-between items-center">
+                <span class="text-sm text-gray-300">Phòng đã chọn:</span>
+                <strong id="modalSelectedRoomDisplay" class="text-lg text-yellow-400 font-serif">Chưa chọn</strong>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeRoomSelectionModal()" class="bg-[#2c2018] border border-[#d4af37]/30 text-[#f8f1e7] font-semibold px-6 py-2.5 rounded-xl hover:bg-[#38281f] transition">
+                    Hủy
+                </button>
+                <button type="button" onclick="confirmRoomSelection()" class="bg-gradient-to-r from-[#d4af37] to-[#f5d77a] text-[#21170f] font-bold px-8 py-2.5 rounded-xl hover:opacity-90 transition shadow-md">
+                    XÁC NHẬN SỐ PHÒNG
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @Html.Partial("~/Views/Shared/_LuxuryModal.cshtml")
 
 </body>
 </html>

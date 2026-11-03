@@ -32,7 +32,7 @@ namespace QLKhachSan.Filters
             }
 
             // Đã đăng nhập nhưng không phải Admin
-            if (role != "Admin")
+            if (string.IsNullOrEmpty(role) || !role.Trim().Equals("Admin", System.StringComparison.OrdinalIgnoreCase))
             {
                 filterContext.Result =
                     new HttpStatusCodeResult(403);

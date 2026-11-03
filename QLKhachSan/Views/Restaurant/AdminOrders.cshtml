@@ -609,154 +609,67 @@
                 );
 
 
-            const status =
-                select.value;
-
+        async function updateOrderStatus(id) {
+            const select = document.getElementById('status-' + id);
+            const status = select.value;
 
             try {
+                const response = await fetch(
+                    '@Url.Action("UpdateOrderStatus", "Restaurant")'
+                    + '?id=' + encodeURIComponent(id)
+                    + '&status=' + encodeURIComponent(status),
+                    { method: 'POST' }
+                );
 
-                const response =
-                    await fetch(
-                        '@Url.Action(
-                            "UpdateOrderStatus",
-                            "Restaurant"
-                        )'
-                        +
-                        '?id='
-                        +
-                        encodeURIComponent(id)
-                        +
-                        '&status='
-                        +
-                        encodeURIComponent(status),
-                        {
-                            method:
-                                'POST'
-                        }
-                    );
-
-
-                const result =
-                    await response.json();
-
+                const result = await response.json();
 
                 if (!result.success) {
-
-                    alert(
-                        result.message
-                    );
-
+                    showLuxuryAlert(result.message || 'Không thể cập nhật trạng thái.', 'Thất bại', 'warning');
                     return;
-
                 }
 
-
-                alert(
-                    'Cập nhật trạng thái thành công.'
-                );
-
-
-                window.location.reload();
-
+                showLuxuryAlert('Cập nhật trạng thái thành công.', 'Thành công', 'success', function() {
+                    window.location.reload();
+                });
             }
             catch (error) {
-
-                console.error(
-                    error
-                );
-
-
-                alert(
-                    'Không thể cập nhật trạng thái.'
-                );
-
+                console.error(error);
+                showLuxuryAlert('Không thể kết nối máy chủ. Vui lòng thử lại!', 'Lỗi', 'error');
             }
-
         }
 
-
-
-        // =========================================================
-        // CẬP NHẬT THANH TOÁN
-        // =========================================================
-
-        async function updateOrderPayment(
-            id
-        ) {
-
-            const select =
-                document.getElementById(
-                    'payment-' + id
-                );
-
-
-            const status =
-                select.value;
-
+        async function updateOrderPayment(id) {
+            const select = document.getElementById('payment-' + id);
+            const status = select.value;
 
             try {
+                const response = await fetch(
+                    '@Url.Action("UpdateOrderPayment", "Restaurant")'
+                    + '?id=' + encodeURIComponent(id)
+                    + '&status=' + encodeURIComponent(status),
+                    { method: 'POST' }
+                );
 
-                const response =
-                    await fetch(
-                        '@Url.Action(
-                            "UpdateOrderPayment",
-                            "Restaurant"
-                        )'
-                        +
-                        '?id='
-                        +
-                        encodeURIComponent(id)
-                        +
-                        '&status='
-                        +
-                        encodeURIComponent(status),
-                        {
-                            method:
-                                'POST'
-                        }
-                    );
-
-
-                const result =
-                    await response.json();
-
+                const result = await response.json();
 
                 if (!result.success) {
-
-                    alert(
-                        result.message
-                    );
-
+                    showLuxuryAlert(result.message || 'Không thể cập nhật thanh toán.', 'Thất bại', 'warning');
                     return;
-
                 }
 
-
-                alert(
-                    'Cập nhật thanh toán thành công.'
-                );
-
-
-                window.location.reload();
-
+                showLuxuryAlert('Cập nhật thanh toán thành công.', 'Thành công', 'success', function() {
+                    window.location.reload();
+                });
             }
             catch (error) {
-
-                console.error(
-                    error
-                );
-
-
-                alert(
-                    'Không thể cập nhật thanh toán.'
-                );
-
+                console.error(error);
+                showLuxuryAlert('Không thể kết nối máy chủ. Vui lòng thử lại!', 'Lỗi', 'error');
             }
-
         }
 
     </script>
 
+    @Html.Partial("~/Views/Shared/_LuxuryModal.cshtml")
 
 </body>
 

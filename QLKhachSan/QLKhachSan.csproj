@@ -170,8 +170,12 @@
     <Compile Include="Models\C__MigrationHistory.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
+    <Compile Include="Models\DanhGia.cs" />
+    <Compile Include="Models\DatPhongDichVu.cs" />
+    <Compile Include="Models\DichVu.cs" />
     <Compile Include="Models\GeminiSettings.cs" />
     <Compile Include="Models\HotelDbContext.cs" />
+    <Compile Include="Models\KhuyenMai.cs" />
     <Compile Include="Models\Model1.Context.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -189,6 +193,7 @@
     </Compile>
     <Compile Include="Models\MoHinhBoSungKhachSan.cs" />
     <Compile Include="Models\PasswordResetTokenViewModel.cs" />
+    <Compile Include="Models\PhysicalRoom.cs" />
     <Compile Include="Models\ResetPasswordViewModel.cs" />
     <Compile Include="Models\RestaurantFoodAdminViewModel.cs" />
     <Compile Include="Models\RestaurantIndexViewModel.cs" />
@@ -198,12 +203,15 @@
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
     <Compile Include="Models\TaoDatPhongRequest.cs" />
+    <Compile Include="Models\ThanhToan.cs" />
     <Compile Include="Models\User.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="bin\QLKhachSan.dll" />
+    <Content Include="bin\QLKhachSan.pdb" />
     <Content Include="Content\bootstrap-grid.css" />
     <Content Include="Content\bootstrap-grid.min.css" />
     <Content Include="Content\bootstrap-grid.rtl.css" />
@@ -235,6 +243,8 @@
       <DependentUpon>Model1.edmx</DependentUpon>
       <LastGenOutput>Model1.cs</LastGenOutput>
     </Content>
+    <Content Include="Properties\PublishProfiles\coklingone-001-site1 - FTP.pubxml.user" />
+    <Content Include="Properties\PublishProfiles\coklingone-001-site1 - Web Deploy.pubxml.user" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />
@@ -249,6 +259,11 @@
       <DependentUpon>Model1.edmx</DependentUpon>
     </Content>
     <Content Include="appsettings.json" />
+    <Content Include=".artifacts\d80e5d15-ad52-4c38-942e-8f4a8f00fa3c\architecture_plan.artifact.md" />
+    <Content Include=".artifacts\d80e5d15-ad52-4c38-942e-8f4a8f00fa3c\permission_plan.artifact.md" />
+    <Content Include=".artifacts\d80e5d15-ad52-4c38-942e-8f4a8f00fa3c\staff_dashboard_plan.artifact.md" />
+    <None Include="Properties\PublishProfiles\coklingone-001-site1 - FTP.pubxml" />
+    <None Include="Properties\PublishProfiles\coklingone-001-site1 - Web Deploy.pubxml" />
     <None Include="Scripts\jquery-3.7.1.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.1.js" />
     <Content Include="Scripts\jquery-3.7.1.min.js" />
@@ -306,12 +321,19 @@
     <Content Include="Views\Admin\Notifications.cshtml" />
     <Content Include="Views\Admin\Customers.cshtml" />
     <Content Include="Views\Admin\CustomerDetails.cshtml" />
+    <Content Include="Views\Shared\_Layout.cshtml" />
+    <Content Include="Views\Shared\_LuxuryModal.cshtml" />
+    <Content Include="Views\Room\Index.cshtml" />
+    <Content Include="Views\Booking\Payment.cshtml" />
+    <Content Include="Views\Booking\Success.cshtml" />
+    <Content Include="Views\Admin\Bookings.cshtml" />
+    <Content Include="Views\Admin\StaffPermissions.cshtml" />
+    <Content Include="Views.zip" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Images\Foods\" />
     <Folder Include="Views\AIChat\" />
-    <Folder Include="Views\Booking\" />
     <Folder Include="Views\Gemini\" />
   </ItemGroup>
   <ItemGroup>

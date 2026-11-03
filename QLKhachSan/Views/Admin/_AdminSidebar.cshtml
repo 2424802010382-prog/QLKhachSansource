@@ -259,6 +259,28 @@
         </a>
 
 
+        <a href="@Url.Action("StaffPermissions", "Admin")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "StaffPermissions"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-shield-halved w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Phân quyền nhân viên
+            </span>
+
+        </a>
+
+
         <a href="@Url.Action("Users", "Admin")"
            class="flex
                   items-center

@@ -180,6 +180,14 @@
                             gap-3">
 
 
+                    <form action="@Url.Action("ClearAllBookings", "Admin")" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn giải phóng toàn bộ dữ liệu đặt phòng và làm mới 40 phòng vật lý không?');" class="inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 rounded-xl whitespace-nowrap">
+                            <i class="fas fa-trash-can mr-1"></i> Giải phóng toàn bộ đặt phòng
+                        </button>
+                    </form>
+
+
                     <a href="@Url.Action(
                                 "Index",
                                 "Home"
@@ -1558,234 +1566,39 @@
                                                             gap-2">
 
 
-                                                    @if (
-                                                        booking.Status ==
-                                                        "Chờ xác nhận"
-                                                    )
+                                                    @if (booking.Status == "Chờ xác nhận")
                                                     {
-                                                        <form method="post"
-                                                              action="@Url.Action(
-                                                                          "Confirm",
-                                                                          "Admin"
-                                                                      )">
-
-                                                            @Html.AntiForgeryToken()
-
-                                                            <input type="hidden"
-                                                                   name="id"
-                                                                   value="@booking.BookingId" />
-
-                                                            <button type="submit"
-                                                                    class="w-full
-                                                                           bg-green-600
-                                                                           hover:bg-green-700
-                                                                           text-white
-                                                                           font-bold
-                                                                           px-3
-                                                                           py-2
-                                                                           rounded-lg">
-
-                                                                <i class="fas
-                                                                          fa-check
-                                                                          mr-1">
-                                                                </i>
-
-                                                                Xác nhận
-
-                                                            </button>
-
-                                                        </form>
+                                                        <button type="button" onclick="performAdminBookingAction(@booking.BookingId, 'confirm', 'Xác nhận đơn đặt phòng', 'Xác nhận đơn đặt phòng #@booking.BookingId?')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-2 rounded-lg">
+                                                            <i class="fas fa-check mr-1"></i> Xác nhận
+                                                        </button>
                                                     }
 
-
-                                                    @if (
-                                                        (
-                                                            booking.Status ==
-                                                            "Đã xác nhận"
-                                                            ||
-                                                            booking.Status ==
-                                                            "Đang ở"
-                                                        )
-                                                        &&
-                                                        !paid
-                                                    )
+                                                    @if ((booking.Status == "Đã xác nhận" || booking.Status == "Đang ở") && !paid)
                                                     {
-                                                        <form method="post"
-                                                              action="@Url.Action(
-                                                                          "ConfirmPayment",
-                                                                          "Admin"
-                                                                      )">
-
-                                                            @Html.AntiForgeryToken()
-
-                                                            <input type="hidden"
-                                                                   name="id"
-                                                                   value="@booking.BookingId" />
-
-                                                            <button type="submit"
-                                                                    onclick="return confirm(
-                                                                        'Xác nhận đơn #@booking.BookingId đã thanh toán?'
-                                                                    );"
-                                                                    class="w-full
-                                                                           bg-blue-600
-                                                                           hover:bg-blue-700
-                                                                           text-white
-                                                                           font-bold
-                                                                           px-3
-                                                                           py-2
-                                                                           rounded-lg">
-
-                                                                <i class="fas
-                                                                          fa-money-bill-wave
-                                                                          mr-1">
-                                                                </i>
-
-                                                                Thanh toán
-
-                                                            </button>
-
-                                                        </form>
+                                                        <button type="button" onclick="performAdminBookingAction(@booking.BookingId, 'payment', 'Xác nhận Thanh toán', 'Xác nhận đơn #@booking.BookingId đã thanh toán?')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded-lg">
+                                                            <i class="fas fa-money-bill-wave mr-1"></i> Thanh toán
+                                                        </button>
                                                     }
 
-
-                                                    @if (
-                                                        booking.Status ==
-                                                        "Đã xác nhận"
-                                                        &&
-                                                        booking.CheckInDate.Date <=
-                                                        DateTime.Today
-                                                    )
+                                                    @if (booking.Status == "Đã xác nhận" && booking.CheckInDate.Date <= DateTime.Today)
                                                     {
-                                                        <form method="post"
-                                                              action="@Url.Action(
-                                                                          "CheckIn",
-                                                                          "Admin"
-                                                                      )">
-
-                                                            @Html.AntiForgeryToken()
-
-                                                            <input type="hidden"
-                                                                   name="id"
-                                                                   value="@booking.BookingId" />
-
-                                                            <button type="submit"
-                                                                    onclick="return confirm(
-                                                                        'Xác nhận khách nhận phòng cho đơn #@booking.BookingId?'
-                                                                    );"
-                                                                    class="w-full
-                                                                           bg-indigo-600
-                                                                           hover:bg-indigo-700
-                                                                           text-white
-                                                                           font-bold
-                                                                           px-3
-                                                                           py-2
-                                                                           rounded-lg">
-
-                                                                <i class="fas
-                                                                          fa-door-open
-                                                                          mr-1">
-                                                                </i>
-
-                                                                Nhận phòng
-
-                                                            </button>
-
-                                                        </form>
+                                                        <button type="button" onclick="performAdminBookingAction(@booking.BookingId, 'checkin', 'Xác nhận Nhận phòng', 'Xác nhận khách nhận phòng cho đơn #@booking.BookingId?')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-lg">
+                                                            <i class="fas fa-door-open mr-1"></i> Nhận phòng
+                                                        </button>
                                                     }
 
-
-                                                    @if (
-                                                        booking.Status ==
-                                                        "Đang ở"
-                                                        &&
-                                                        paid
-                                                    )
+                                                    @if (booking.Status == "Đang ở" && paid)
                                                     {
-                                                        <form method="post"
-                                                              action="@Url.Action(
-                                                                          "CheckOut",
-                                                                          "Admin"
-                                                                      )">
-
-                                                            @Html.AntiForgeryToken()
-
-                                                            <input type="hidden"
-                                                                   name="id"
-                                                                   value="@booking.BookingId" />
-
-                                                            <button type="submit"
-                                                                    onclick="return confirm(
-                                                                        'Xác nhận khách trả phòng cho đơn #@booking.BookingId?'
-                                                                    );"
-                                                                    class="w-full
-                                                                           bg-purple-600
-                                                                           hover:bg-purple-700
-                                                                           text-white
-                                                                           font-bold
-                                                                           px-3
-                                                                           py-2
-                                                                           rounded-lg">
-
-                                                                <i class="fas
-                                                                          fa-door-closed
-                                                                          mr-1">
-                                                                </i>
-
-                                                                Trả phòng
-
-                                                            </button>
-
-                                                        </form>
+                                                        <button type="button" onclick="performAdminBookingAction(@booking.BookingId, 'checkout', 'Xác nhận Trả phòng', 'Xác nhận khách trả phòng cho đơn #@booking.BookingId?')" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-2 rounded-lg">
+                                                            <i class="fas fa-door-closed mr-1"></i> Trả phòng
+                                                        </button>
                                                     }
 
-
-                                                    @if (
-                                                        (
-                                                            booking.Status ==
-                                                            "Chờ xác nhận"
-                                                            ||
-                                                            booking.Status ==
-                                                            "Đã xác nhận"
-                                                        )
-                                                        &&
-                                                        !paid
-                                                    )
+                                                    @if ((booking.Status == "Chờ xác nhận" || booking.Status == "Đã xác nhận") && !paid)
                                                     {
-                                                        <form method="post"
-                                                              action="@Url.Action(
-                                                                          "Cancel",
-                                                                          "Admin"
-                                                                      )">
-
-                                                            @Html.AntiForgeryToken()
-
-                                                            <input type="hidden"
-                                                                   name="id"
-                                                                   value="@booking.BookingId" />
-
-                                                            <button type="submit"
-                                                                    onclick="return confirm(
-                                                                        'Bạn có chắc muốn hủy đơn #@booking.BookingId?'
-                                                                    );"
-                                                                    class="w-full
-                                                                           bg-red-500
-                                                                           hover:bg-red-600
-                                                                           text-white
-                                                                           font-bold
-                                                                           px-3
-                                                                           py-2
-                                                                           rounded-lg">
-
-                                                                <i class="fas
-                                                                          fa-xmark
-                                                                          mr-1">
-                                                                </i>
-
-                                                                Hủy
-
-                                                            </button>
-
-                                                        </form>
+                                                        <button type="button" onclick="performAdminBookingAction(@booking.BookingId, 'cancel', 'Hủy đơn đặt phòng', 'Bạn có chắc muốn HỦY đơn #@booking.BookingId?')" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-2 rounded-lg">
+                                                            <i class="fas fa-xmark mr-1"></i> Hủy
+                                                        </button>
                                                     }
 
 
@@ -1887,10 +1700,17 @@
                 )
             );
 
-        const revenueData =
+        const roomRevenueData =
             @Html.Raw(
                 System.Web.Helpers.Json.Encode(
-                    ViewBag.RevenueData
+                    ViewBag.RoomRevenue7Days
+                )
+            );
+
+        const foodRevenueData =
+            @Html.Raw(
+                System.Web.Helpers.Json.Encode(
+                    ViewBag.FoodRevenue7Days
                 )
             );
 
@@ -1913,23 +1733,20 @@
 
                         datasets: [
                             {
-                                label:
-                                    'Doanh thu',
-
-                                data:
-                                    revenueData,
-
-                                borderWidth:
-                                    1,
-
-                                borderRadius:
-                                    10,
-
-                                backgroundColor:
-                                    'rgba(79, 70, 229, 0.70)',
-
-                                borderColor:
-                                    'rgba(79, 70, 229, 1)'
+                                label: 'Doanh thu phòng',
+                                data: roomRevenueData,
+                                borderWidth: 1,
+                                borderRadius: 8,
+                                backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                                borderColor: 'rgba(79, 70, 229, 1)'
+                            },
+                            {
+                                label: 'Doanh thu nhà hàng',
+                                data: foodRevenueData,
+                                borderWidth: 1,
+                                borderRadius: 8,
+                                backgroundColor: 'rgba(245, 158, 11, 0.8)',
+                                borderColor: 'rgba(245, 158, 11, 1)'
                             }
                         ]
                     },
@@ -1945,8 +1762,8 @@
                         plugins: {
 
                             legend: {
-                                display:
-                                    false
+                                display: true,
+                                position: 'top'
                             },
 
                             tooltip: {
@@ -1957,9 +1774,10 @@
                                         function (
                                             context
                                         ) {
-
-                                            return Number(
-                                                context.raw
+                                            let label = context.dataset.label || '';
+                                            let val = context.raw || 0;
+                                            return label + ': ' + Number(
+                                                val
                                             ).toLocaleString(
                                                 'vi-VN'
                                             )
@@ -1998,6 +1816,62 @@
             );
         }
 
+    </script>
+
+    @Html.AntiForgeryToken()
+    @Html.Partial("~/Views/Shared/_LuxuryModal.cshtml")
+
+    <script>
+        function performAdminBookingAction(bookingId, actionName, actionTitle, confirmMessage) {
+            if (typeof showLuxuryConfirm !== 'function') {
+                if (!confirm(confirmMessage)) return;
+                executeAjaxAction(bookingId, actionName);
+                return;
+            }
+
+            showLuxuryConfirm(confirmMessage, actionTitle, function () {
+                executeAjaxAction(bookingId, actionName);
+            });
+        }
+
+        function executeAjaxAction(bookingId, actionName) {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            const formData = new FormData();
+            formData.append('id', bookingId);
+            formData.append('__RequestVerificationToken', token);
+
+            let url = '@Url.Action("Confirm", "Admin")';
+            if (actionName === 'cancel') url = '@Url.Action("Cancel", "Admin")';
+            else if (actionName === 'checkin') url = '@Url.Action("CheckIn", "Admin")';
+            else if (actionName === 'checkout') url = '@Url.Action("CheckOut", "Admin")';
+            else if (actionName === 'payment') url = '@Url.Action("ConfirmPayment", "Admin")';
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(res => {
+                if (res && res.success) {
+                    if (typeof showLuxuryAlert === 'function') {
+                        showLuxuryAlert(res.message, 'Thành công', 'success');
+                    }
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    if (typeof showLuxuryAlert === 'function') {
+                        showLuxuryAlert(res ? res.message : 'Có lỗi xảy ra', 'Thất bại', 'warning');
+                    }
+                }
+            })
+            .catch(err => {
+                if (typeof showLuxuryAlert === 'function') {
+                    showLuxuryAlert('Không thể kết nối máy chủ. Vui lòng thử lại!', 'Lỗi', 'error');
+                }
+            });
+        }
     </script>
 
 </body>

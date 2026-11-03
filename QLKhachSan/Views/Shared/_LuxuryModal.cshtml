@@ -1,0 +1,174 @@
+<!-- LUXURY HOTEL UNIFIED MODAL SYSTEM -->
+<div id="luxuryModalOverlay" class="fixed inset-0 z-[99999] bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-all duration-300 opacity-0">
+    <div id="luxuryModalBox" class="bg-[#241c17] border border-[#d4af37]/40 text-[#f8f1e7] rounded-2xl max-w-md w-full p-6 shadow-2xl transform scale-95 transition-all duration-300">
+        <div class="text-center">
+            <div id="luxuryModalIconContainer" class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-2xl bg-[#2c2018] border border-[#d4af37]/30 text-[#d4af37]">
+                <i id="luxuryModalIcon" class="fas fa-crown"></i>
+            </div>
+            <h3 id="luxuryModalTitle" class="text-2xl font-serif font-bold text-[#f5d77a] mb-2">Thông báo</h3>
+            <div id="luxuryModalMessage" class="text-gray-300 text-sm leading-relaxed mb-6 text-left bg-[#2c2018]/50 p-4 rounded-xl border border-[#d4af37]/15"></div>
+            <div id="luxuryModalButtons" class="flex gap-3 justify-center">
+                <button id="luxuryModalConfirmBtn" onclick="closeLuxuryModal(true)" class="bg-gradient-to-r from-[#d4af37] to-[#f5d77a] text-[#21170f] font-bold px-8 py-2.5 rounded-xl hover:opacity-90 transition shadow-md">
+                    Xác nhận
+                </button>
+                <button id="luxuryModalCancelBtn" onclick="closeLuxuryModal(false)" class="bg-[#2c2018] border border-[#d4af37]/30 text-[#f8f1e7] font-semibold px-6 py-2.5 rounded-xl hover:bg-[#38281f] transition hidden">
+                    Hủy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let luxuryConfirmCallback = null;
+    let luxuryAlertCallback = null;
+
+    function showLuxuryAlert(message, title = 'Thông báo', type = 'success', callback = null) {
+        const overlay = document.getElementById('luxuryModalOverlay');
+        const box = document.getElementById('luxuryModalBox');
+        const titleEl = document.getElementById('luxuryModalTitle');
+        const msgEl = document.getElementById('luxuryModalMessage');
+        const iconEl = document.getElementById('luxuryModalIcon');
+        const iconContainer = document.getElementById('luxuryModalIconContainer');
+        const confirmBtn = document.getElementById('luxuryModalConfirmBtn');
+        const cancelBtn = document.getElementById('luxuryModalCancelBtn');
+
+        if (!overlay || !box) return;
+
+        titleEl.innerText = title;
+        if (message.includes('<') && message.includes('>')) {
+            msgEl.innerHTML = message;
+        } else {
+            msgEl.innerText = message;
+        }
+        cancelBtn.classList.add('hidden');
+        confirmBtn.innerText = 'Đã hiểu';
+
+        if (type === 'success') {
+            iconEl.className = 'fas fa-check';
+            iconContainer.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-2xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400';
+        } else if (type === 'error') {
+            iconEl.className = 'fas fa-exclamation-triangle';
+            iconContainer.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-2xl bg-rose-950/60 border border-rose-500/40 text-rose-400';
+        } else if (type === 'warning') {
+            iconEl.className = 'fas fa-exclamation-circle';
+            iconContainer.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-2xl bg-amber-950/60 border border-amber-500/40 text-amber-400';
+        } else {
+            iconEl.className = 'fas fa-crown';
+            iconContainer.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-2xl bg-[#2c2018] border border-[#d4af37]/30 text-[#d4af37]';
+        }
+
+        luxuryAlertCallback = callback;
+
+        overlay.classList.remove('hidden');
+        setTimeout(() => {
+            overlay.classList.remove('opacity-0');
+            box.classList.remove('scale-95');
+            box.classList.add('scale-100');
+        }, 10);
+    }
+
+    function showLuxuryConfirm(message, title = 'Xác nhận thao tác', onConfirm, onCancel) {
+        const overlay = document.getElementById('luxuryModalOverlay');
+        const box = document.getElementById('luxuryModalBox');
+        const titleEl = document.getElementById('luxuryModalTitle');
+        const msgEl = document.getElementById('luxuryModalMessage');
+        const iconEl = document.getElementById('luxuryModalIcon');
+        const iconContainer = document.getElementById('luxuryModalIconContainer');
+        const confirmBtn = document.getElementById('luxuryModalConfirmBtn');
+        const cancelBtn = document.getElementById('luxuryModalCancelBtn');
+
+        if (!overlay || !box) return;
+
+        titleEl.innerText = title;
+        msgEl.innerText = message;
+        cancelBtn.classList.remove('hidden');
+        confirmBtn.innerText = 'Xác nhận';
+
+        iconEl.className = 'fas fa-question';
+        iconContainer.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-2xl bg-[#2c2018] border border-[#d4af37]/30 text-[#d4af37]';
+
+        luxuryConfirmCallback = { onConfirm, onCancel };
+
+        overlay.classList.remove('hidden');
+        setTimeout(() => {
+            overlay.classList.remove('opacity-0');
+            box.classList.remove('scale-95');
+            box.classList.add('scale-100');
+        }, 10);
+    }
+
+    function closeLuxuryModal(isConfirmed) {
+        const overlay = document.getElementById('luxuryModalOverlay');
+        const box = document.getElementById('luxuryModalBox');
+
+        if (!overlay || !box) return;
+
+        overlay.classList.add('opacity-0');
+        box.classList.remove('scale-100');
+        box.classList.add('scale-95');
+
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            if (luxuryConfirmCallback) {
+                const cb = luxuryConfirmCallback;
+                luxuryConfirmCallback = null;
+                if (isConfirmed && typeof cb.onConfirm === 'function') {
+                    cb.onConfirm();
+                } else if (!isConfirmed && typeof cb.onCancel === 'function') {
+                    cb.onCancel();
+                }
+            }
+            if (luxuryAlertCallback) {
+                const cb = luxuryAlertCallback;
+                luxuryAlertCallback = null;
+                if (typeof cb === 'function') {
+                    cb();
+                }
+            }
+        }, 300);
+    }
+
+    // Override alert globally for JS alerts
+    window.alert = function(msg) {
+        showLuxuryAlert(msg, 'Thông báo', 'success');
+    };
+</script>
+
+@{
+    string successMsg = TempData["AdminSuccess"] as string
+                      ?? TempData["StaffSuccess"] as string
+                      ?? TempData["ProfileSuccess"] as string
+                      ?? TempData["BookingSuccess"] as string
+                      ?? TempData["FoodSuccess"] as string
+                      ?? TempData["RegisterSuccess"] as string
+                      ?? TempData["LoginSuccess"] as string;
+
+    string errorMsg = TempData["AdminError"] as string
+                    ?? TempData["StaffError"] as string
+                    ?? TempData["ProfileError"] as string
+                    ?? TempData["BookingError"] as string
+                    ?? TempData["FoodError"] as string
+                    ?? TempData["LoginError"] as string
+                    ?? TempData["RegisterError"] as string
+                    ?? TempData["PasswordError"] as string
+                    ?? TempData["StaffFoodError"] as string;
+}
+
+@if (!string.IsNullOrEmpty(successMsg))
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            showLuxuryAlert(@Html.Raw(Json.Encode(successMsg)), "Thành công", "success");
+        });
+    </script>
+}
+
+@if (!string.IsNullOrEmpty(errorMsg))
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            showLuxuryAlert(@Html.Raw(Json.Encode(errorMsg)), "Thông báo lỗi", "error");
+        });
+    </script>
+}

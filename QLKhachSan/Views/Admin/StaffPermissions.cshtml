@@ -1,0 +1,255 @@
+@model QLKhachSan.Models.StaffPermissionsViewModel
+@using System.Linq
+
+@{
+    Layout = null;
+    ViewBag.AdminPage = "StaffPermissions";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phân quyền Ma trận Nhân viên - Admin Luxury Hotel</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+
+<body class="bg-[#f4f6fb] min-h-screen">
+
+    @Html.Partial("~/Views/Admin/_AdminSidebar.cshtml")
+
+    <div class="lg:ml-72 min-h-screen">
+
+        <header class="bg-white border-b sticky top-0 z-30">
+            <div class="px-5 lg:px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <p class="text-xs tracking-[2px] font-bold text-indigo-500">
+                        BẢO MẬT & PHÂN QUYỀN MA TRẬN
+                    </p>
+                    <h1 class="text-3xl font-extrabold">
+                        Phân quyền Nhân viên
+                    </h1>
+                </div>
+            </div>
+        </header>
+
+        <main class="p-5 lg:p-8">
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <!-- CỘT TRÁI: DANH SÁCH NHÂN VIÊN -->
+                <div class="lg:col-span-1 bg-white rounded-2xl border shadow-sm p-6 h-fit">
+                    <h3 class="text-lg font-extrabold text-gray-900 mb-4 flex items-center justify-between">
+                        <span class="flex items-center gap-2"><i class="fas fa-users-gear text-indigo-600"></i> Nhân viên</span>
+                        <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-100 text-indigo-700 rounded-full">@Model.StaffList.Count nhân sự</span>
+                    </h3>
+
+                    <!-- Tìm kiếm -->
+                    <form method="get" action="@Url.Action("StaffPermissions", "Admin")" class="mb-5 flex gap-2">
+                        <input type="text" name="keyword" value="@Model.Keyword" placeholder="Tìm theo tên, email..." class="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+
+                    <!-- Danh sách staff -->
+                    <div class="space-y-3 max-h-[550px] overflow-y-auto pr-1">
+                        @if (Model.StaffList == null || !Model.StaffList.Any())
+                        {
+                            <p class="text-gray-500 text-sm text-center py-6">Không tìm thấy nhân viên nào.</p>
+                        }
+                        else
+                        {
+                            foreach (var staff in Model.StaffList)
+                            {
+                                bool isSelected = Model.SelectedStaff != null && Model.SelectedStaff.UserId == staff.UserId;
+                                string activeClass = isSelected
+                                    ? "bg-[#241c17] text-[#f8f1e7] border-[#d4af37]"
+                                    : "bg-gray-50 hover:bg-gray-100 text-gray-800 border-gray-200";
+
+                                <a href="@Url.Action("StaffPermissions", "Admin", new { id = staff.UserId, keyword = Model.Keyword })"
+                                   class="block border rounded-xl p-4 transition shadow-sm @activeClass">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm @(isSelected ? "bg-[#d4af37] text-[#21170f]" : "bg-indigo-100 text-indigo-600")">
+                                            <i class="fas fa-user-gear"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <h4 class="font-bold text-sm truncate">@staff.FullName</h4>
+                                            <p class="text-xs opacity-75 truncate">@staff.Email</p>
+                                        </div>
+                                        @if (isSelected)
+                                        {
+                                            <i class="fas fa-chevron-right text-[#d4af37]"></i>
+                                        }
+                                    </div>
+                                </a>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <!-- CỘT PHẢI: MA TRẬN PHÂN QUYỀN -->
+                <div class="lg:col-span-2">
+                    @if (Model.SelectedStaff == null)
+                    {
+                        <div class="bg-white rounded-2xl border shadow-sm p-12 text-center text-gray-500">
+                            <i class="fas fa-shield-halved text-5xl text-gray-300 mb-4"></i>
+                            <h3 class="text-lg font-bold text-gray-700">Chưa chọn nhân viên</h3>
+                            <p class="text-sm mt-1">Vui lòng chọn một nhân viên từ danh sách bên trái để phân quyền ma trận.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="bg-white rounded-2xl border shadow-sm p-6 mb-6">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4 mb-6">
+                                <div>
+                                    <span class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full">NHÂN VIÊN ĐƯỢC CHỌN</span>
+                                    <h2 class="text-2xl font-extrabold text-gray-900 mt-2">@Model.SelectedStaff.FullName</h2>
+                                    <p class="text-sm text-gray-500">Tài khoản: <strong>@Model.SelectedStaff.Username</strong> • Email: <strong>@Model.SelectedStaff.Email</strong></p>
+                                </div>
+                                <div class="text-right">
+                                    <span id="permCountDisplay" class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1.5 rounded-full inline-block mb-2">
+                                        @Model.GrantedPermissionCodes.Count / @Model.AllPermissions.Count quyền đã cấp
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- MẪU ÁP DỤNG NHANH THEO BỘ PHẬN -->
+                            <div class="mb-6 p-4 bg-amber-50/60 border border-amber-200 rounded-xl">
+                                <h4 class="text-xs font-bold text-amber-900 tracking-wider mb-2">
+                                    <i class="fas fa-wand-magic-sparkles text-amber-600 mr-1"></i> ÁP DỤNG MẪU QUYỀN NHANH THEO BỘ PHẬN:
+                                </h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" onclick="applyTemplate('receptionist')" class="px-3 py-1.5 bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-lg transition">
+                                        🛎️ Bộ phận Lễ tân
+                                    </button>
+                                    <button type="button" onclick="applyTemplate('restaurant')" class="px-3 py-1.5 bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-lg transition">
+                                        🍽️ Bộ phận Nhà hàng
+                                    </button>
+                                    <button type="button" onclick="applyTemplate('housekeeping')" class="px-3 py-1.5 bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-lg transition">
+                                        🧹 Bộ phận Buồng phòng
+                                    </button>
+                                    <button type="button" onclick="applyTemplate('accounting')" class="px-3 py-1.5 bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-lg transition">
+                                        💳 Bộ phận Kế toán
+                                    </button>
+                                    <button type="button" onclick="selectAllPermissions(true)" class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg hover:bg-indigo-100 transition">
+                                        <i class="fas fa-check-double mr-1"></i> Chọn tất cả
+                                    </button>
+                                    <button type="button" onclick="selectAllPermissions(false)" class="px-3 py-1.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-lg hover:bg-rose-100 transition">
+                                        <i class="fas fa-ban mr-1"></i> Bỏ chọn hết
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- FORM BẢNG MA TRẬN PHÂN QUYỀN -->
+                            <form id="permissionForm" method="post" action="@Url.Action("SaveStaffPermissions", "Admin")" onsubmit="return confirmSavePermissions(event)">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@Model.SelectedStaff.UserId" />
+
+                                <div class="space-y-6">
+                                    @{
+                                        var categories = Model.AllPermissions.Select(p => p.Category).Distinct().ToList();
+                                    }
+
+                                    @foreach (var cat in categories)
+                                    {
+                                        var permsInCat = Model.AllPermissions.Where(p => p.Category == cat).ToList();
+                                        <div class="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                                            <h4 class="font-bold text-base text-indigo-900 mb-3 flex items-center gap-2 border-b border-gray-200 pb-2">
+                                                <i class="fas fa-folder-tree text-indigo-600"></i> Nhóm: @cat
+                                            </h4>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                @foreach (var p in permsInCat)
+                                                {
+                                                    bool isChecked = Model.GrantedPermissionCodes != null && Model.GrantedPermissionCodes.Contains(p.PermissionCode);
+                                                    <label class="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-indigo-400 transition">
+                                                        <input type="checkbox" name="selectedPermissions" value="@p.PermissionCode" @(isChecked ? "checked" : "") onchange="updateCount()" class="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 perm-checkbox" />
+                                                        <div>
+                                                            <div class="font-bold text-sm text-gray-800">@p.PermissionName</div>
+                                                            <div class="text-xs text-gray-400 font-mono">@p.PermissionCode</div>
+                                                        </div>
+                                                    </label>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- NÚT HÀNH ĐỘNG -->
+                                <div class="mt-8 flex gap-4 justify-end border-t pt-5">
+                                    <button type="button" onclick="location.reload()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-6 py-3 rounded-xl transition">
+                                        <i class="fas fa-rotate-left mr-2"></i> KHÔI PHỤC
+                                    </button>
+                                    <button type="submit" class="bg-gradient-to-r from-[#d4af37] to-[#f5d77a] text-[#21170f] font-bold px-8 py-3 rounded-xl hover:opacity-90 transition shadow-lg">
+                                        <i class="fas fa-floppy-disk mr-2"></i> LƯU PHÂN QUYỀN
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    @Html.Partial("~/Views/Shared/_LuxuryModal.cshtml")
+
+    <script>
+        function updateCount() {
+            const checked = document.querySelectorAll('.perm-checkbox:checked').length;
+            const total = document.querySelectorAll('.perm-checkbox').length;
+            const display = document.getElementById('permCountDisplay');
+            if (display) {
+                display.innerText = checked + ' / ' + total + ' quyền đã chọn';
+            }
+        }
+
+        function applyTemplate(type) {
+            document.querySelectorAll('.perm-checkbox').forEach(cb => cb.checked = false);
+            let perms = [];
+            if (type === 'receptionist') {
+                perms = ['rooms.view', 'bookings.view', 'bookings.approve', 'bookings.checkin', 'bookings.checkout', 'customers.view'];
+            } else if (type === 'restaurant') {
+                perms = ['restaurant.manage', 'restaurant.orders'];
+            } else if (type === 'housekeeping') {
+                perms = ['rooms.view', 'rooms.manage'];
+            } else if (type === 'accounting') {
+                perms = ['payments.manage', 'revenue.view'];
+            }
+
+            perms.forEach(code => {
+                const cb = document.querySelector('.perm-checkbox[value="' + code + '"]');
+                if (cb) cb.checked = true;
+            });
+            updateCount();
+            if (typeof showLuxuryAlert === 'function') {
+                showLuxuryAlert('Đã áp dụng mẫu quyền bộ phận. Vui lòng bấm LƯU PHÂN QUYỀN để hoàn tất.', 'Áp dụng mẫu', 'success');
+            }
+        }
+
+        function selectAllPermissions(select) {
+            document.querySelectorAll('.perm-checkbox').forEach(cb => cb.checked = select);
+            updateCount();
+        }
+
+        function confirmSavePermissions(e) {
+            const checkedCount = document.querySelectorAll('.perm-checkbox:checked').length;
+            if (typeof showLuxuryConfirm === 'function') {
+                e.preventDefault();
+                showLuxuryConfirm('Bạn có chắc muốn lưu ' + checkedCount + ' quyền cho nhân viên @(Model.SelectedStaff != null ? Model.SelectedStaff.FullName : "")?', 'Xác nhận lưu phân quyền', function() {
+                    document.getElementById('permissionForm').submit();
+                });
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

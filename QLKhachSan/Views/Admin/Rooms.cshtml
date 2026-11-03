@@ -290,6 +290,72 @@
                 </div>
             }
 
+            <!-- ====================================== -->
+            <!-- SƠ ĐỒ MA TRẬN 40 PHÒNG VẬT LÝ -->
+            <!-- ====================================== -->
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b pb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <i class="fas fa-th-large text-indigo-600"></i> Sơ đồ Ma trận 40 Phòng Vật lý (Đồng bộ từ Đặt phòng khách hàng)
+                        </h3>
+                        <p class="text-xs text-gray-500 mt-1">Trạng thái phòng thực tế phân bố từ Tầng 1 đến Tầng 8</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 text-xs font-bold">
+                        <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">🟩 Trống</span>
+                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full">🟨 Chờ xác nhận</span>
+                        <span class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full">🟧 Đã đặt</span>
+                        <span class="px-3 py-1 bg-rose-100 text-rose-800 rounded-full">🟥 Đang ở</span>
+                        <span class="px-3 py-1 bg-gray-200 text-gray-800 rounded-full">🧹 Bảo trì</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
+                    @{
+                        var physicalRooms = ViewBag.PhysicalRooms as List<QLKhachSan.Models.PhysicalRoom> ?? new List<QLKhachSan.Models.PhysicalRoom>();
+                    }
+                    @if (physicalRooms != null && physicalRooms.Any())
+                    {
+                        foreach (var room in physicalRooms)
+                        {
+                            string bg = "bg-emerald-50 border-emerald-300 text-emerald-900";
+                            string statusText = "Trống";
+
+                            if (room.Status == "Đang ở")
+                            {
+                                bg = "bg-rose-50 border-rose-300 text-rose-900";
+                                statusText = "Đang ở";
+                            }
+                            else if (room.Status == "Đã đặt")
+                            {
+                                bg = "bg-amber-50 border-amber-300 text-amber-900";
+                                statusText = "Đã đặt";
+                            }
+                            else if (room.Status == "Chờ xác nhận")
+                            {
+                                bg = "bg-yellow-50 border-yellow-300 text-yellow-900";
+                                statusText = "Chờ xác nhận";
+                            }
+                            else if (room.Status == "Bảo trì")
+                            {
+                                bg = "bg-gray-100 border-gray-300 text-gray-600";
+                                statusText = "Bảo trì";
+                            }
+
+                            <div class="border rounded-xl p-3 text-center transition shadow-sm @bg">
+                                <div class="font-extrabold text-base">@room.RoomNumber</div>
+                                <div class="text-[11px] opacity-75 truncate">@(room.RoomType != null ? room.RoomType.RoomName : "Phòng")</div>
+                                <div class="text-[10px] font-bold mt-1 uppercase tracking-wider">@statusText</div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="col-span-full text-center py-8 text-gray-400">Chưa có dữ liệu phòng vật lý.</div>
+                    }
+                </div>
+            </div>
+
 
 
             <!-- ====================================== -->

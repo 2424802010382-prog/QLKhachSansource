@@ -21,7 +21,50 @@ namespace QLKhachSan.Controllers
             return
                 Session["UserId"] != null &&
                 Session["Role"] != null &&
-                Session["Role"].ToString() == "Staff";
+                Session["Role"].ToString().Trim().Equals("Staff", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool HasStaffPermission(string permissionCode)
+        {
+            if (Session["UserId"] == null) return false;
+            string role = Session["Role"]?.ToString()?.Trim();
+            if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)) return true;
+            if (!string.Equals(role, "Staff", StringComparison.OrdinalIgnoreCase)) return false;
+
+            int userId = Convert.ToInt32(Session["UserId"]);
+            var userPerms = Session["Permissions"] as System.Collections.Generic.List<string>;
+            if (userPerms == null)
+            {
+                userPerms = db.UserPermissions.Where(up => up.UserId == userId).Select(up => up.PermissionCode).ToList();
+                Session["Permissions"] = userPerms;
+            }
+
+            return userPerms != null && userPerms.Contains(permissionCode);
+        }
+
+        private bool IsBookingAssignedToRoom(string specialRequest, string targetRoomNumber)
+        {
+            if (string.IsNullOrEmpty(specialRequest)) return false;
+            try
+            {
+                int idx = 0;
+                while ((idx = specialRequest.IndexOf("[Phòng:", idx, StringComparison.OrdinalIgnoreCase)) != -1)
+                {
+                    int start = idx + 7;
+                    int end = specialRequest.IndexOf("]", start);
+                    if (end > start)
+                    {
+                        string rNum = specialRequest.Substring(start, end - start).Trim();
+                        if (string.Equals(rNum, targetRoomNumber, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                    idx = start;
+                }
+            }
+            catch { }
+            return false;
         }
 
 
@@ -39,6 +82,14 @@ namespace QLKhachSan.Controllers
                 );
             }
 
+            int userId = Convert.ToInt32(Session["UserId"]);
+            var perms = Session["Permissions"] as System.Collections.Generic.List<string>;
+            if (perms == null)
+            {
+                perms = db.UserPermissions.Where(up => up.UserId == userId).Select(up => up.PermissionCode).ToList();
+                Session["Permissions"] = perms;
+            }
+            ViewBag.Permissions = perms ?? new System.Collections.Generic.List<string>();
 
             DateTime today =
                 DateTime.Today;
@@ -66,12 +117,9 @@ namespace QLKhachSan.Controllers
             ViewBag.TodayCheckIns =
                 db.Bookings.Count(
                     b =>
-                    b.Status ==
-                    "Đã xác nhận"
+                    (b.Status == "Đã xác nhận" || b.Status == "Chờ xác nhận")
                     &&
-                    b.CheckInDate >= today
-                    &&
-                    b.CheckInDate < tomorrow
+                    DbFunctions.TruncateTime(b.CheckInDate) == today
                 );
 
 
@@ -79,26 +127,30 @@ namespace QLKhachSan.Controllers
             // 3. ĐƠN GỌI MÓN ĐANG CHỜ XỬ LÝ
             // =====================================================
 
-            ViewBag.PendingFoodOrders =
-                db.Database
-                  .SqlQuery<int>(
-                      @"
-                SELECT COUNT(*)
+            try {
+                ViewBag.PendingFoodOrders =
+                    db.Database
+                      .SqlQuery<int>(
+                          @"
+                    SELECT COUNT(*)
 
-                FROM dbo.DonDatMon
+                    FROM dbo.DonDatMon
 
-                WHERE
-                    TrangThai IN
-                    (
-                        N'Chờ xác nhận',
-                        N'Đã xác nhận',
-                        N'Đang chuẩn bị',
-                        N'Đang phục vụ',
-                        N'Đang giao'
-                    )
-              "
-                  )
-                  .FirstOrDefault();
+                    WHERE
+                        TrangThai IN
+                        (
+                            N'Chờ xác nhận',
+                            N'Đã xác nhận',
+                            N'Đang chuẩn bị',
+                            N'Đang phục vụ',
+                            N'Đang giao'
+                        )
+                  "
+                      )
+                      .FirstOrDefault();
+            } catch {
+                ViewBag.PendingFoodOrders = 0;
+            }
 
 
             // =====================================================
@@ -129,29 +181,34 @@ namespace QLKhachSan.Controllers
             // 5. DOANH THU GỌI MÓN HÔM NAY
             // =====================================================
 
-            decimal foodRevenueToday =
-                db.Database
-                  .SqlQuery<decimal>(
-                      @"
-                SELECT
-                    ISNULL(
-                        SUM(TongTien),
-                        0
-                    )
+            decimal foodRevenueToday = 0;
+            try {
+                foodRevenueToday =
+                    db.Database
+                      .SqlQuery<decimal>(
+                          @"
+                    SELECT
+                        ISNULL(
+                            SUM(TongTien),
+                            0
+                        )
 
-                FROM dbo.DonDatMon
+                    FROM dbo.DonDatMon
 
-                WHERE
-                    TrangThaiThanhToan =
-                        N'Đã thanh toán'
+                    WHERE
+                        TrangThaiThanhToan =
+                            N'Đã thanh toán'
 
-                    AND CreatedAt >= @p0
-                    AND CreatedAt < @p1
-              ",
-                      today,
-                      tomorrow
-                  )
-                  .FirstOrDefault();
+                        AND CreatedAt >= @p0
+                        AND CreatedAt < @p1
+                  ",
+                          today,
+                          tomorrow
+                      )
+                      .FirstOrDefault();
+            } catch {
+                foodRevenueToday = 0;
+            }
 
 
             ViewBag.TodayRevenue =
@@ -171,6 +228,16 @@ namespace QLKhachSan.Controllers
                     b.CreatedAt < tomorrow
                 );
 
+            // =====================================================
+            // 7. MA TRẬN 40 PHÒNG VẬT LÝ (ĐỒNG BỘ VÀ CẬP NHẬT TRỰC TIẾP VÀO DATABASE)
+            // =====================================================
+            try {
+                PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
+                ViewBag.PhysicalRooms = db.PhysicalRooms.Include(pr => pr.RoomType).OrderBy(pr => pr.Floor).ThenBy(pr => pr.RoomNumber).ToList();
+            } catch {
+                ViewBag.PhysicalRooms = new System.Collections.Generic.List<PhysicalRoom>();
+            }
+
 
             return View();
         }
@@ -180,9 +247,7 @@ namespace QLKhachSan.Controllers
         // =====================================================
 
         public ActionResult TodayCheckIns()
-
         {
-
             if (!IsStaff())
             {
                 return RedirectToAction(
@@ -191,13 +256,7 @@ namespace QLKhachSan.Controllers
                 );
             }
 
-
-            DateTime today =
-                DateTime.Today;
-
-            DateTime tomorrow =
-                today.AddDays(1);
-
+            DateTime today = DateTime.Today;
 
             var bookings =
                 db.Bookings
@@ -205,11 +264,9 @@ namespace QLKhachSan.Controllers
                   .Include(b => b.ThanhToans)
                   .Where(
                       b =>
-                      b.Status == "Đã xác nhận"
+                      (b.Status == "Đã xác nhận" || b.Status == "Chờ xác nhận")
                       &&
-                      b.CheckInDate >= today
-                      &&
-                      b.CheckInDate < tomorrow
+                      DbFunctions.TruncateTime(b.CheckInDate) == today
                   )
                   .OrderBy(
                       b => b.CheckInDate
@@ -218,7 +275,6 @@ namespace QLKhachSan.Controllers
                       b => b.CustomerName
                   )
                   .ToList();
-
 
             return View(bookings);
         }
@@ -364,6 +420,8 @@ namespace QLKhachSan.Controllers
 
             db.SaveChanges();
 
+            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
+
             TempData["StaffSuccess"] =
                 "Đã xác nhận trả phòng cho đơn #" +
                 booking.BookingId +
@@ -419,7 +477,8 @@ namespace QLKhachSan.Controllers
                         b =>
                         b.CustomerName.Contains(keyword) ||
                         b.CustomerPhone.Contains(keyword) ||
-                        b.CustomerEmail.Contains(keyword)
+                        b.CustomerEmail.Contains(keyword) ||
+                        (b.SpecialRequest != null && b.SpecialRequest.Contains(keyword))
                     );
             }
 
@@ -591,6 +650,7 @@ namespace QLKhachSan.Controllers
 
 
             db.SaveChanges();
+            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
 
 
             TempData["StaffSuccess"] =
@@ -706,6 +766,7 @@ namespace QLKhachSan.Controllers
 
 
             db.SaveChanges();
+            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
 
 
             TempData["StaffSuccess"] =
@@ -865,6 +926,7 @@ namespace QLKhachSan.Controllers
 
 
             db.SaveChanges();
+            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
 
 
             TempData["StaffSuccess"] =
@@ -1076,7 +1138,7 @@ namespace QLKhachSan.Controllers
                   .Where(
                       b =>
                       b.RoomId == roomId &&
-                      b.Status != "Đã hủy" &&
+                      (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") &&
                       checkInDate < b.CheckOutDate &&
                       checkOutDate > b.CheckInDate
                   )
@@ -1201,6 +1263,7 @@ namespace QLKhachSan.Controllers
 
 
             db.SaveChanges();
+            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
 
 
             // =================================================
@@ -1239,6 +1302,7 @@ namespace QLKhachSan.Controllers
 
 
             db.SaveChanges();
+            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
 
 
             TempData["StaffSuccess"] =

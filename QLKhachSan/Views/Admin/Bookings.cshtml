@@ -165,40 +165,24 @@
 
                                                 @if (b.Status == "Chờ xác nhận")
                                                 {
-                                                    using (Html.BeginForm("Confirm", "Admin", new { id = b.BookingId }, FormMethod.Post, new { @class = "inline" }))
-                                                    {
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg" title="Xác nhận">
-                                                            <i class="fas fa-check"></i>
-                                                        </button>
-                                                    }
-                                                    using (Html.BeginForm("Cancel", "Admin", new { id = b.BookingId }, FormMethod.Post, new { @class = "inline" }))
-                                                    {
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg" title="Hủy" onclick="return confirm('Bạn có chắc muốn hủy đơn này?');">
-                                                            <i class="fas fa-times"></i>
-                                                        </button>
-                                                    }
+                                                    <button type="button" onclick="performAdminBookingAction(@b.BookingId, 'confirm', 'Xác nhận đơn đặt phòng', 'Xác nhận đơn đặt phòng #@b.BookingId?')" class="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg" title="Xác nhận">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button type="button" onclick="performAdminBookingAction(@b.BookingId, 'cancel', 'Hủy đơn đặt phòng', 'Bạn có chắc chắn muốn HỦY đơn đặt phòng #@b.BookingId?')" class="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg" title="Hủy">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
                                                 }
                                                 else if (b.Status == "Đã xác nhận")
                                                 {
-                                                    using (Html.BeginForm("CheckIn", "Admin", new { id = b.BookingId }, FormMethod.Post, new { @class = "inline" }))
-                                                    {
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg" title="Nhận phòng (Check-in)">
-                                                            <i class="fas fa-key"></i>
-                                                        </button>
-                                                    }
+                                                    <button type="button" onclick="performAdminBookingAction(@b.BookingId, 'checkin', 'Xác nhận Nhận phòng', 'Xác nhận khách nhận phòng cho đơn #@b.BookingId?')" class="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg" title="Nhận phòng (Check-in)">
+                                                        <i class="fas fa-key"></i>
+                                                    </button>
                                                 }
                                                 else if (b.Status == "Đang ở")
                                                 {
-                                                    using (Html.BeginForm("CheckOut", "Admin", new { id = b.BookingId }, FormMethod.Post, new { @class = "inline" }))
-                                                    {
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="p-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg" title="Trả phòng (Check-out)">
-                                                            <i class="fas fa-sign-out-alt"></i>
-                                                        </button>
-                                                    }
+                                                    <button type="button" onclick="performAdminBookingAction(@b.BookingId, 'checkout', 'Xác nhận Trả phòng', 'Xác nhận khách trả phòng cho đơn #@b.BookingId?')" class="p-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg" title="Trả phòng (Check-out)">
+                                                        <i class="fas fa-sign-out-alt"></i>
+                                                    </button>
                                                 }
                                             </div>
                                         </td>
@@ -210,8 +194,64 @@
                 </div>
             </div>
 
+            @Html.AntiForgeryToken()
+
         </main>
     </div>
 
+    @Html.Partial("~/Views/Shared/_LuxuryModal.cshtml")
+
+    <script>
+        function performAdminBookingAction(bookingId, actionName, actionTitle, confirmMessage) {
+            if (typeof showLuxuryConfirm !== 'function') {
+                if (!confirm(confirmMessage)) return;
+                executeAjaxAction(bookingId, actionName);
+                return;
+            }
+
+            showLuxuryConfirm(confirmMessage, actionTitle, function () {
+                executeAjaxAction(bookingId, actionName);
+            });
+        }
+
+        function executeAjaxAction(bookingId, actionName) {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            const formData = new FormData();
+            formData.append('id', bookingId);
+            formData.append('__RequestVerificationToken', token);
+
+            let url = '@Url.Action("Confirm", "Admin")';
+            if (actionName === 'cancel') url = '@Url.Action("Cancel", "Admin")';
+            else if (actionName === 'checkin') url = '@Url.Action("CheckIn", "Admin")';
+            else if (actionName === 'checkout') url = '@Url.Action("CheckOut", "Admin")';
+            else if (actionName === 'payment') url = '@Url.Action("ConfirmPayment", "Admin")';
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(res => {
+                if (res && res.success) {
+                    if (typeof showLuxuryAlert === 'function') {
+                        showLuxuryAlert(res.message, 'Thành công', 'success');
+                    }
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    if (typeof showLuxuryAlert === 'function') {
+                        showLuxuryAlert(res ? res.message : 'Có lỗi xảy ra', 'Thất bại', 'warning');
+                    }
+                }
+            })
+            .catch(err => {
+                if (typeof showLuxuryAlert === 'function') {
+                    showLuxuryAlert('Không thể kết nối máy chủ. Vui lòng thử lại!', 'Lỗi', 'error');
+                }
+            });
+        }
+    </script>
 </body>
 </html>

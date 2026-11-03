@@ -789,6 +789,7 @@ namespace QLKhachSan.Controllers
                     // =============================================
 
                     db.SaveChanges();
+                    PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
 
 
                     transaction.Commit();

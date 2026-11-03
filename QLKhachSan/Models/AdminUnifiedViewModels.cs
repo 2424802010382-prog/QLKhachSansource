@@ -224,4 +224,21 @@ namespace QLKhachSan.Models
                 new List<Booking>();
         }
     }
+
+
+    public class StaffPermissionsViewModel
+    {
+        public List<User> StaffList { get; set; }
+        public User SelectedStaff { get; set; }
+        public List<Permission> AllPermissions { get; set; }
+        public List<string> GrantedPermissionCodes { get; set; }
+        public string Keyword { get; set; }
+
+        public StaffPermissionsViewModel()
+        {
+            StaffList = new List<User>();
+            AllPermissions = new List<Permission>();
+            GrantedPermissionCodes = new List<string>();
+        }
+    }
 }

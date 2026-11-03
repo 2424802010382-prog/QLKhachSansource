@@ -1,7 +1,10 @@
 @model QLKhachSan.Models.Booking
 @{
     Layout = null;
-    string qrUrl = $"https://img.vietqr.io/image/MB-0123456789-compact.png?amount={Model.TotalAmount}&addInfo=QLKS%20{Model.BookingId}&accountName=LUXURY%20HOTEL";
+    long amountInt = Convert.ToInt64(Math.Round(Model.TotalAmount));
+    string addInfo = "QLKS " + Model.BookingId;
+    string accountName = "LUXURY HOTEL";
+    string qrUrl = $"https://img.vietqr.io/image/970436-1038619653-compact2.png?amount={amountInt}&addInfo={Uri.EscapeDataString(addInfo)}&accountName={Uri.EscapeDataString(accountName)}";
 }
 
 <!DOCTYPE html>
@@ -65,25 +68,51 @@
                 <!-- Tab Chuyển khoản QR -->
                 <div id="sectionTransfer" class="space-y-6 text-center">
                     <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 text-sm">
-                        <i class="fas fa-info-circle mr-1"></i> Quét mã QR bên dưới bằng ứng dụng ngân hàng để thanh toán tự động. Hệ thống sẽ tự động xác nhận sau vài giây.
+                        <i class="fas fa-info-circle mr-1"></i> Quét mã QR Vietcombank bên dưới bằng ứng dụng ngân hàng. Số tiền và nội dung sẽ được điền tự động.
                     </div>
 
                     <div class="inline-block p-4 bg-white border-2 border-dashed border-indigo-300 rounded-2xl shadow-sm">
-                        <img src="@qrUrl" alt="VietQR Payment" class="w-64 h-64 mx-auto object-contain">
+                        <img src="@qrUrl" alt="VietQR Payment VCB" class="w-64 h-64 mx-auto object-contain">
                     </div>
 
-                    <div class="text-sm space-y-1 text-gray-700 bg-gray-50 p-4 rounded-xl text-left">
-                        <div class="flex justify-between"><span>Ngân hàng:</span> <strong class="text-gray-900">MB Bank</strong></div>
-                        <div class="flex justify-between"><span>Số tài khoản:</span> <strong class="text-indigo-600">0123456789</strong></div>
-                        <div class="flex justify-between"><span>Chủ tài khoản:</span> <strong class="text-gray-900">LUXURY HOTEL</strong></div>
-                        <div class="flex justify-between"><span>Số tiền:</span> <strong class="text-red-600">@Model.TotalAmount.ToString("N0")đ</strong></div>
-                        <div class="flex justify-between"><span>Nội dung CK:</span> <strong class="text-emerald-600">QLKS @Model.BookingId</strong></div>
+                    <div class="text-sm space-y-2 text-gray-700 bg-gray-50 p-4 rounded-xl text-left">
+                        <div class="flex justify-between items-center">
+                            <span>Ngân hàng:</span>
+                            <strong class="text-gray-900">Vietcombank (VCB)</strong>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Số tài khoản:</span>
+                            <div class="flex items-center gap-2">
+                                <strong id="accNoText" class="text-indigo-600">1038619653</strong>
+                                <button type="button" onclick="copyText('1038619653', this)" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-semibold transition">
+                                    <i class="fas fa-copy mr-1"></i> Sao chép
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Chủ tài khoản:</span>
+                            <strong class="text-gray-900">LUXURY HOTEL</strong>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Số tiền:</span>
+                            <strong class="text-red-600 text-base">@Model.TotalAmount.ToString("N0")đ</strong>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Nội dung CK:</span>
+                            <div class="flex items-center gap-2">
+                                <strong id="contentTransferText" class="text-emerald-600">QLKS @Model.BookingId</strong>
+                                <button type="button" onclick="copyText('QLKS @Model.BookingId', this)" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-semibold transition">
+                                    <i class="fas fa-copy mr-1"></i> Sao chép
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="flex gap-4">
-                        <button onclick="simulatePaid()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition">
-                            <i class="fas fa-check-circle mr-2"></i> Mô phỏng đã chuyển khoản
+                    <div class="flex flex-col gap-2">
+                        <button onclick="simulatePaid()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow">
+                            <i class="fas fa-check-circle mr-2"></i> Mô phỏng đã chuyển khoản (Demo Testing)
                         </button>
+                        <span class="text-[11px] text-gray-400 italic">Chế độ giả lập dành cho môi trường thử nghiệm. Giao dịch thực tế cần được xác nhận từ nhân viên/ngân hàng.</span>
                     </div>
                 </div>
 
@@ -117,12 +146,24 @@
             }
         }
 
+        function copyText(text, btn) {
+            navigator.clipboard.writeText(text).then(function() {
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check mr-1"></i> Đã sao chép';
+                btn.classList.add('bg-green-100', 'text-green-800');
+                setTimeout(function() {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.remove('bg-green-100', 'text-green-800');
+                }, 2000);
+            });
+        }
+
         function confirmCash() {
             $.post('@Url.Action("ConfirmCashPayment", "Booking", new { id = Model.BookingId })', function(res) {
                 if (res.success && res.redirectUrl) {
                     window.location.href = res.redirectUrl;
                 } else {
-                    alert(res.message || 'Có lỗi xảy ra.');
+                    showLuxuryAlert(res.message || 'Có lỗi xảy ra.', 'Thông báo', 'error');
                 }
             });
         }
@@ -144,5 +185,6 @@
             });
         }, 4000);
     </script>
+    @Html.Partial("~/Views/Shared/_LuxuryModal.cshtml")
 </body>
 </html>
