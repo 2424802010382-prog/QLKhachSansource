@@ -20,7 +20,7 @@ namespace QLKhachSan
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
 
-            Database.SetInitializer(new MigrateDatabaseToLatestVersion<HotelDbContext, Configuration>());
+            Database.SetInitializer<HotelDbContext>(null);
         }
     }
 }
