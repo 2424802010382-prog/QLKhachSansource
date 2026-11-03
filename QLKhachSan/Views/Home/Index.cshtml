@@ -1125,13 +1125,27 @@
             }
 
         @@media (max-width: 768px) {
+            .hero-section {
+                min-height: 480px !important;
+                padding: 40px 15px !important;
+            }
+
             .hero-section .hero-buttons {
-                gap: 14px !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                width: 100% !important;
+                gap: 12px !important;
             }
 
             .hero-section .hero-discover-button,
             .hero-section .hero-book-button {
-                width: 225px !important;
+                width: 100% !important;
+                max-width: 280px !important;
+            }
+
+            .hero-title {
+                font-size: 1.875rem !important;
+                line-height: 1.25 !important;
             }
 
             .luxury-feature-card h4 {
@@ -1206,7 +1220,8 @@
                 <div class="luxury-crown-logo"><i class="fas fa-crown"></i></div>
                 <div><h1 class="luxury-logo text-xl md:text-2xl font-extrabold">LUXURY HOTEL</h1><p class="text-yellow-300 text-[10px] tracking-[3px]">LUXURY &amp; COMFORT</p></div>
             </a>
-            <div class="flex items-center gap-1">
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex items-center gap-1">
                 <a href="#" onclick="showPage('home'); return false;" class="luxury-menu-link px-3 py-2 rounded text-sm font-semibold"><i class="fas fa-house mr-1"></i> Trang chủ</a>
                 <div class="room-dropdown">
                     <button type="button" class="luxury-menu-link room-dropdown-button px-3 py-2 rounded text-sm font-semibold"><i class="fas fa-bed mr-1"></i> Phòng <i class="fas fa-chevron-down text-xs ml-1"></i></button>
@@ -1474,6 +1489,45 @@ Session["Role"].ToString() == "Admin"
                     </div>
                 }
             </div>
+
+            <!-- Mobile Hamburger Button -->
+            <button type="button" onclick="toggleMobileMenu()" class="md:hidden text-yellow-300 text-2xl p-2 focus:outline-none">
+                <i class="fas fa-bars" id="mobileMenuIcon"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Dropdown Menu -->
+        <div id="mobileMenu" class="hidden absolute top-full left-0 w-full bg-[#241c17]/95 backdrop-blur-md border-b border-[#d4af37]/40 shadow-2xl p-5 flex flex-col gap-3 md:hidden z-50 text-white">
+            <a href="#" onclick="showPage('home'); toggleMobileMenu(); return false;" class="py-2.5 px-3 rounded hover:bg-white/10 font-semibold text-sm flex items-center gap-2"><i class="fas fa-house text-yellow-400"></i> Trang chủ</a>
+            <a href="#" onclick="showPage('rooms'); toggleMobileMenu(); return false;" class="py-2.5 px-3 rounded hover:bg-white/10 font-semibold text-sm flex items-center gap-2"><i class="fas fa-bed text-yellow-400"></i> Danh sách phòng</a>
+            @if (Session["Role"] == null || (Session["Role"].ToString() != "Staff" && Session["Role"].ToString() != "Admin"))
+            {
+                <a href="#" onclick="showPage('rooms'); toggleMobileMenu(); return false;" class="py-2.5 px-3 rounded hover:bg-white/10 font-semibold text-sm flex items-center gap-2"><i class="fas fa-calendar-check text-yellow-400"></i> Đặt phòng</a>
+                <a href="#" onclick="goToRestaurant(event); toggleMobileMenu(); return false;" class="py-2.5 px-3 rounded hover:bg-white/10 font-semibold text-sm flex items-center gap-2"><i class="fas fa-utensils text-yellow-400"></i> Đặt món ăn</a>
+            }
+            <div class="border-t border-white/10 pt-3 mt-1 flex flex-col gap-2">
+                @if (Session["UserId"] == null)
+                {
+                    <button type="button" onclick="openLoginModal(); toggleMobileMenu();" class="w-full text-center py-2.5 bg-transparent border border-yellow-500 text-yellow-300 font-semibold rounded-lg text-sm"><i class="fas fa-right-to-bracket mr-1"></i> Đăng nhập</button>
+                    <button type="button" onclick="openRegisterModal(); toggleMobileMenu();" class="w-full text-center py-2.5 bg-gradient-to-r from-[#d4af37] to-[#f5d77a] text-[#21170f] font-bold rounded-lg text-sm"><i class="fas fa-user-plus mr-1"></i> Đăng ký</button>
+                }
+                else
+                {
+                    <div class="text-yellow-300 text-sm font-semibold py-1"><i class="fas fa-user-circle mr-1"></i> Xin chào, @(Session["FullName"] ?? Session["Username"])</div>
+                    if (Session["Role"] != null && Session["Role"].ToString() == "Admin")
+                    {
+                        <a href="@Url.Action("Index", "Admin")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-hotel"></i> Quản lý khách sạn</a>
+                        <a href="@Url.Action("ManageFoods", "Restaurant")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-utensils"></i> Quản lý thực đơn</a>
+                    }
+                    if (Session["Role"] != null && Session["Role"].ToString() == "Staff")
+                    {
+                        <a href="@Url.Action("Index", "Staff")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-gauge-high"></i> Dashboard nhân viên</a>
+                    }
+                    <a href="@Url.Action("Profile", "Account")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-user-gear"></i> Tài khoản</a>
+                    <a href="@Url.Action("Logout", "Account")" class="py-2.5 px-3 rounded bg-red-600 text-white text-center font-bold text-sm"><i class="fas fa-right-from-bracket mr-1"></i> Đăng xuất</a>
+                }
+            </div>
+        </div>
         </div>
     </nav>
 
@@ -4130,6 +4184,19 @@ document.addEventListener('DOMContentLoaded', function() {
         openLoginModal();
     }
 });
+
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    const icon = document.getElementById('mobileMenuIcon');
+    if (!menu) return;
+    if (menu.classList.contains('hidden')) {
+        menu.classList.remove('hidden');
+        if (icon) { icon.classList.remove('fa-bars'); icon.classList.add('fa-times'); }
+    } else {
+        menu.classList.add('hidden');
+        if (icon) { icon.classList.remove('fa-times'); icon.classList.add('fa-bars'); }
+    }
+}
 
             /* =======================================================
     ĐẶT PHÒNG
