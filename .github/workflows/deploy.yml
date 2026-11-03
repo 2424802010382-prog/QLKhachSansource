@@ -1,5 +1,5 @@
 
-name: Luxury Hotel - Build
+name: Luxury Hotel - Build and Deploy
 
 on:
   push:
@@ -29,3 +29,62 @@ jobs:
 
       - name: Build ASP.NET MVC 5
         run: msbuild QLKhachSan.sln /m /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Publish website to folder
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE "publish"
+
+          msbuild "QLKhachSan\QLKhachSan.csproj" `
+            /p:Configuration=Release `
+            /p:VisualStudioVersion=17.0 `
+            /p:DeployOnBuild=true `
+            /p:WebPublishMethod=FileSystem `
+            /p:PublishUrl="$publishDir" `
+            /p:DeleteExistingFiles=true
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Publish failed"
+          }
+
+          if (!(Test-Path "$publishDir\bin") -or
+              !(Test-Path "$publishDir\Views")) {
+            throw "Publish output is incomplete"
+          }
+
+          Write-Host "Website publish files prepared."
+
+      - name: Deploy to SmarterASP.NET
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        env:
+          DEPLOY_SERVER: ${{ secrets.WEBDEPLOY_SERVER }}
+          DEPLOY_USER: ${{ secrets.WEBDEPLOY_USERNAME }}
+          DEPLOY_PASSWORD: ${{ secrets.WEBDEPLOY_PASSWORD }}
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE "publish"
+
+          # Keep the hosting's existing Web.config
+          $configPath = Join-Path $publishDir "Web.config"
+          if (Test-Path $configPath) {
+            Remove-Item $configPath -Force
+          }
+
+          $msdeploy = "${env:ProgramFiles}\IIS\Microsoft Web Deploy V3\msdeploy.exe"
+
+          if (!(Test-Path $msdeploy)) {
+            throw "Web Deploy is not installed on the runner."
+          }
+
+          & $msdeploy `
+            "-verb:sync" `
+            "-source:contentPath=$publishDir" `
+            "-dest:contentPath=coklingone-001-site1,computerName=$env:DEPLOY_SERVER,userName=$env:DEPLOY_USER,password=$env:DEPLOY_PASSWORD,authType=Basic" `
+            "-allowUntrusted" `
+            "-enableRule:DoNotDeleteRule"
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Web Deploy failed"
+          }
+
+          Write-Host "Deployment completed."
