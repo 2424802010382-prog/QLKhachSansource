@@ -1,0 +1,31 @@
+
+name: Luxury Hotel - Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore packages
+        run: nuget restore QLKhachSan.sln
+
+      - name: Build ASP.NET MVC 5
+        run: msbuild QLKhachSan.sln /m /p:Configuration=Release /p:Platform="Any CPU"
