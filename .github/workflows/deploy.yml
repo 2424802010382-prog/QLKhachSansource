@@ -1,19 +1,21 @@
-name: CI/CD Deploy Luxury Hotel
+
+name: Luxury Hotel - Build
 
 on:
   push:
     branches:
       - main
-      - master
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  build-and-deploy:
-    name: Build & Deploy to SmarterASP.NET
+  build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Setup NuGet
@@ -22,32 +24,8 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Restore NuGet Packages
+      - name: Restore packages
         run: nuget restore QLKhachSan.sln
 
-      - name: Build Web Application
-        run: |
-          msbuild QLKhachSan\QLKhachSan.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipExtraFilesOnServer=true /p:PackageLocation="${{ github.workspace }}\package\QLKhachSan.zip"
-
-      - name: Deploy to Hosting via MSDeploy
-        shell: powershell
-        run: |
-          $msdeploy = "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe"
-          if (-not (Test-Path $msdeploy)) {
-              $msdeploy = "C:\Program Files (x86)\IIS\Microsoft Web Deploy V3\msdeploy.exe"
-          }
-          
-          $packagePath = "${{ github.workspace }}\package\QLKhachSan.zip"
-          $server = "${{ secrets.SMARTERASP_SERVER }}"
-          $siteName = "${{ secrets.SMARTERASP_SITE_NAME }}"
-          $username = "${{ secrets.SMARTERASP_USERNAME }}"
-          $password = "${{ secrets.SMARTERASP_PASSWORD }}"
-          
-          if ([string]::IsNullOrWhiteSpace($server) -or [string]::IsNullOrWhiteSpace($siteName) -or [string]::IsNullOrWhiteSpace($username) -or [string]::IsNullOrWhiteSpace($password)) {
-              Write-Error "CRITICAL: GitHub Secrets for SmarterASP.NET are missing. Please configure SMARTERASP_SERVER, SMARTERASP_SITE_NAME, SMARTERASP_USERNAME, and SMARTERASP_PASSWORD in GitHub Repository Secrets!"
-              exit 1
-          }
-
-          $dest = "auto,ComputerName='https://$($server):8172/msdeploy.axd?site=$($siteName)',UserName='$($username)',Password='$($password)',AuthType='Basic'"
-          
-          & $msdeploy -verb:sync -source:package="$packagePath" -dest:$dest -enableRule:DoNotDeleteRule -skip:objectName=filePath,absolutePath='Web\.config$' -allowUntrusted
+      - name: Build ASP.NET MVC 5
+        run: msbuild QLKhachSan.sln /m /p:Configuration=Release /p:Platform="Any CPU"
