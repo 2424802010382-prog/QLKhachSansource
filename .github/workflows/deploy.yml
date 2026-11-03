@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: luxury-hotel-deployment
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: windows-2022
@@ -39,20 +43,43 @@ jobs:
             /p:Configuration=Release `
             /p:VisualStudioVersion=17.0 `
             /p:DeployOnBuild=true `
-            /p:WebPublishMethod=FileSystem `
-            /p:PublishUrl="$publishDir" `
-            /p:DeleteExistingFiles=true
+            /p:WebPublishMethod=Package `
+            /p:PackageAsSingleFile=false
 
           if ($LASTEXITCODE -ne 0) {
             throw "Publish failed"
           }
 
-          if (!(Test-Path "$publishDir\bin") -or
-              !(Test-Path "$publishDir\Views")) {
-            throw "Publish output is incomplete"
+          $packageTmp = Join-Path $env:GITHUB_WORKSPACE "QLKhachSan\obj\Release\Package\PackageTmp"
+
+          if (!(Test-Path "$packageTmp\bin") -or
+              !(Test-Path "$packageTmp\Views")) {
+            throw "Package output is incomplete"
           }
 
-          Write-Host "Website publish files prepared."
+          New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
+          Copy-Item "$packageTmp\*" $publishDir -Recurse -Force
+
+          Write-Host "Publish output prepared successfully."
+
+      - name: Check deployment files
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE "publish"
+
+          if (!(Test-Path "$publishDir\bin")) {
+            throw "Missing bin folder"
+          }
+
+          if (!(Test-Path "$publishDir\Views")) {
+            throw "Missing Views folder"
+          }
+
+          if (!(Test-Path "$publishDir\Global.asax")) {
+            throw "Missing Global.asax"
+          }
+
+          Write-Host "Publish folder validation passed."
 
       - name: Deploy to SmarterASP.NET
         if: github.event_name == 'workflow_dispatch'
@@ -64,27 +91,35 @@ jobs:
         run: |
           $publishDir = Join-Path $env:GITHUB_WORKSPACE "publish"
 
-          # Keep the hosting's existing Web.config
-          $configPath = Join-Path $publishDir "Web.config"
-          if (Test-Path $configPath) {
-            Remove-Item $configPath -Force
+          if ([string]::IsNullOrWhiteSpace($env:DEPLOY_SERVER) -or
+              [string]::IsNullOrWhiteSpace($env:DEPLOY_USER) -or
+              [string]::IsNullOrWhiteSpace($env:DEPLOY_PASSWORD)) {
+            throw "Missing Web Deploy secrets."
           }
 
           $msdeploy = "${env:ProgramFiles}\IIS\Microsoft Web Deploy V3\msdeploy.exe"
 
           if (!(Test-Path $msdeploy)) {
-            throw "Web Deploy is not installed on the runner."
+            throw "Web Deploy is not installed on this runner."
           }
 
+          # Do not deploy local database connection settings.
+          $configPath = Join-Path $publishDir "Web.config"
+          if (Test-Path $configPath) {
+            Remove-Item $configPath -Force
+          }
+
+          # Preserve existing files and folders on hosting.
           & $msdeploy `
             "-verb:sync" `
             "-source:contentPath=$publishDir" `
             "-dest:contentPath=coklingone-001-site1,computerName=$env:DEPLOY_SERVER,userName=$env:DEPLOY_USER,password=$env:DEPLOY_PASSWORD,authType=Basic" `
             "-allowUntrusted" `
-            "-enableRule:DoNotDeleteRule"
+            "-enableRule:DoNotDeleteRule" `
+            "-skip:objectName=filePath,absolutePath=Web\.config$"
 
           if ($LASTEXITCODE -ne 0) {
-            throw "Web Deploy failed"
+            throw "Web Deploy failed."
           }
 
           Write-Host "Deployment completed."
