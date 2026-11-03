@@ -243,7 +243,7 @@
       <DependentUpon>Model1.edmx</DependentUpon>
       <LastGenOutput>Model1.cs</LastGenOutput>
     </Content>
-    <Content Include="Properties\PublishProfiles\coklingone-001-site1 - FTP.pubxml.user" />
+    
     <Content Include="Properties\PublishProfiles\coklingone-001-site1 - Web Deploy.pubxml.user" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
