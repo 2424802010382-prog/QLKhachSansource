@@ -969,7 +969,7 @@
             .hero-title span {
                 font-size: clamp(1.9rem, 7.5vw, 3.4rem) !important;
                 white-space: nowrap !important;
-            
+
         }
 }
 
@@ -1148,6 +1148,47 @@
                 flex-direction: column !important;
             }
         }
+
+/* FIX POPUP DANG KY TREN DIEN THOAI */
+#registerModal {
+    box-sizing: border-box;
+    overscroll-behavior: contain;
+}
+
+#registerModal > .rounded-2xl {
+    box-sizing: border-box;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+@@media (max-width: 640px) {
+    #registerModal {
+        padding: 12px !important;
+    }
+
+    #registerModal > .rounded-2xl {
+        width: 100%;
+        max-height: calc(100vh - 24px);
+        max-height: calc(100dvh - 24px);
+        padding: 20px 16px 24px !important;
+    }
+
+    #registerModal .text-center.mb-8 {
+        margin-bottom: 20px !important;
+    }
+
+    #registerModal h2 {
+        font-size: 24px !important;
+        line-height: 1.3;
+    }
+
+    #registerModal input {
+        font-size: 16px;
+    }
+}
+
     </style>
 
     <!-- =========================================================
@@ -1266,26 +1307,26 @@
                     <!-- ĐÃ ĐĂNG NHẬP -->
                     <!-- ===================================================== -->
 
-            <div id="userInfo"
-                 class="flex items-center
+                    <div id="userInfo"
+                         class="flex items-center
                 space-x-3
                 bg-black/30
                 p-1 rounded-full
                 px-4
                 border border-yellow-500/50">
 
-                @if (
+                        @if (
 Session["Role"] != null &&
 Session["Role"].ToString() == "Admin"
 )
-                {
-                    <!-- QUAY LẠI TRANG QUẢN LÝ KHÁCH SẠN -->
+                        {
+                            <!-- QUAY LẠI TRANG QUẢN LÝ KHÁCH SẠN -->
 
-                    <a href="@Url.Action(
+                            <a href="@Url.Action(
                 "Index",
                 "Admin"
              )"
-                       class="text-yellow-200
+                               class="text-yellow-200
               hover:text-yellow-400
               text-xs
               font-semibold
@@ -1294,25 +1335,25 @@ Session["Role"].ToString() == "Admin"
               items-center
               gap-1">
 
-                        <i class="fas fa-hotel"></i>
+                                <i class="fas fa-hotel"></i>
 
-                        Quản lý khách sạn
+                                Quản lý khách sạn
 
-                    </a>
-
-
-                    <span class="text-yellow-500">
-                        |
-                    </span>
+                            </a>
 
 
-                    <!-- QUẢN LÝ THỰC ĐƠN -->
+                            <span class="text-yellow-500">
+                                |
+                            </span>
 
-                    <a href="@Url.Action(
+
+                            <!-- QUẢN LÝ THỰC ĐƠN -->
+
+                            <a href="@Url.Action(
                 "ManageFoods",
                 "Restaurant"
              )"
-                       class="text-yellow-200
+                               class="text-yellow-200
               hover:text-yellow-400
               text-xs
               font-semibold
@@ -1321,40 +1362,40 @@ Session["Role"].ToString() == "Admin"
               items-center
               gap-1">
 
-                        <i class="fas fa-utensils"></i>
+                                <i class="fas fa-utensils"></i>
 
-                        Quản lý thực đơn
+                                Quản lý thực đơn
 
-                    </a>
+                            </a>
 
 
-                    <span class="text-yellow-500">
-                        |
-                    </span>
-                }
+                            <span class="text-yellow-500">
+                                |
+                            </span>
+                        }
 
-                <!-- LỊCH SỬ ĐẶT PHÒNG (CHỈ DÀNH CHO KHÁCH HÀNG THƯỜNG) -->
-                @if (Session["UserId"] != null && (Session["Role"] == null || (Session["Role"].ToString() != "Admin" && Session["Role"].ToString() != "Staff")))
-                {
-                    <span class="text-yellow-500">|</span>
-                    <a href="@Url.Action("Index", "BookingHistory")"
-                       class="text-yellow-200 hover:text-yellow-400 text-sm font-semibold whitespace-nowrap">
-                        <i class="fas fa-clock-rotate-left mr-1"></i> Lịch sử đặt phòng
-                    </a>
-                }
+                        <!-- LỊCH SỬ ĐẶT PHÒNG (CHỈ DÀNH CHO KHÁCH HÀNG THƯỜNG) -->
+                        @if (Session["UserId"] != null && (Session["Role"] == null || (Session["Role"].ToString() != "Admin" && Session["Role"].ToString() != "Staff")))
+                        {
+                            <span class="text-yellow-500">|</span>
+                            <a href="@Url.Action("Index", "BookingHistory")"
+                               class="text-yellow-200 hover:text-yellow-400 text-sm font-semibold whitespace-nowrap">
+                                <i class="fas fa-clock-rotate-left mr-1"></i> Lịch sử đặt phòng
+                            </a>
+                        }
 
-                @if (
-    Session["Role"] != null
-    &&
-    Session["Role"].ToString() == "Staff"
+                        @if (
+            Session["Role"] != null
+            &&
+            Session["Role"].ToString() == "Staff"
 )
-                {
-                    <span class="text-yellow-500">|</span>
-                    <a href="@Url.Action(
+                        {
+                            <span class="text-yellow-500">|</span>
+                            <a href="@Url.Action(
                 "Index",
                 "Staff"
              )"
-                       class="text-yellow-200
+                               class="text-yellow-200
               hover:text-yellow-400
               text-sm
               font-semibold
@@ -1363,74 +1404,74 @@ Session["Role"].ToString() == "Admin"
               items-center
               gap-1">
 
-                        <i class="fas fa-gauge-high"></i>
+                                <i class="fas fa-gauge-high"></i>
 
-                        Dashboard nhân viên
+                                Dashboard nhân viên
 
-                    </a>
-                }
+                            </a>
+                        }
 
-                <span class="text-yellow-500">|</span>
-                <a href="@Url.Action(
+                        <span class="text-yellow-500">|</span>
+                        <a href="@Url.Action(
             "Profile",
             "Account"
          )"
-                   class="text-yellow-200
+                           class="text-yellow-200
           hover:text-yellow-400
           text-sm
           font-semibold
           whitespace-nowrap">
 
-                    <i class="fas
+                            <i class="fas
               fa-user-gear
               mr-1">
-                    </i>
+                            </i>
 
-                    Tài khoản
+                            Tài khoản
 
-                </a>
-                <!-- NGƯỜI DÙNG -->
+                        </a>
+                        <!-- NGƯỜI DÙNG -->
 
-                <span class="text-yellow-500">
-                    |
-                </span>
+                        <span class="text-yellow-500">
+                            |
+                        </span>
 
 
-                <i class="fas fa-user-circle
+                        <i class="fas fa-user-circle
                   text-2xl
                   text-yellow-300">
-                </i>
+                        </i>
 
 
-                <span class="font-semibold text-white"
-                      id="userNameDisplay">
+                        <span class="font-semibold text-white"
+                              id="userNameDisplay">
 
-                    @(Session["FullName"] != null
+                            @(Session["FullName"] != null
                 ? Session["FullName"].ToString()
                 : Session["Username"].ToString())
 
-                </span>
+                        </span>
 
 
-                <!-- ĐĂNG XUẤT -->
+                        <!-- ĐĂNG XUẤT -->
 
-                <a href="@Url.Action(
+                        <a href="@Url.Action(
                     "Logout",
                     "Account"
                  )"
-                   title="Đăng xuất"
-                   class="bg-red-500
+                           title="Đăng xuất"
+                           class="bg-red-500
                   hover:bg-red-600
                   text-white
                   text-xs
                   px-3 py-1.5
                   rounded-full">
 
-                    <i class="fas fa-sign-out-alt"></i>
+                            <i class="fas fa-sign-out-alt"></i>
 
-                </a>
+                        </a>
 
-            </div>
+                    </div>
                 }
             </div>
         </div>
@@ -1518,25 +1559,40 @@ Session["Role"].ToString() == "Admin"
                                 var imageList = new List<string> { primaryImg };
                                 string rTypeUpper = (room.RoomType ?? "").ToUpper();
 
-                                if (rTypeUpper.Contains("DELUXE")) {
+                                if (rTypeUpper.Contains("DELUXE"))
+                                {
                                     imageList.Add("https://images.unsplash.com/photo-1591088398332-8a7791972843?q=80&w=900");
                                     imageList.Add("https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=900");
-                                } else if (rTypeUpper.Contains("PREMIUM")) {
+                                }
+                                else if (rTypeUpper.Contains("PREMIUM"))
+                                {
                                     imageList.Add("https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=900");
                                     imageList.Add("https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=900");
-                                } else if (rTypeUpper.Contains("SUITE") || rTypeUpper.Contains("BALCONY")) {
+                                }
+                                else if (rTypeUpper.Contains("SUITE") || rTypeUpper.Contains("BALCONY"))
+                                {
                                     imageList.Add("https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=900");
                                     imageList.Add("https://images.unsplash.com/photo-1566665797739-1674de7a421a?q=80&w=900");
-                                } else if (rTypeUpper.Contains("PRESIDENT") || rTypeUpper.Contains("TONG THONG")) {
+                                }
+                                else if (rTypeUpper.Contains("PRESIDENT") || rTypeUpper.Contains("TONG THONG"))
+                                {
                                     imageList.Add("https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=900");
                                     imageList.Add("https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=900");
-                                } else if (rTypeUpper.Contains("SUPERIOR")) {
+                                }
+                                else if (rTypeUpper.Contains("SUPERIOR"))
+                                {
                                     imageList.Add("https://images.unsplash.com/photo-1591088398332-8a7791972843?q=80&w=900");
-                                } else if (rTypeUpper.Contains("TWIN")) {
+                                }
+                                else if (rTypeUpper.Contains("TWIN"))
+                                {
                                     imageList.Add("https://images.unsplash.com/photo-1566665797739-1674de7a421a?q=80&w=900");
-                                } else if (rTypeUpper.Contains("FAMILY")) {
+                                }
+                                else if (rTypeUpper.Contains("FAMILY"))
+                                {
                                     imageList.Add("https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=900");
-                                } else {
+                                }
+                                else
+                                {
                                     imageList.Add("https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=900");
                                 }
 
@@ -2543,18 +2599,23 @@ Session["Role"].ToString() == "Admin"
     <!-- MODAL ĐĂNG KÝ -->
     <!-- ========================================================= -->
 
+
     <div id="registerModal"
          class="fixed inset-0 bg-black/70 hidden
-                justify-center items-center p-4 z-50
-                transition-opacity duration-300 opacity-0">
+            justify-center items-center
+            p-3 sm:p-4 z-50
+            overflow-y-auto
+            transition-opacity duration-300 opacity-0">
 
         <div class="bg-white rounded-2xl
-                    max-w-2xl w-full
-                    p-8 md:p-10
-                    shadow-2xl relative
-                    transform scale-90
-                    transition-transform duration-300
-                    max-h-[95vh] overflow-y-auto">
+                w-full max-w-2xl
+                p-5 sm:p-8 md:p-10
+                shadow-2xl relative
+                transform scale-90
+                transition-transform duration-300
+                overflow-y-auto overflow-x-hidden
+                mx-auto">
+
 
 
             <!-- ================================================= -->
@@ -6805,13 +6866,13 @@ async function checkRoomAvailability() {
             row.id = id;
             row.style.cssText = "display: flex; gap: 8px; margin-bottom: 15px;";
             row.innerHTML = `
-                <div style="width: 32px; height: 32px; min-width: 32px; background: #dbeafe; color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-robot"></i>
-                </div>
-                <div style="background: white; color: #4b5563; padding: 12px; border-radius: 12px; font-size: 13px; font-style: italic; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
-                    <i class="fas fa-spinner fa-spin me-1 text-primary"></i> Gemini 3.5 Flash Lite đang suy nghĩ...
-                </div>
-            `;
+                    <div style="width: 32px; height: 32px; min-width: 32px; background: #dbeafe; color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div style="background: white; color: #4b5563; padding: 12px; border-radius: 12px; font-size: 13px; font-style: italic; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                        <i class="fas fa-spinner fa-spin me-1 text-primary"></i> Gemini 3.5 Flash Lite đang suy nghĩ...
+                    </div>
+                `;
             messages.appendChild(row);
             messages.scrollTop = messages.scrollHeight;
             return id;
@@ -6829,60 +6890,60 @@ async function checkRoomAvailability() {
 
             if (sender === "user") {
                 messageRow.style.cssText = `
-                    display: flex;
-                    justify-content: flex-end;
-                    margin-bottom: 15px;
-                `;
+                        display: flex;
+                        justify-content: flex-end;
+                        margin-bottom: 15px;
+                    `;
 
                 messageRow.innerHTML = `
-                    <div style="
-                        background: #2563eb;
-                        color: white;
-                        padding: 12px;
-                        border-radius: 12px;
-                        max-width: 80%;
-                        font-size: 14px;
-                        word-wrap: break-word;
-                    ">
-                        ${escapeAIText(message)}
-                    </div>
-                `;
+                        <div style="
+                            background: #2563eb;
+                            color: white;
+                            padding: 12px;
+                            border-radius: 12px;
+                            max-width: 80%;
+                            font-size: 14px;
+                            word-wrap: break-word;
+                        ">
+                            ${escapeAIText(message)}
+                        </div>
+                    `;
             } else {
                 messageRow.style.cssText = `
-                    display: flex;
-                    gap: 8px;
-                    margin-bottom: 15px;
-                `;
+                        display: flex;
+                        gap: 8px;
+                        margin-bottom: 15px;
+                    `;
 
                 messageRow.innerHTML = `
-                    <div style="
-                        width: 32px;
-                        height: 32px;
-                        min-width: 32px;
-                        background: #dbeafe;
-                        color: #2563eb;
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    ">
-                        <i class="fas fa-robot"></i>
-                    </div>
+                        <div style="
+                            width: 32px;
+                            height: 32px;
+                            min-width: 32px;
+                            background: #dbeafe;
+                            color: #2563eb;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        ">
+                            <i class="fas fa-robot"></i>
+                        </div>
 
-                    <div style="
-                        background: white;
-                        color: #1f2937;
-                        padding: 12px;
-                        border-radius: 12px;
-                        max-width: 80%;
-                        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-                        font-size: 14px;
-                        white-space: pre-line;
-                        line-height: 1.5;
-                    ">
-                        ${formatAIResponse(message)}
-                    </div>
-                `;
+                        <div style="
+                            background: white;
+                            color: #1f2937;
+                            padding: 12px;
+                            border-radius: 12px;
+                            max-width: 80%;
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+                            font-size: 14px;
+                            white-space: pre-line;
+                            line-height: 1.5;
+                        ">
+                            ${formatAIResponse(message)}
+                        </div>
+                    `;
             }
 
             messages.appendChild(messageRow);
