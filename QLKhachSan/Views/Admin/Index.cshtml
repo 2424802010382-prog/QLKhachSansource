@@ -116,127 +116,72 @@
         "_AdminSidebar"
     )
 
+    <!-- ====================================================== -->
+    <!-- MOBILE ADMIN SIDEBAR DRAWER -->
+    <!-- ====================================================== -->
+    <div id="adminMobileSidebar" class="hidden fixed inset-0 z-50 bg-black/60 lg:hidden" onclick="toggleAdminMobileSidebar()">
+        <div class="w-72 h-full bg-gradient-to-b from-[#111827] via-[#172554] to-[#312e81] text-white overflow-y-auto p-5 flex flex-col shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center pb-4 mb-4 border-b border-white/10">
+                <div class="font-bold text-lg text-yellow-400 flex items-center gap-2"><i class="fas fa-hotel"></i> LUXURY ADMIN</div>
+                <button type="button" onclick="toggleAdminMobileSidebar()" class="text-white text-xl p-1 hover:text-yellow-400 transition"><i class="fas fa-times"></i></button>
+            </div>
+            <p class="px-3 mb-2 text-xs font-extrabold tracking-[2px] text-blue-300">TỔNG QUAN</p>
+            <a href="@Url.Action("Index", "Admin")" class="py-2.5 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold flex items-center gap-3 mb-1"><i class="fas fa-chart-line text-blue-400"></i> Dashboard</a>
+            <a href="@Url.Action("Rooms", "Admin")" class="py-2.5 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold flex items-center gap-3 mb-1"><i class="fas fa-bed text-yellow-400"></i> Quản lý phòng</a>
+            <a href="@Url.Action("Bookings", "Admin")" class="py-2.5 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold flex items-center gap-3 mb-1"><i class="fas fa-calendar-check text-green-400"></i> Đơn đặt phòng</a>
+            <a href="@Url.Action("CurrentGuests", "Admin")" class="py-2.5 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold flex items-center gap-3 mb-1"><i class="fas fa-users text-purple-400"></i> Khách đang ở</a>
+            <p class="px-3 mt-4 mb-2 text-xs font-extrabold tracking-[2px] text-blue-300">QUẢN LÝ</p>
+            <a href="@Url.Action("Users", "Admin")" class="py-2.5 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold flex items-center gap-3 mb-1"><i class="fas fa-user-gear text-indigo-400"></i> Tài khoản</a>
+            <a href="@Url.Action("StaffPermissions", "Admin")" class="py-2.5 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold flex items-center gap-3 mb-1"><i class="fas fa-shield-halved text-rose-400"></i> Phân quyền nhân viên</a>
+            <a href="@Url.Action("Services", "Admin")" class="py-2.5 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold flex items-center gap-3 mb-1"><i class="fas fa-concierge-bell text-amber-400"></i> Dịch vụ</a>
+            <a href="@Url.Action("Revenue", "Admin")" class="py-2.5 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold flex items-center gap-3 mb-1"><i class="fas fa-coins text-emerald-400"></i> Doanh thu</a>
+            <a href="@Url.Action("ManageFoods", "Restaurant")" class="py-2.5 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold flex items-center gap-3 mb-1"><i class="fas fa-utensils text-orange-400"></i> Quản lý thực đơn</a>
+        </div>
+    </div>
 
 
     <!-- ====================================================== -->
     <!-- MAIN -->
     <!-- ====================================================== -->
 
-    <div class="lg:ml-72
-                min-h-screen">
-
+    <div class="lg:ml-72 min-h-screen">
 
         <!-- ================================================== -->
         <!-- TOP BAR -->
         <!-- ================================================== -->
 
-        <header class="bg-white
-                       border-b
-                       sticky
-                       top-0
-                       z-30">
-
-            <div class="px-5
-                        lg:px-8
-                        py-4
-                        flex
-                        items-center
-                        justify-between
-                        gap-4">
-
-
-                <div>
-
-                    <p class="text-xs
-                              tracking-[2px]
-                              font-bold
-                              text-indigo-500">
-
-                        LUXURY HOTEL
-
-                    </p>
-
-                    <h1 class="text-2xl
-                               lg:text-3xl
-                               font-extrabold">
-
-                        Dashboard quản trị
-
-                    </h1>
-
-                    <p class="text-gray-500
-                              text-sm
-                              mt-1">
-
-                        Theo dõi và quản lý toàn bộ hoạt động khách sạn.
-
-                    </p>
-
+        <header class="bg-white border-b sticky top-0 z-30">
+            <div class="px-4 lg:px-8 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-center justify-between w-full md:w-auto">
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="toggleAdminMobileSidebar()" class="lg:hidden text-gray-700 hover:text-gray-900 text-2xl p-1.5 focus:outline-none mr-1">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div>
+                            <p class="text-xs tracking-[2px] font-bold text-indigo-500">LUXURY HOTEL</p>
+                            <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold">Dashboard quản trị</h1>
+                            <p class="text-gray-500 text-xs sm:text-sm mt-0.5">Theo dõi và quản lý toàn bộ hoạt động khách sạn.</p>
+                        </div>
+                    </div>
                 </div>
 
-
-                <div class="flex
-                            items-center
-                            gap-3">
-
-
-                    <form action="@Url.Action("ClearAllBookings", "Admin")" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn giải phóng toàn bộ dữ liệu đặt phòng và làm mới 40 phòng vật lý không?');" class="inline">
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
+                    <form action="@Url.Action("ClearAllBookings", "Admin")" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn giải phóng toàn bộ dữ liệu đặt phòng và làm mới 40 phòng vật lý không?');" class="w-full sm:w-auto">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 rounded-xl whitespace-nowrap">
+                        <button type="submit" class="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-xl transition">
                             <i class="fas fa-trash-can mr-1"></i> Giải phóng toàn bộ đặt phòng
                         </button>
                     </form>
 
-
-                    <a href="@Url.Action(
-                                "Index",
-                                "Home"
-                            )"
-                       class="bg-yellow-400
-                              hover:bg-yellow-500
-                              text-gray-900
-                              font-bold
-                              px-4
-                              py-2.5
-                              rounded-xl
-                              whitespace-nowrap">
-
-                        <i class="fas
-                                  fa-house
-                                  mr-1">
-                        </i>
-
-                        Trang chủ khách sạn
-
+                    <a href="@Url.Action("Index", "Home")" class="flex-1 sm:flex-none text-center bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-xl transition">
+                        <i class="fas fa-house mr-1"></i> Trang chủ
                     </a>
 
-
-                    <a href="@Url.Action(
-                                "Logout",
-                                "Account"
-                            )"
-                       class="bg-red-500
-                              hover:bg-red-600
-                              text-white
-                              font-bold
-                              px-4
-                              py-2.5
-                              rounded-xl
-                              whitespace-nowrap">
-
-                        <i class="fas
-                                  fa-right-from-bracket
-                                  mr-1">
-                        </i>
-
-                        Đăng xuất
-
+                    <a href="@Url.Action("Logout", "Account")" class="flex-1 sm:flex-none text-center bg-red-500 hover:bg-red-600 text-white font-bold px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-xl transition">
+                        <i class="fas fa-right-from-bracket mr-1"></i> Đăng xuất
                     </a>
-
                 </div>
-
             </div>
-
         </header>
 
 
@@ -1871,6 +1816,11 @@
                     showLuxuryAlert('Không thể kết nối máy chủ. Vui lòng thử lại!', 'Lỗi', 'error');
                 }
             });
+        }
+        function toggleAdminMobileSidebar() {
+            const sidebar = document.getElementById('adminMobileSidebar');
+            if (!sidebar) return;
+            sidebar.classList.toggle('hidden');
         }
     </script>
 

@@ -1221,7 +1221,7 @@
                 <div><h1 class="luxury-logo text-xl md:text-2xl font-extrabold">LUXURY HOTEL</h1><p class="text-yellow-300 text-[10px] tracking-[3px]">LUXURY &amp; COMFORT</p></div>
             </a>
             <!-- Desktop Menu -->
-            <div class="hidden md:flex items-center gap-1">
+            <div class="hidden xl:flex items-center gap-1">
                 <a href="#" onclick="showPage('home'); return false;" class="luxury-menu-link px-3 py-2 rounded text-sm font-semibold"><i class="fas fa-house mr-1"></i> Trang chủ</a>
                 <div class="room-dropdown">
                     <button type="button" class="luxury-menu-link room-dropdown-button px-3 py-2 rounded text-sm font-semibold"><i class="fas fa-bed mr-1"></i> Phòng <i class="fas fa-chevron-down text-xs ml-1"></i></button>
@@ -1491,13 +1491,13 @@ Session["Role"].ToString() == "Admin"
             </div>
 
             <!-- Mobile Hamburger Button -->
-            <button type="button" onclick="toggleMobileMenu()" class="md:hidden text-yellow-300 text-2xl p-2 focus:outline-none">
+            <button type="button" onclick="toggleMobileMenu()" class="xl:hidden text-yellow-300 text-2xl p-2 focus:outline-none">
                 <i class="fas fa-bars" id="mobileMenuIcon"></i>
             </button>
         </div>
 
         <!-- Mobile Dropdown Menu -->
-        <div id="mobileMenu" class="hidden absolute top-full left-0 w-full bg-[#241c17]/95 backdrop-blur-md border-b border-[#d4af37]/40 shadow-2xl p-5 flex flex-col gap-3 md:hidden z-50 text-white">
+        <div id="mobileMenu" class="hidden absolute top-full left-0 w-full bg-[#241c17]/95 backdrop-blur-md border-b border-[#d4af37]/40 shadow-2xl p-5 flex flex-col gap-3 xl:hidden z-50 text-white max-h-[85vh] overflow-y-auto">
             <a href="#" onclick="showPage('home'); toggleMobileMenu(); return false;" class="py-2.5 px-3 rounded hover:bg-white/10 font-semibold text-sm flex items-center gap-2"><i class="fas fa-house text-yellow-400"></i> Trang chủ</a>
             <a href="#" onclick="showPage('rooms'); toggleMobileMenu(); return false;" class="py-2.5 px-3 rounded hover:bg-white/10 font-semibold text-sm flex items-center gap-2"><i class="fas fa-bed text-yellow-400"></i> Danh sách phòng</a>
             @if (Session["Role"] == null || (Session["Role"].ToString() != "Staff" && Session["Role"].ToString() != "Admin"))
@@ -1523,11 +1523,14 @@ Session["Role"].ToString() == "Admin"
                     {
                         <a href="@Url.Action("Index", "Staff")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-gauge-high"></i> Dashboard nhân viên</a>
                     }
+                    if (Session["Role"] == null || (Session["Role"].ToString() != "Admin" && Session["Role"].ToString() != "Staff"))
+                    {
+                        <a href="@Url.Action("Index", "BookingHistory")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-clock-rotate-left"></i> Lịch sử đặt phòng</a>
+                    }
                     <a href="@Url.Action("Profile", "Account")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-user-gear"></i> Tài khoản</a>
                     <a href="@Url.Action("Logout", "Account")" class="py-2.5 px-3 rounded bg-red-600 text-white text-center font-bold text-sm"><i class="fas fa-right-from-bracket mr-1"></i> Đăng xuất</a>
                 }
             </div>
-        </div>
         </div>
     </nav>
 
