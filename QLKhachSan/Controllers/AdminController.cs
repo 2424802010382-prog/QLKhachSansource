@@ -2015,6 +2015,300 @@ namespace QLKhachSan.Controllers
         }
 
 
+        // Dữ liệu lịch bảo trì được lưu riêng, không ghi đè PhysicalRooms.Status.
+        // Bảng dbo.RoomMaintenances phải được tạo bằng script SQL đi kèm trước khi sử dụng.
+        public class RoomMaintenanceRecord
+        {
+            public int MaintenanceId { get; set; }
+            public int PhysicalRoomId { get; set; }
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
+            public string Reason { get; set; }
+            public string Note { get; set; }
+            public string Status { get; set; }
+        }
+
+        private List<RoomMaintenanceRecord> GetRoomMaintenanceRecords()
+        {
+            return db.Database.SqlQuery<RoomMaintenanceRecord>(
+                @"SELECT MaintenanceId, PhysicalRoomId, StartDate, EndDate, Reason, Note, Status
+                  FROM dbo.RoomMaintenances ORDER BY StartDate DESC, MaintenanceId DESC").ToList();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AdminAuthorize]
+        public ActionResult SaveRoomMaintenance(int physicalRoomId, DateTime? startDate,
+            DateTime? endDate, string reason, string note)
+        {
+            reason = (reason ?? "").Trim();
+            note = (note ?? "").Trim();
+            if (!startDate.HasValue || !endDate.HasValue ||
+                startDate.Value.Date >= endDate.Value.Date || reason.Length == 0 || reason.Length > 500 || note.Length > 2000)
+                return Json(new { success = false, message = "Ngày kết thúc phải sau ngày bắt đầu; lý do là bắt buộc (tối đa 500 ký tự)." });
+
+            DateTime start = startDate.Value.Date;
+            DateTime end = endDate.Value.Date; // ngày kết thúc không bao gồm
+            if (start < DateTime.Today)
+                return Json(new { success = false, message = "Không thể tạo lịch bảo trì bắt đầu trong quá khứ." });
+            try
+            {
+                using (var transaction = db.Database.BeginTransaction(System.Data.IsolationLevel.Serializable))
+                {
+                    var room = db.PhysicalRooms.FirstOrDefault(p => p.PhysicalRoomId == physicalRoomId);
+                    if (room == null)
+                        return Json(new { success = false, message = "Không tìm thấy phòng vật lý." });
+
+                    string roomNumber = (room.RoomNumber ?? "").Trim();
+                    // Kiểm tra đơn trùng ngày của ĐÚNG phòng vật lý, không chặn toàn bộ loại phòng.
+                    var candidateBookings = db.Bookings.AsNoTracking()
+                        .Where(b => b.RoomId == room.RoomTypeId &&
+                            (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") &&
+                            b.CheckInDate < end && b.CheckOutDate > start)
+                        .Select(b => new { b.BookingId, b.SpecialRequest }).ToList();
+                    var overlapBooking = candidateBookings.FirstOrDefault(b =>
+                        PhysicalRoomHelper.IsBookingAssignedToRoom(b.SpecialRequest, roomNumber));
+                    if (overlapBooking != null)
+                        return Json(new
+                        {
+                            success = false,
+                            message = "Phòng " + roomNumber +
+                            " đã có đơn đặt #" + overlapBooking.BookingId + " trong thời gian bảo trì. Không thể lưu."
+                        });
+
+                    // UPDLOCK, HOLDLOCK: hai thao tác bảo trì đồng thời không thể cùng giữ một khoảng ngày.
+                    int conflicts = db.Database.SqlQuery<int>(
+                        @"SELECT COUNT(1) FROM dbo.RoomMaintenances WITH (UPDLOCK, HOLDLOCK)
+                          WHERE PhysicalRoomId = @roomId AND Status = N'Đang bảo trì'
+                            AND StartDate < @end AND EndDate > @start",
+                        new System.Data.SqlClient.SqlParameter("@roomId", physicalRoomId),
+                        new System.Data.SqlClient.SqlParameter("@start", start),
+                        new System.Data.SqlClient.SqlParameter("@end", end)).Single();
+                    if (conflicts > 0)
+                        return Json(new { success = false, message = "Phòng đã có lịch bảo trì trùng thời gian." });
+
+                    db.Database.ExecuteSqlCommand(
+                        @"INSERT INTO dbo.RoomMaintenances
+                          (PhysicalRoomId, StartDate, EndDate, Reason, Note, Status, CreatedAt)
+                          VALUES (@roomId, @start, @end, @reason, @note, N'Đang bảo trì', GETDATE())",
+                        new System.Data.SqlClient.SqlParameter("@roomId", physicalRoomId),
+                        new System.Data.SqlClient.SqlParameter("@start", start),
+                        new System.Data.SqlClient.SqlParameter("@end", end),
+                        new System.Data.SqlClient.SqlParameter("@reason", reason),
+                        new System.Data.SqlClient.SqlParameter("@note", (object)note ?? DBNull.Value));
+                    transaction.Commit();
+                    return Json(new { success = true, message = "Đã lưu lịch bảo trì phòng " + roomNumber + "." });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("SaveRoomMaintenance: " + ex);
+                return Json(new
+                {
+                    success = false,
+                    message = Request.IsLocal
+                    ? "Không lưu được lịch bảo trì: " + ex.GetBaseException().Message
+                    : "Không lưu được lịch bảo trì. Kiểm tra bảng RoomMaintenances trên database."
+                });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AdminAuthorize]
+        public ActionResult EndMaintenanceEarly(int maintenanceId)
+        {
+            try
+            {
+                // Bảo lưu dữ liệu lịch sử; chỉ đánh dấu kết thúc, không xóa bản ghi.
+                int changed = db.Database.ExecuteSqlCommand(
+                    @"UPDATE dbo.RoomMaintenances SET Status = N'Đã kết thúc sớm', EndedAt = GETDATE()
+                      WHERE MaintenanceId = @id AND Status = N'Đang bảo trì'",
+                    new System.Data.SqlClient.SqlParameter("@id", maintenanceId));
+                return Json(changed > 0
+                    ? new { success = true, message = "Đã kết thúc lịch bảo trì." }
+                    : new { success = false, message = "Lịch bảo trì không tồn tại hoặc đã kết thúc." });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("EndMaintenanceEarly: " + ex);
+                return Json(new { success = false, message = "Không thể kết thúc bảo trì. Kiểm tra bảng dữ liệu." });
+            }
+        }
+
+        [HttpGet]
+        [AdminAuthorize]
+        public JsonResult GetPhysicalRoomsMatrixByDate(string date)
+        {
+            try
+            {
+                DateTime targetDate;
+                if (string.IsNullOrWhiteSpace(date) ||
+                    !DateTime.TryParseExact(date, "yyyy-MM-dd",
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.None, out targetDate))
+                {
+                    targetDate = DateTime.Today;
+                }
+
+                var dateOnly = targetDate.Date;
+                var nextDate = dateOnly.AddDays(1);
+
+                // Dùng phép so sánh theo khoảng ngày để không phát sinh SQL
+                // CAST/TruncateTime và không kéo theo bảng Room qua Include.
+                var physicalRooms = db.PhysicalRooms.AsNoTracking()
+                    .Include(pr => pr.RoomType)
+                    .OrderBy(pr => pr.Floor)
+                    .ThenBy(pr => pr.RoomNumber)
+                    .ToList();
+
+                // Chỉ SELECT những cột thật sự dùng trong ma trận.
+                // Không Include(b => b.Room): quan hệ này có thể làm truy vấn
+                // thất bại nếu mapping của Room trên DB đã thay đổi.
+                var bookings = db.Bookings.AsNoTracking()
+                    .Where(b => (b.Status == "Chờ xác nhận" ||
+                                 b.Status == "Đã xác nhận" ||
+                                 b.Status == "Đang ở") &&
+                                b.CheckOutDate > dateOnly)
+                    .Select(b => new
+                    {
+                        b.BookingId,
+                        b.RoomId,
+                        b.SpecialRequest,
+                        b.CheckInDate,
+                        b.CheckOutDate,
+                        b.Status,
+                        b.CustomerName,
+                        b.CustomerPhone,
+                        b.CustomerEmail,
+                        b.TotalAmount
+                    })
+                    .OrderBy(b => b.CheckInDate)
+                    .ToList();
+
+                var activeBookings = bookings
+                    .Where(b => b.CheckInDate < nextDate && b.CheckOutDate > dateOnly)
+                    .ToList();
+
+                // Chỉ một truy vấn thanh toán thay vì truy vấn cho từng phòng.
+                var relevantBookingIds = activeBookings.Select(b => b.BookingId).ToList();
+                var paidBookingIds = new HashSet<int>(
+                    db.ThanhToans.AsNoTracking()
+                        .Where(t => relevantBookingIds.Contains(t.BookingId) &&
+                                    t.TrangThai == "Đã thanh toán")
+                        .Select(t => t.BookingId)
+                        .ToList());
+
+                var maintenanceRecords = GetRoomMaintenanceRecords();
+                var roomListResult = new List<object>();
+                foreach (var pr in physicalRooms)
+                {
+                    string roomNum = (pr.RoomNumber ?? "").Trim();
+                    string statusOnDate = "Trống";
+                    var roomMaintenanceHistory = maintenanceRecords
+                        .Where(m => m.PhysicalRoomId == pr.PhysicalRoomId).ToList();
+                    var activeMaintenance = roomMaintenanceHistory.FirstOrDefault(m =>
+                        m.Status == "Đang bảo trì" && m.StartDate < nextDate && m.EndDate > dateOnly);
+                    bool isMaintenance = pr.Status == "Bảo trì" || activeMaintenance != null;
+                    if (isMaintenance)
+                    {
+                        statusOnDate = "Bảo trì";
+                    }
+
+                    var matchedBooking = activeBookings.FirstOrDefault(b =>
+                        b.RoomId == pr.RoomTypeId &&
+                        !string.IsNullOrWhiteSpace(b.SpecialRequest) &&
+                        PhysicalRoomHelper.IsBookingAssignedToRoom(b.SpecialRequest, roomNum));
+
+                    object bookingDetail = null;
+                    if (matchedBooking != null && !isMaintenance)
+                    {
+                        if (matchedBooking.Status == "Đang ở") statusOnDate = "Đang ở";
+                        else if (matchedBooking.Status == "Đã xác nhận") statusOnDate = "Đã đặt";
+                        else statusOnDate = "Chờ xác nhận";
+
+                        bookingDetail = new
+                        {
+                            bookingId = matchedBooking.BookingId,
+                            customerName = string.IsNullOrWhiteSpace(matchedBooking.CustomerName) ? "Khách hàng" : matchedBooking.CustomerName,
+                            customerPhone = string.IsNullOrWhiteSpace(matchedBooking.CustomerPhone) ? "Chưa cung cấp" : matchedBooking.CustomerPhone,
+                            customerEmail = string.IsNullOrWhiteSpace(matchedBooking.CustomerEmail) ? "Chưa cung cấp" : matchedBooking.CustomerEmail,
+                            checkInDate = matchedBooking.CheckInDate.ToString("dd/MM/yyyy"),
+                            checkOutDate = matchedBooking.CheckOutDate.ToString("dd/MM/yyyy"),
+                            status = matchedBooking.Status,
+                            totalAmount = matchedBooking.TotalAmount.ToString("N0") + "đ",
+                            isPaid = paidBookingIds.Contains(matchedBooking.BookingId)
+                        };
+                    }
+
+                    var upcoming = bookings
+                        .Where(b => b.RoomId == pr.RoomTypeId &&
+                                    (matchedBooking == null || b.BookingId != matchedBooking.BookingId) &&
+                                    !string.IsNullOrWhiteSpace(b.SpecialRequest) &&
+                                    PhysicalRoomHelper.IsBookingAssignedToRoom(b.SpecialRequest, roomNum))
+                        .Take(5)
+                        .Select(b => new
+                        {
+                            bookingId = b.BookingId,
+                            customerName = string.IsNullOrWhiteSpace(b.CustomerName) ? "Khách hàng" : b.CustomerName,
+                            checkInDate = b.CheckInDate.ToString("dd/MM/yyyy"),
+                            checkOutDate = b.CheckOutDate.ToString("dd/MM/yyyy"),
+                            status = b.Status
+                        }).ToList();
+
+                    roomListResult.Add(new
+                    {
+                        physicalRoomId = pr.PhysicalRoomId,
+                        roomNumber = pr.RoomNumber,
+                        floor = pr.Floor,
+                        roomTypeName = pr.RoomType != null ? pr.RoomType.RoomName : "Phòng",
+                        status = statusOnDate,
+                        currentBooking = bookingDetail,
+                        currentMaintenance = activeMaintenance == null ? null : new
+                        {
+                            maintenanceId = activeMaintenance.MaintenanceId,
+                            reason = activeMaintenance.Reason,
+                            note = activeMaintenance.Note,
+                            status = activeMaintenance.Status,
+                            startDate = activeMaintenance.StartDate.ToString("dd/MM/yyyy"),
+                            endDate = activeMaintenance.EndDate.ToString("dd/MM/yyyy")
+                        },
+                        maintenanceHistory = roomMaintenanceHistory.Select(m => new
+                        {
+                            maintenanceId = m.MaintenanceId,
+                            reason = m.Reason,
+                            status = m.Status,
+                            startDate = m.StartDate.ToString("dd/MM/yyyy"),
+                            endDate = m.EndDate.ToString("dd/MM/yyyy")
+                        }).ToList(),
+                        upcomingBookings = upcoming
+                    });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    selectedDate = dateOnly.ToString("yyyy-MM-dd"),
+                    displayDate = dateOnly.ToString("dd/MM/yyyy"),
+                    rooms = roomListResult
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                // Ghi chi tiết ở Output trên localhost để chẩn đoán đúng
+                // cột/bảng lỗi, không đưa stack trace cho người dùng.
+                System.Diagnostics.Trace.TraceError("GetPhysicalRoomsMatrixByDate: " + ex);
+                var sqlError = ex;
+                while (sqlError.InnerException != null)
+                    sqlError = sqlError.InnerException;
+                return Json(new
+                {
+                    success = false,
+                    message = Request.IsLocal ? ("Không thể tải lịch phòng: " + sqlError.Message) : "Không thể tải lịch phòng. Vui lòng liên hệ quản trị viên."
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AdminAuthorize]

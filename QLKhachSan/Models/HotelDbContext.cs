@@ -18,6 +18,7 @@ namespace QLKhachSan.Models
         public DbSet<ThanhToan> ThanhToans { get; set; }
         public DbSet<DanhGia> DanhGias { get; set; }
         public DbSet<PhysicalRoom> PhysicalRooms { get; set; }
+        public DbSet<RoomMaintenance> RoomMaintenances { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<UserPermission> UserPermissions { get; set; }
 
@@ -34,6 +35,7 @@ namespace QLKhachSan.Models
             modelBuilder.Entity<KhuyenMai>().HasKey(e => e.MaKhuyenMai).ToTable("KhuyenMai");
             modelBuilder.Entity<ThanhToan>().HasKey(e => e.MaThanhToan).ToTable("ThanhToan");
             modelBuilder.Entity<PhysicalRoom>().HasKey(e => e.PhysicalRoomId).ToTable("PhysicalRooms");
+            modelBuilder.Entity<RoomMaintenance>().HasKey(e => e.MaintenanceId).ToTable("RoomMaintenances");
             modelBuilder.Entity<Permission>().HasKey(e => e.PermissionId).ToTable("Permissions");
             modelBuilder.Entity<UserPermission>().HasKey(e => e.UserPermissionId).ToTable("UserPermissions");
         }

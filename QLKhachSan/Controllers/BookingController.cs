@@ -509,6 +509,24 @@ namespace QLKhachSan.Controllers
                             });
                         }
 
+                        bool maintenanceConflict = db.RoomMaintenances
+                            .Join(db.PhysicalRooms,
+                                m => m.PhysicalRoomId,
+                                pr => pr.PhysicalRoomId,
+                                (m, pr) => new { m, pr })
+                            .Any(x => x.m.Status == "Đang bảo trì"
+                                   && x.pr.RoomNumber.Trim().Equals(targetRoomNum, StringComparison.OrdinalIgnoreCase)
+                                   && request.CheckInDate < x.m.EndDate && request.CheckOutDate > x.m.StartDate);
+
+                        if (maintenanceConflict)
+                        {
+                            return Json(new
+                            {
+                                success = false,
+                                message = $"Phòng số [{targetRoomNum}] đang trong thời gian bảo trì. Vui lòng chọn số phòng hoặc khoảng ngày khác."
+                            });
+                        }
+
                         request.SpecialRequest = $"[Phòng: {targetRoomNum}] " + (request.SpecialRequest ?? "");
                     }
 
@@ -1401,6 +1419,11 @@ namespace QLKhachSan.Controllers
                     .Where(b => b.RoomId == roomId && (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") && b.CheckInDate < checkOut && b.CheckOutDate > checkIn)
                     .ToList();
 
+                var activeMaintenances = db.Set<RoomMaintenance>()
+                    .Where(m => m.Status == "Đang bảo trì" && m.StartDate < checkOut && m.EndDate > checkIn)
+                    .ToList();
+                var maintRoomIds = new HashSet<int>(activeMaintenances.Select(m => m.PhysicalRoomId));
+
                 var bookedRoomNumbers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 int untaggedBookingCount = 0;
 
@@ -1432,8 +1455,8 @@ namespace QLKhachSan.Controllers
                 var available = physicalRooms
                     .Select(pr => {
                         string rNum = pr.RoomNumber.Trim();
-                        bool isB = bookedRoomNumbers.Contains(rNum);
-                        if (!isB && lockedUntagged < untaggedBookingCount)
+                        bool isB = bookedRoomNumbers.Contains(rNum) || maintRoomIds.Contains(pr.PhysicalRoomId);
+                        if (!bookedRoomNumbers.Contains(rNum) && !maintRoomIds.Contains(pr.PhysicalRoomId) && lockedUntagged < untaggedBookingCount)
                         {
                             isB = true;
                             lockedUntagged++;
