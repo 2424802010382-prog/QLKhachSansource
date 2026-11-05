@@ -26,6 +26,10 @@ namespace QLKhachSan.Models
 
         public string PhuongThucThanhToan { get; set; }
 
+        public int? BookingId { get; set; }
+
+        public bool ChargeToRoom { get; set; }
+
         public List<RestaurantOrderItemRequest>
             Items
         { get; set; }

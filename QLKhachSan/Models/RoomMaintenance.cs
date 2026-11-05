@@ -28,6 +28,8 @@ namespace QLKhachSan.Models
 
         public DateTime CreatedAt { get; set; }
 
+        public DateTime? EndedAt { get; set; }
+
         [ForeignKey("PhysicalRoomId")]
         public virtual PhysicalRoom PhysicalRoom { get; set; }
     }

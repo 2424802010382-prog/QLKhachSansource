@@ -6,13 +6,9 @@ using System.Web.Mvc;
 
 namespace QLKhachSan.Controllers
 {
-    public class StaffController : Controller
+    public class StaffController : HotelController
     {
-        private readonly HotelDbContext db =
-            new HotelDbContext();
-
-
-        // =====================================================
+// =====================================================
         // KIỂM TRA QUYỀN NHÂN VIÊN
         // =====================================================
 
@@ -22,6 +18,28 @@ namespace QLKhachSan.Controllers
                 Session["UserId"] != null &&
                 Session["Role"] != null &&
                 Session["Role"].ToString().Trim().Equals("Staff", StringComparison.OrdinalIgnoreCase);
+        }
+
+        [HttpGet]
+        public ActionResult GetPhysicalRoomsMatrixByDate(string date)
+        {
+            if (!IsStaff()) return new HttpStatusCodeResult(403);
+            if (!HasStaffPermission("rooms.view") && !HasStaffPermission("rooms.manage"))
+                return new HttpStatusCodeResult(403);
+            bool details = HasStaffPermission("bookings.view") || HasStaffPermission("bookings.approve") ||
+                HasStaffPermission("bookings.checkin") || HasStaffPermission("bookings.checkout") || HasStaffPermission("payments.manage");
+            Response.Cache.SetCacheability(System.Web.HttpCacheability.NoCache);
+            Response.Cache.SetNoStore();
+            try
+            {
+                return Json(RoomMatrixService.Load(db, RoomMatrixService.ParseDate(date), details), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("Staff room matrix: " + ex);
+                Response.StatusCode = 500;
+                return Json(new { success = false, message = "Không thể tải lịch phòng. Vui lòng thử lại hoặc liên hệ quản trị viên." }, JsonRequestBehavior.AllowGet);
+            }
         }
 
         private bool HasStaffPermission(string permissionCode)
@@ -127,7 +145,6 @@ namespace QLKhachSan.Controllers
             // 3. ĐƠN GỌI MÓN ĐANG CHỜ XỬ LÝ
             // =====================================================
 
-            try {
                 ViewBag.PendingFoodOrders =
                     db.Database
                       .SqlQuery<int>(
@@ -148,9 +165,7 @@ namespace QLKhachSan.Controllers
                   "
                       )
                       .FirstOrDefault();
-            } catch {
-                ViewBag.PendingFoodOrders = 0;
-            }
+
 
 
             // =====================================================
@@ -159,22 +174,7 @@ namespace QLKhachSan.Controllers
             // =====================================================
 
             decimal roomRevenueToday =
-                db.ThanhToans
-                  .Where(
-                      t =>
-                      t.TrangThai ==
-                      "Đã thanh toán"
-                      &&
-                      t.NgayThanhToan >= today
-                      &&
-                      t.NgayThanhToan < tomorrow
-                  )
-                  .Select(
-                      t =>
-                      (decimal?)t.SoTien
-                  )
-                  .Sum()
-                ?? 0;
+                HotelOperations.RoomRevenue(db, today, tomorrow);
 
 
             // =====================================================
@@ -182,7 +182,6 @@ namespace QLKhachSan.Controllers
             // =====================================================
 
             decimal foodRevenueToday = 0;
-            try {
                 foodRevenueToday =
                     db.Database
                       .SqlQuery<decimal>(
@@ -199,16 +198,14 @@ namespace QLKhachSan.Controllers
                         TrangThaiThanhToan =
                             N'Đã thanh toán'
 
-                        AND CreatedAt >= @p0
-                        AND CreatedAt < @p1
+                        AND COALESCE(PaidAt,CreatedAt) >= @p0
+                        AND COALESCE(PaidAt,CreatedAt) < @p1
                   ",
                           today,
                           tomorrow
                       )
                       .FirstOrDefault();
-            } catch {
-                foodRevenueToday = 0;
-            }
+
 
 
             ViewBag.TodayRevenue =
@@ -231,12 +228,7 @@ namespace QLKhachSan.Controllers
             // =====================================================
             // 7. MA TRẬN 40 PHÒNG VẬT LÝ (ĐỒNG BỘ VÀ CẬP NHẬT TRỰC TIẾP VÀO DATABASE)
             // =====================================================
-            try {
-                PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
-                ViewBag.PhysicalRooms = db.PhysicalRooms.Include(pr => pr.RoomType).OrderBy(pr => pr.Floor).ThenBy(pr => pr.RoomNumber).ToList();
-            } catch {
-                ViewBag.PhysicalRooms = new System.Collections.Generic.List<PhysicalRoom>();
-            }
+            // The date-aware matrix loads through the shared, permission-checked API.
 
 
             return View();
@@ -283,77 +275,21 @@ namespace QLKhachSan.Controllers
         // =====================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult CheckInBooking(
             int id
         )
         {
-            if (!IsStaff())
-            {
-                return RedirectToAction(
-                    "Index",
-                    "Home"
-                );
-            }
-
-            var booking =
-                db.Bookings.Find(id);
-
-            if (booking == null)
-            {
-                return HttpNotFound();
-            }
-
-            if (
-                booking.Status !=
-                "Đã xác nhận"
-            )
-            {
-                TempData["StaffError"] =
-                    "Chỉ có thể nhận phòng đối với đơn đã xác nhận.";
-
-                return RedirectToAction(
-                    "TodayCheckIns"
-                );
-            }
-
-            if (
-                booking.CheckInDate.Date !=
-                DateTime.Today
-            )
-            {
-                TempData["StaffError"] =
-                    "Đơn này không có ngày nhận phòng hôm nay.";
-
-                return RedirectToAction(
-                    "TodayCheckIns"
-                );
-            }
-
-            var payment = db.ThanhToans.FirstOrDefault(p => p.BookingId == id);
-            if (payment == null || payment.TrangThai != "Đã thanh toán")
-            {
-                TempData["StaffError"] =
-                    "Đơn đặt phòng chưa hoàn tất thanh toán. Không thể nhận phòng.";
-
-                return RedirectToAction(
-                    "TodayCheckIns"
-                );
-            }
-
-            booking.Status =
-                "Đang ở";
-
+            if (!IsStaff()) return new HttpStatusCodeResult(403);
+            var booking = db.Bookings.Find(id);
+            if (booking == null) return HttpNotFound();
+            try { HotelOperations.ValidateCheckIn(db, booking); }
+            catch (HotelRuleException ex) { FailOperation(); TempData["StaffError"] = ex.Message; return RedirectToAction("TodayCheckIns"); }
+            booking.Status = "Đang ở";
             db.SaveChanges();
-
-            TempData["StaffSuccess"] =
-                "Đã xác nhận nhận phòng cho đơn #" +
-                booking.BookingId +
-                ".";
-
-            return RedirectToAction(
-                "TodayCheckIns"
-            );
+            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
+            TempData["StaffSuccess"] = "Đã nhận phòng cho đơn #" + id;
+            return RedirectToAction("TodayCheckIns");
         }
 
 
@@ -362,7 +298,7 @@ namespace QLKhachSan.Controllers
         // =====================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult CheckOutBooking(
             int id
         )
@@ -388,26 +324,17 @@ namespace QLKhachSan.Controllers
                 "Đang ở"
             )
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Chỉ có thể trả phòng đối với khách đang ở.";
 
                 return RedirectToAction(
                     "Bookings"
                 );
             }
-            bool hasPaid =
-    db.ThanhToans.Any(
-        t =>
-        t.BookingId == id
-        &&
-        t.TrangThai ==
-        "Đã thanh toán"
-    );
-
-
-            if (!hasPaid)
+            decimal paidAmount = db.ThanhToans.Where(t => t.BookingId == id && t.TrangThai == "Đã thanh toán").Select(t => (decimal?)t.SoTien).Sum() ?? 0;
+            if (paidAmount < booking.TotalAmount)
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Khách chưa thanh toán. Vui lòng xác nhận thanh toán trước khi trả phòng.";
 
                 return RedirectToAction(
@@ -607,7 +534,7 @@ namespace QLKhachSan.Controllers
         // =====================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ConfirmBooking(
             int id
         )
@@ -636,7 +563,7 @@ namespace QLKhachSan.Controllers
     "Chờ xác nhận"
 )
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Chỉ có thể xác nhận đơn đang chờ xác nhận.";
 
                 return RedirectToAction(
@@ -645,6 +572,8 @@ namespace QLKhachSan.Controllers
             }
 
 
+            try { HotelOperations.EnsureReservation(db, booking); }
+            catch (HotelRuleException ex) { FailOperation(); TempData["StaffError"] = ex.Message; return RedirectToAction("Bookings"); }
             booking.Status =
                 "Đã xác nhận";
 
@@ -670,7 +599,7 @@ namespace QLKhachSan.Controllers
         // =====================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult CancelBooking(
             int id
         )
@@ -701,7 +630,7 @@ namespace QLKhachSan.Controllers
     "Đã xác nhận"
 )
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Chỉ có thể hủy đơn trước khi khách nhận phòng.";
 
                 return RedirectToAction(
@@ -723,7 +652,7 @@ namespace QLKhachSan.Controllers
 
             if (hasPaid)
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Đơn đã thanh toán. Không thể hủy trực tiếp.";
 
                 return RedirectToAction(
@@ -732,6 +661,7 @@ namespace QLKhachSan.Controllers
             }
 
 
+            HotelOperations.ReturnPromotionUse(db, id);
             booking.Status =
                 "Đã hủy";
 
@@ -786,158 +716,18 @@ namespace QLKhachSan.Controllers
         // =====================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ConfirmPayment(
             int id
         )
         {
-            if (!IsStaff())
-            {
-                return RedirectToAction(
-                    "Index",
-                    "Home"
-                );
-            }
-
-
-            var booking =
-                db.Bookings.Find(id);
-
-
-            if (booking == null)
-            {
-                return HttpNotFound();
-            }
-
-
-            if (
-                booking.Status ==
-                "Đã hủy"
-            )
-            {
-                TempData["StaffError"] =
-                    "Không thể xác nhận thanh toán cho đơn đã hủy.";
-
-                return RedirectToAction(
-                    "Bookings"
-                );
-            }
-
-            if (
-    booking.Status !=
-    "Đã xác nhận"
-    &&
-    booking.Status !=
-    "Đang ở"
-)
-            {
-                TempData["StaffError"] =
-                    "Trạng thái đơn hiện tại không thể xác nhận thanh toán.";
-
-                return RedirectToAction(
-                    "Bookings"
-                );
-            }
-            var payment =
-                db.ThanhToans
-                  .Where(
-                      t =>
-                      t.BookingId == id
-                  )
-                  .OrderByDescending(
-                      t =>
-                      t.NgayThanhToan
-                  )
-                  .FirstOrDefault();
-            if (
-    payment != null
-    &&
-    payment.TrangThai ==
-    "Đã thanh toán"
-)
-            {
-                TempData["StaffError"] =
-                    "Đơn này đã được thanh toán trước đó.";
-
-                return RedirectToAction(
-                    "Bookings"
-                );
-            }
-
-
-            // =================================================
-            // TRƯỜNG HỢP BOOKING CŨ CHƯA CÓ THANH TOÁN
-            // =================================================
-
-            if (payment == null)
-            {
-                payment =
-                    new ThanhToan
-                    {
-                        BookingId =
-                            booking.BookingId,
-
-                        PhuongThucThanhToan =
-                            booking.PaymentMethod,
-
-                        SoTien =
-                            booking.TotalAmount,
-
-                        NgayThanhToan =
-                            DateTime.Now,
-
-                        TrangThai =
-                            "Đã thanh toán",
-
-                        MaGiaoDich =
-                            null,
-
-                        GhiChu =
-                            "Nhân viên xác nhận thanh toán"
-                    };
-
-
-                db.ThanhToans.Add(
-                    payment
-                );
-            }
-            else
-            {
-                payment.TrangThai =
-                    "Đã thanh toán";
-
-                payment.NgayThanhToan =
-                    DateTime.Now;
-
-                payment.SoTien =
-                    booking.TotalAmount;
-
-
-                if (
-                    string.IsNullOrWhiteSpace(
-                        payment.GhiChu
-                    )
-                )
-                {
-                    payment.GhiChu =
-                        "Nhân viên xác nhận thanh toán";
-                }
-            }
-
-
-            db.SaveChanges();
-            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
-
-
-            TempData["StaffSuccess"] =
-                "Đã xác nhận thanh toán cho đơn #" +
-                booking.BookingId +
-                ".";
-
-
-            return RedirectToAction(
-                "Bookings"
-            );
+            if (!IsStaff()) return new HttpStatusCodeResult(403);
+            var booking = db.Bookings.Find(id);
+            if (booking == null) return HttpNotFound();
+            try { HotelOperations.ConfirmBookingPayment(db, booking, Request.Headers["X-Payment-Evidence"] ?? Request["paymentEvidence"], Convert.ToInt32(Session["UserId"])); }
+            catch (HotelRuleException ex) { FailOperation(); TempData["StaffError"] = ex.Message; return RedirectToAction("Bookings"); }
+            TempData["StaffSuccess"] = "Đã xác minh và ghi nhận thanh toán đơn #" + id;
+            return RedirectToAction("Bookings");
         }
 
 
@@ -976,7 +766,7 @@ namespace QLKhachSan.Controllers
 
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult CreateBooking(
             int roomId,
             string customerName,
@@ -987,7 +777,8 @@ namespace QLKhachSan.Controllers
             int guestCount,
             int roomCount,
             string paymentMethod,
-            string specialRequest
+            string specialRequest,
+            string[] roomNumbers
         )
         {
             if (!IsStaff())
@@ -1041,7 +832,7 @@ namespace QLKhachSan.Controllers
                 )
             )
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Vui lòng nhập đầy đủ thông tin khách hàng.";
 
                 return RedirectToAction(
@@ -1055,7 +846,7 @@ namespace QLKhachSan.Controllers
                 DateTime.Today
             )
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Ngày nhận phòng không được nhỏ hơn ngày hiện tại.";
 
                 return RedirectToAction(
@@ -1069,7 +860,7 @@ namespace QLKhachSan.Controllers
                 checkInDate.Date
             )
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Ngày trả phòng phải sau ngày nhận phòng.";
 
                 return RedirectToAction(
@@ -1083,7 +874,7 @@ namespace QLKhachSan.Controllers
                 roomCount <= 0
             )
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Số khách và số phòng phải lớn hơn 0.";
 
                 return RedirectToAction(
@@ -1106,7 +897,7 @@ namespace QLKhachSan.Controllers
 
             if (room == null)
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Phòng không tồn tại hoặc đang ngừng hoạt động.";
 
                 return RedirectToAction(
@@ -1120,7 +911,7 @@ namespace QLKhachSan.Controllers
                 room.Capacity * roomCount
             )
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Số khách vượt quá sức chứa của số phòng đã chọn.";
 
                 return RedirectToAction(
@@ -1133,48 +924,17 @@ namespace QLKhachSan.Controllers
             // KIỂM TRA SỐ PHÒNG CÒN TRỐNG
             // =================================================
 
-            int bookedRooms =
-                db.Bookings
-                  .Where(
-                      b =>
-                      b.RoomId == roomId &&
-                      (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") &&
-                      checkInDate < b.CheckOutDate &&
-                      checkOutDate > b.CheckInDate
-                  )
-                  .Select(
-                      b => b.RoomCount
-                  )
-                  .DefaultIfEmpty(0)
-                  .Sum();
-
-
-            int availableRooms =
-                room.TotalRooms -
-                bookedRooms;
-
-
-            if (
-                roomCount >
-                availableRooms
-            )
+            System.Collections.Generic.List<PhysicalRoom> selectedRooms;
+            try
             {
-                TempData["StaffError"] =
-                    "Không đủ phòng trống. Hiện chỉ còn "
-                    +
-                    availableRooms
-                    +
-                    " phòng.";
-
-                return RedirectToAction(
-                    "CreateBooking"
-                );
+                selectedRooms = HotelOperations.SelectRooms(db, roomId, checkInDate.Date, checkOutDate.Date, roomCount, roomNumbers, false);
+                specialRequest = HotelOperations.AssignmentNotes(selectedRooms, specialRequest);
             }
-
-
-            // =================================================
-            // THANH TOÁN
-            // =================================================
+            catch (HotelRuleException ex)
+            {
+                FailOperation(); TempData["StaffError"] = ex.Message;
+                return RedirectToAction("CreateBooking");
+            }
 
             if (
                 paymentMethod !=
@@ -1183,7 +943,7 @@ namespace QLKhachSan.Controllers
                     "Chuyển khoản"
             )
             {
-                TempData["StaffError"] =
+                FailOperation(); TempData["StaffError"] =
                     "Phương thức thanh toán không hợp lệ.";
 
                 return RedirectToAction(
@@ -1418,294 +1178,31 @@ namespace QLKhachSan.Controllers
         // =====================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult UpdateFoodOrderStatus(
             int id,
             string status
         )
         {
-            if (!IsStaff())
-            {
-                return RedirectToAction(
-                    "Index",
-                    "Home"
-                );
-            }
-
-
-            status =
-                (status ?? "").Trim();
-
-
-            string[] validStatuses =
-            {
-        "Chờ xác nhận",
-        "Đã xác nhận",
-        "Đang chuẩn bị",
-        "Đang phục vụ",
-        "Đang giao",
-        "Hoàn tất",
-        "Đã hủy"
-    };
-
-
-            if (
-                !validStatuses.Contains(
-                    status
-                )
-            )
-            {
-                TempData["StaffFoodError"] =
-                    "Trạng thái đơn không hợp lệ.";
-
-                return RedirectToAction(
-                    "FoodOrders"
-                );
-            }
-            string currentStatus =
-    db.Database
-      .SqlQuery<string>(
-          @"
-            SELECT TrangThai
-            FROM dbo.DonDatMon
-            WHERE MaDon = @p0
-          ",
-          id
-      )
-      .FirstOrDefault();
-
-
-            if (
-                string.IsNullOrWhiteSpace(
-                    currentStatus
-                )
-            )
-            {
-                TempData["StaffFoodError"] =
-                    "Không tìm thấy đơn gọi món.";
-
-                return RedirectToAction(
-                    "FoodOrders"
-                );
-            }
-
-
-            bool canChangeStatus = false;
-
-
-            if (
-                currentStatus ==
-                "Chờ xác nhận"
-            )
-            {
-                canChangeStatus =
-                    status == "Đã xác nhận"
-                    ||
-                    status == "Đã hủy";
-            }
-            else if (
-                currentStatus ==
-                "Đã xác nhận"
-            )
-            {
-                canChangeStatus =
-                    status == "Đang chuẩn bị"
-                    ||
-                    status == "Đã hủy";
-            }
-            else if (
-                currentStatus ==
-                "Đang chuẩn bị"
-            )
-            {
-                canChangeStatus =
-                    status == "Đang phục vụ"
-                    ||
-                    status == "Đang giao"
-                    ||
-                    status == "Đã hủy";
-            }
-            else if (
-                currentStatus ==
-                "Đang phục vụ"
-                ||
-                currentStatus ==
-                "Đang giao"
-            )
-            {
-                canChangeStatus =
-                    status == "Hoàn tất";
-            }
-
-
-            if (!canChangeStatus)
-            {
-                TempData["StaffFoodError"] =
-                    "Không thể chuyển đơn từ trạng thái '" +
-                    currentStatus +
-                    "' sang '" +
-                    status +
-                    "'.";
-
-                return RedirectToAction(
-                    "FoodOrders"
-                );
-            }
-
-            int affected =
-                db.Database.ExecuteSqlCommand(
-                    @"
-                UPDATE dbo.DonDatMon
-
-                SET TrangThai = @p0
-
-                WHERE MaDon = @p1
-            ",
-                    status,
-                    id
-                );
-
-
-            if (affected == 0)
-            {
-                TempData["StaffFoodError"] =
-                    "Không tìm thấy đơn gọi món.";
-
-                return RedirectToAction(
-                    "FoodOrders"
-                );
-            }
-
-
-            TempData["StaffFoodSuccess"] =
-                "Cập nhật trạng thái đơn #" +
-                id +
-                " thành công.";
-
-
-            return RedirectToAction(
-                "FoodOrders"
-            );
+            try { HotelOperations.ChangeFoodStatus(db, id, (status ?? "").Trim()); }
+            catch (HotelRuleException ex) { FailOperation(); TempData["StaffFoodError"] = ex.Message; return RedirectToAction("FoodOrders"); }
+            TempData["StaffFoodSuccess"] = "Đã cập nhật đơn món.";
+            return RedirectToAction("FoodOrders");
         }
         // =====================================================
         // NHÂN VIÊN - XÁC NHẬN THANH TOÁN ĐƠN MÓN
         // =====================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ConfirmFoodPayment(
             int id
         )
         {
-            if (!IsStaff())
-            {
-                return RedirectToAction(
-                    "Index",
-                    "Home"
-                );
-            }
-
-            string orderStatus =
-    db.Database
-      .SqlQuery<string>(
-          @"
-            SELECT TrangThai
-            FROM dbo.DonDatMon
-            WHERE MaDon = @p0
-          ",
-          id
-      )
-      .FirstOrDefault();
-
-
-            if (
-                string.IsNullOrWhiteSpace(
-                    orderStatus
-                )
-            )
-            {
-                TempData["StaffFoodError"] =
-                    "Không tìm thấy đơn gọi món.";
-
-                return RedirectToAction(
-                    "FoodOrders"
-                );
-            }
-
-
-            if (
-                orderStatus ==
-                "Đã hủy"
-            )
-            {
-                TempData["StaffFoodError"] =
-                    "Đơn đã hủy nên không thể xác nhận thanh toán.";
-
-                return RedirectToAction(
-                    "FoodOrders"
-                );
-            }
-
-
-            string currentPaymentStatus =
-                db.Database
-                  .SqlQuery<string>(
-                      @"
-            SELECT TrangThaiThanhToan
-            FROM dbo.DonDatMon
-            WHERE MaDon = @p0
-          ",
-                      id
-                  )
-                  .FirstOrDefault();
-
-
-            if (
-                currentPaymentStatus ==
-                "Đã thanh toán"
-            )
-            {
-                TempData["StaffFoodError"] =
-                    "Đơn gọi món này đã được thanh toán trước đó.";
-
-                return RedirectToAction(
-                    "FoodOrders"
-                );
-            }
-            int affected =
-                db.Database.ExecuteSqlCommand(
-                    @"
-                UPDATE dbo.DonDatMon
-
-                SET TrangThaiThanhToan =
-                    N'Đã thanh toán'
-
-                WHERE MaDon = @p0
-            ",
-                    id
-                );
-
-
-            if (affected == 0)
-            {
-                TempData["StaffFoodError"] =
-                    "Không tìm thấy đơn gọi món.";
-
-                return RedirectToAction(
-                    "FoodOrders"
-                );
-            }
-
-
-            TempData["StaffFoodSuccess"] =
-                "Đã xác nhận thanh toán đơn #" +
-                id +
-                ".";
-
-
-            return RedirectToAction(
-                "FoodOrders"
-            );
+            try { HotelOperations.ConfirmFoodPayment(db, id, Request.Headers["X-Payment-Evidence"] ?? Request["paymentEvidence"], Convert.ToInt32(Session["UserId"])); }
+            catch (HotelRuleException ex) { FailOperation(); TempData["StaffFoodError"] = ex.Message; return RedirectToAction("FoodOrders"); }
+            TempData["StaffFoodSuccess"] = "Đã xác minh và thu tiền đơn món.";
+            return RedirectToAction("FoodOrders");
         }
         protected override void Dispose(
             bool disposing

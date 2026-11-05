@@ -130,6 +130,7 @@
     <Compile Include="Controllers\RestaurantController.cs" />
     <Compile Include="Controllers\RoomController.cs" />
     <Compile Include="Controllers\StaffController.cs" />
+    <Compile Include="Controllers\OverdueJobController.cs" />
     <Compile Include="Filters\AdminAuthorizeAttribute.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -175,6 +176,8 @@
     <Compile Include="Models\DichVu.cs" />
     <Compile Include="Models\GeminiSettings.cs" />
     <Compile Include="Models\HotelDbContext.cs" />
+    <Compile Include="Models\RoomMatrixService.cs" />
+    <Content Include="Scripts\staff-room-matrix.js" />
     <Compile Include="Models\KhuyenMai.cs" />
     <Compile Include="Models\Model1.Context.cs">
       <AutoGen>True</AutoGen>
@@ -208,6 +211,11 @@
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
     <Compile Include="Models\RoomMaintenance.cs" />
+    <Compile Include="Models\OverdueBookingService.cs" />
+    <Compile Include="Services\OverdueBookingJob.cs" />
+    <Compile Include="Models\HotelOperations.cs" />
+    <Compile Include="Controllers\HotelController.cs" />
+    <Compile Include="Filters\HotelSecurityFilter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -244,7 +252,6 @@
       <DependentUpon>Model1.edmx</DependentUpon>
       <LastGenOutput>Model1.cs</LastGenOutput>
     </Content>
-    
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />
@@ -264,6 +271,9 @@
     <Content Include=".artifacts\d80e5d15-ad52-4c38-942e-8f4a8f00fa3c\staff_dashboard_plan.artifact.md" />
     <None Include="Properties\PublishProfiles\coklingone-001-site1 - FTP.pubxml" />
     <None Include="Properties\PublishProfiles\coklingone-001-site1 - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\dothigiang2006gl-001-site1 - FTP.pubxml" />
+    <None Include="Properties\PublishProfiles\dothigiang2006gl-001-site1 - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\IISProfile.pubxml" />
     <None Include="Scripts\jquery-3.7.1.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.1.js" />
     <Content Include="Scripts\jquery-3.7.1.min.js" />
@@ -328,13 +338,26 @@
     <Content Include="Views\Booking\Success.cshtml" />
     <Content Include="Views\Admin\Bookings.cshtml" />
     <Content Include="Views\Admin\StaffPermissions.cshtml" />
-    <Content Include="Views.zip" />
+    <Content Include="Views\Shared\_SecurityClient.cshtml" />
+    <Content Include="Views\Account\Logout.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Images\Foods\" />
     <Folder Include="Views\AIChat\" />
     <Folder Include="Views\Gemini\" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Source handover files, visible in VS; deliberately not web Content. -->
+    <None Include="..\database\*.sql">
+      <Link>Support\database\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="..\tests\*">
+      <Link>Support\tests\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="..\docs\*.md">
+      <Link>Support\docs\%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />

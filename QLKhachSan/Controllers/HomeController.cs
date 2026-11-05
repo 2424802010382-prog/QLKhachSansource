@@ -22,20 +22,25 @@ namespace QLKhachSan.Controllers
         }
         public ActionResult Register()
         {
-            return View();
+            return RedirectToAction("Index", "Home", new { registerRequired = 1 });
         }
         public ActionResult About()
         {
-            ViewBag.Message = "Your application description page.";
+            ViewBag.RoomTypeCount = db.Rooms.Count(r => r.IsActive);
+            ViewBag.PhysicalRoomCount = db.PhysicalRooms.Count(p => p.IsActive && p.RoomType.IsActive);
 
             return View();
         }
 
         public ActionResult Contact()
         {
-            ViewBag.Message = "Your contact page.";
-
             return View();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) db.Dispose();
+            base.Dispose(disposing);
         }
     }
 }

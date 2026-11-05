@@ -11,11 +11,9 @@ using System.Web.Mvc;
 namespace QLKhachSan.Controllers
 {
     [AdminAuthorize]
-    public class AdminController : Controller
+    public class AdminController : HotelController
     {
-        private readonly HotelDbContext db = new HotelDbContext();
-
-        // =========================================================
+// =========================================================
         // DASHBOARD VẬN HÀNH NÂNG CAO
         // =========================================================
         // DASHBOARD QUẢN TRỊ / TỔNG QUAN
@@ -63,19 +61,9 @@ namespace QLKhachSan.Controllers
             DateTime monthStart = new DateTime(today.Year, today.Month, 1);
             DateTime monthEnd = monthStart.AddMonths(1);
 
-            decimal roomToday = db.ThanhToans
-                .Where(t => t.TrangThai == "Đã thanh toán" &&
-                            t.NgayThanhToan >= today &&
-                            t.NgayThanhToan < tomorrow)
-                .Select(t => (decimal?)t.SoTien)
-                .Sum() ?? 0;
+            decimal roomToday = HotelOperations.RoomRevenue(db, today, tomorrow);
 
-            decimal roomMonth = db.ThanhToans
-                .Where(t => t.TrangThai == "Đã thanh toán" &&
-                            t.NgayThanhToan >= monthStart &&
-                            t.NgayThanhToan < monthEnd)
-                .Select(t => (decimal?)t.SoTien)
-                .Sum() ?? 0;
+            decimal roomMonth = HotelOperations.RoomRevenue(db, monthStart, monthEnd);
 
             decimal foodToday = GetFoodRevenue(today, tomorrow);
 
@@ -107,12 +95,7 @@ namespace QLKhachSan.Controllers
 
                 revenueLabels.Add(d.ToString("dd/MM"));
 
-                decimal rRev = db.ThanhToans
-                    .Where(t => t.TrangThai == "Đã thanh toán" &&
-                                t.NgayThanhToan >= dStart &&
-                                t.NgayThanhToan < dEnd)
-                    .Select(t => (decimal?)t.SoTien)
-                    .Sum() ?? 0;
+                decimal rRev = HotelOperations.RoomRevenue(db, dStart, dEnd);
 
                 decimal fRev = GetFoodRevenue(dStart, dEnd);
 
@@ -183,7 +166,7 @@ namespace QLKhachSan.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult Confirm(int id, string returnTo = null)
         {
             var booking = db.Bookings.Find(id);
@@ -196,10 +179,17 @@ namespace QLKhachSan.Controllers
             if (booking.Status != "Chờ xác nhận")
             {
                 if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Chỉ có thể xác nhận đơn đang chờ xác nhận." });
-                TempData["AdminError"] = "Chỉ có thể xác nhận đơn đang chờ xác nhận.";
+                FailOperation(); TempData["AdminError"] = "Chỉ có thể xác nhận đơn đang chờ xác nhận.";
                 return RedirectAfterBookingAction(returnTo);
             }
 
+            try { HotelOperations.EnsureReservation(db, booking); }
+            catch (HotelRuleException ex)
+            {
+                if (Request.IsAjaxRequest()) return Json(new { success = false, message = ex.Message });
+                FailOperation(); TempData["AdminError"] = ex.Message;
+                return RedirectAfterBookingAction(returnTo);
+            }
             booking.Status = "Đã xác nhận";
             db.SaveChanges();
             PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
@@ -214,7 +204,7 @@ namespace QLKhachSan.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult Cancel(int id, string returnTo = null)
         {
             var booking = db.Bookings.Find(id);
@@ -227,7 +217,7 @@ namespace QLKhachSan.Controllers
             if (booking.Status != "Chờ xác nhận" && booking.Status != "Đã xác nhận")
             {
                 if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Không thể hủy đơn ở trạng thái hiện tại." });
-                TempData["AdminError"] = "Không thể hủy đơn ở trạng thái hiện tại.";
+                FailOperation(); TempData["AdminError"] = "Không thể hủy đơn ở trạng thái hiện tại.";
                 return RedirectAfterBookingAction(returnTo);
             }
 
@@ -237,10 +227,11 @@ namespace QLKhachSan.Controllers
             if (paid)
             {
                 if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Đơn đã thanh toán. Không thể hủy trực tiếp." });
-                TempData["AdminError"] = "Đơn đã thanh toán. Không thể hủy trực tiếp.";
+                FailOperation(); TempData["AdminError"] = "Đơn đã thanh toán. Không thể hủy trực tiếp.";
                 return RedirectAfterBookingAction(returnTo);
             }
 
+            HotelOperations.ReturnPromotionUse(db, id);
             booking.Status = "Đã hủy";
             foreach (var p in db.ThanhToans.Where(t => t.BookingId == id).ToList())
             {
@@ -260,118 +251,49 @@ namespace QLKhachSan.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ConfirmPayment(int id, string returnTo = null)
         {
             var booking = db.Bookings.Find(id);
-            if (booking == null)
+            if (booking == null) return HttpNotFound();
+            try
             {
-                if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Không tìm thấy đơn đặt phòng." });
-                return HttpNotFound();
+                HotelOperations.ConfirmBookingPayment(db, booking, Request.Headers["X-Payment-Evidence"] ?? Request["paymentEvidence"], Convert.ToInt32(Session["UserId"]));
             }
-
-            if (booking.Status != "Đã xác nhận" && booking.Status != "Đang ở" && booking.Status != "Chờ xác nhận")
+            catch (HotelRuleException ex)
             {
-                if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Trạng thái đơn hiện tại không thể xác nhận thanh toán." });
-                TempData["AdminError"] = "Trạng thái đơn hiện tại không thể xác nhận thanh toán.";
+                if (Request.IsAjaxRequest()) return Json(new { success = false, message = ex.Message });
+                FailOperation(); TempData["AdminError"] = ex.Message;
                 return RedirectAfterBookingAction(returnTo);
             }
-
-            var payment = db.ThanhToans
-                .Where(t => t.BookingId == id)
-                .OrderByDescending(t => t.NgayThanhToan)
-                .FirstOrDefault();
-
-            if (payment != null && payment.TrangThai == "Đã thanh toán")
-            {
-                if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Đơn này đã được thanh toán trước đó." });
-                TempData["AdminError"] = "Đơn này đã được thanh toán trước đó.";
-                return RedirectAfterBookingAction(returnTo);
-            }
-
-            if (payment == null)
-            {
-                payment = new ThanhToan
-                {
-                    BookingId = booking.BookingId,
-                    PhuongThucThanhToan = booking.PaymentMethod,
-                    SoTien = booking.TotalAmount,
-                    NgayThanhToan = DateTime.Now,
-                    TrangThai = "Đã thanh toán",
-                    MaGiaoDich = null,
-                    GhiChu = "Admin xác nhận thanh toán"
-                };
-                db.ThanhToans.Add(payment);
-            }
-            else
-            {
-                payment.TrangThai = "Đã thanh toán";
-                payment.NgayThanhToan = DateTime.Now;
-                payment.SoTien = booking.TotalAmount;
-                payment.GhiChu = "Admin xác nhận thanh toán";
-            }
-
-            db.SaveChanges();
-            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
-
-            if (Request.IsAjaxRequest())
-            {
-                return Json(new { success = true, message = $"Đã xác nhận thanh toán đơn #{booking.BookingId}.", status = booking.Status });
-            }
-
-            TempData["AdminSuccess"] = "Đã xác nhận thanh toán đơn #" + booking.BookingId + ".";
+            if (Request.IsAjaxRequest()) return Json(new { success = true, message = "Đã xác minh và ghi nhận thanh toán.", status = booking.Status });
+            TempData["AdminSuccess"] = "Đã xác minh và ghi nhận thanh toán.";
             return RedirectAfterBookingAction(returnTo);
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult CheckIn(int id, string returnTo = null)
         {
             var booking = db.Bookings.Find(id);
-            if (booking == null)
+            if (booking == null) return HttpNotFound();
+            try { HotelOperations.ValidateCheckIn(db, booking); }
+            catch (HotelRuleException ex)
             {
-                if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Không tìm thấy đơn đặt phòng." });
-                return HttpNotFound();
-            }
-
-            if (booking.Status != "Đã xác nhận")
-            {
-                if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Chỉ đơn đã xác nhận mới có thể nhận phòng." });
-                TempData["AdminError"] = "Chỉ đơn đã xác nhận mới có thể nhận phòng.";
+                if (Request.IsAjaxRequest()) return Json(new { success = false, message = ex.Message });
+                FailOperation(); TempData["AdminError"] = ex.Message;
                 return RedirectAfterBookingAction(returnTo);
             }
-
-            if (booking.CheckInDate.Date > DateTime.Today)
-            {
-                if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Chưa đến ngày nhận phòng." });
-                TempData["AdminError"] = "Chưa đến ngày nhận phòng.";
-                return RedirectAfterBookingAction(returnTo);
-            }
-
-            var payment = db.ThanhToans.FirstOrDefault(p => p.BookingId == id);
-            if (payment == null || payment.TrangThai != "Đã thanh toán")
-            {
-                if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Đơn đặt phòng chưa hoàn tất thanh toán. Không thể nhận phòng." });
-                TempData["AdminError"] = "Đơn đặt phòng chưa hoàn tất thanh toán. Không thể nhận phòng.";
-                return RedirectAfterBookingAction(returnTo);
-            }
-
             booking.Status = "Đang ở";
             db.SaveChanges();
             PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
-            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
-
-            if (Request.IsAjaxRequest())
-            {
-                return Json(new { success = true, message = $"Đã nhận phòng cho đơn #{booking.BookingId}.", status = booking.Status });
-            }
-
-            TempData["AdminSuccess"] = "Đã nhận phòng cho đơn #" + booking.BookingId + ".";
+            if (Request.IsAjaxRequest()) return Json(new { success = true, message = "Đã nhận phòng.", status = booking.Status });
+            TempData["AdminSuccess"] = "Đã nhận phòng.";
             return RedirectAfterBookingAction(returnTo);
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult CheckOut(int id, string returnTo = null)
         {
             var booking = db.Bookings.Find(id);
@@ -384,23 +306,21 @@ namespace QLKhachSan.Controllers
             if (booking.Status != "Đang ở")
             {
                 if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Chỉ khách đang ở mới có thể trả phòng." });
-                TempData["AdminError"] = "Chỉ khách đang ở mới có thể trả phòng.";
+                FailOperation(); TempData["AdminError"] = "Chỉ khách đang ở mới có thể trả phòng.";
                 return RedirectAfterBookingAction(returnTo);
             }
 
-            bool paid = db.ThanhToans.Any(t =>
-                t.BookingId == id && t.TrangThai == "Đã thanh toán");
+            decimal paidAmount = db.ThanhToans.Where(t => t.BookingId == id && t.TrangThai == "Đã thanh toán").Select(t => (decimal?)t.SoTien).Sum() ?? 0;
 
-            if (!paid)
+            if (paidAmount < booking.TotalAmount)
             {
                 if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Khách chưa thanh toán. Vui lòng xác nhận thanh toán trước." });
-                TempData["AdminError"] = "Khách chưa thanh toán. Vui lòng xác nhận thanh toán trước.";
+                FailOperation(); TempData["AdminError"] = "Khách chưa thanh toán. Vui lòng xác nhận thanh toán trước.";
                 return RedirectAfterBookingAction(returnTo);
             }
 
             booking.Status = "Đã trả phòng";
             db.SaveChanges();
-            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
             PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
 
             if (Request.IsAjaxRequest())
@@ -423,7 +343,6 @@ namespace QLKhachSan.Controllers
         // =========================================================
         public ActionResult Rooms(string keyword, string status)
         {
-            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
             var query = db.Rooms.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -443,13 +362,13 @@ namespace QLKhachSan.Controllers
             ViewBag.ActiveRoomTypes = db.Rooms.Count(r => r.IsActive);
             ViewBag.InactiveRoomTypes = db.Rooms.Count(r => !r.IsActive);
             ViewBag.TotalRoomUnits = db.Rooms.Where(r => r.IsActive).Select(r => (int?)r.TotalRooms).Sum() ?? 0;
-            ViewBag.PhysicalRooms = db.PhysicalRooms.Include(pr => pr.RoomType).OrderBy(pr => pr.Floor).ThenBy(pr => pr.RoomNumber).ToList();
+            ViewBag.PhysicalRooms = HotelOperations.RoomSnapshot(db, DateTime.Today);
 
             return View(query.OrderBy(r => r.Price).ToList());
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult SaveRoom(
             int? id,
             string roomName,
@@ -466,19 +385,26 @@ namespace QLKhachSan.Controllers
             description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
             imageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
 
-            if (string.IsNullOrWhiteSpace(roomName) || string.IsNullOrWhiteSpace(roomType) || price < 0 || capacity <= 0 || totalRooms <= 0)
+            if (string.IsNullOrWhiteSpace(roomName) || string.IsNullOrWhiteSpace(roomType) || price < 0 || capacity <= 0 || totalRooms < 0)
             {
-                TempData["AdminError"] = "Thông tin phòng không hợp lệ.";
+                FailOperation(); TempData["AdminError"] = "Thông tin phòng không hợp lệ.";
                 return RedirectToAction("Rooms");
             }
 
+            int physicalCount = id.HasValue ? db.PhysicalRooms.Count(p => p.RoomTypeId == id.Value) : 0;
+            if (id.HasValue && totalRooms != physicalCount)
+            {
+                FailOperation(); TempData["AdminError"] = "Số lượng phải khớp " + physicalCount + " phòng vật lý.";
+                return RedirectToAction("Rooms");
+            }
+            if (!id.HasValue) totalRooms = 0; // A new type has no sellable physical rooms yet.
             bool duplicate = id.HasValue
                 ? db.Rooms.Any(r => r.RoomName == roomName && r.RoomId != id.Value)
                 : db.Rooms.Any(r => r.RoomName == roomName);
 
             if (duplicate)
             {
-                TempData["AdminError"] = "Tên phòng này đã tồn tại.";
+                FailOperation(); TempData["AdminError"] = "Tên phòng này đã tồn tại.";
                 return RedirectToAction("Rooms");
             }
 
@@ -518,7 +444,7 @@ namespace QLKhachSan.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ToggleRoom(int id)
         {
             var room = db.Rooms.Find(id);
@@ -545,7 +471,7 @@ namespace QLKhachSan.Controllers
 
             ViewBag.CurrentGuestCount = bookings.Count;
             ViewBag.UnpaidGuests = bookings.Count(b =>
-                !b.ThanhToans.Any(t => t.TrangThai == "Đã thanh toán"));
+                HotelOperations.PaymentStatus(b) != "Đã thanh toán");
 
             return View(bookings);
         }
@@ -579,7 +505,7 @@ namespace QLKhachSan.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult CreateStaff(string fullName, string email, string password)
         {
             fullName = (fullName ?? "").Trim();
@@ -588,13 +514,13 @@ namespace QLKhachSan.Controllers
 
             if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email) || password.Length < 6)
             {
-                TempData["AdminError"] = "Thông tin chưa hợp lệ. Mật khẩu ít nhất 6 ký tự.";
+                FailOperation(); TempData["AdminError"] = "Thông tin chưa hợp lệ. Mật khẩu ít nhất 6 ký tự.";
                 return RedirectToAction("Users", new { role = "Staff" });
             }
 
             if (db.Users.Any(u => u.Email == email || u.Username == email))
             {
-                TempData["AdminError"] = "Email này đã được sử dụng.";
+                FailOperation(); TempData["AdminError"] = "Email này đã được sử dụng.";
                 return RedirectToAction("Users", new { role = "Staff" });
             }
 
@@ -616,7 +542,7 @@ namespace QLKhachSan.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ToggleUser(int id)
         {
             var user = db.Users.Find(id);
@@ -624,7 +550,7 @@ namespace QLKhachSan.Controllers
 
             if (user.Role == "Admin")
             {
-                TempData["AdminError"] = "Không thể khóa tài khoản Admin tại đây.";
+                FailOperation(); TempData["AdminError"] = "Không thể khóa tài khoản Admin tại đây.";
                 return RedirectToAction("Users");
             }
 
@@ -636,7 +562,7 @@ namespace QLKhachSan.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ChangeUserRole(int id, string role)
         {
             var user = db.Users.Find(id);
@@ -644,13 +570,13 @@ namespace QLKhachSan.Controllers
 
             if (user.Role == "Admin")
             {
-                TempData["AdminError"] = "Không thể thay đổi quyền Admin.";
+                FailOperation(); TempData["AdminError"] = "Không thể thay đổi quyền Admin.";
                 return RedirectToAction("Users");
             }
 
             if (role != "Customer" && role != "Staff")
             {
-                TempData["AdminError"] = "Quyền không hợp lệ.";
+                FailOperation(); TempData["AdminError"] = "Quyền không hợp lệ.";
                 return RedirectToAction("Users");
             }
 
@@ -682,7 +608,7 @@ namespace QLKhachSan.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult SaveService(int? id, string tenDichVu, string moTa, decimal gia, string donVi, bool hoatDong = true)
         {
             tenDichVu = (tenDichVu ?? "").Trim();
@@ -691,7 +617,7 @@ namespace QLKhachSan.Controllers
 
             if (string.IsNullOrWhiteSpace(tenDichVu) || string.IsNullOrWhiteSpace(donVi) || gia < 0)
             {
-                TempData["AdminError"] = "Thông tin dịch vụ không hợp lệ.";
+                FailOperation(); TempData["AdminError"] = "Thông tin dịch vụ không hợp lệ.";
                 return RedirectToAction("Services");
             }
 
@@ -724,7 +650,7 @@ namespace QLKhachSan.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ToggleService(int id)
         {
             var service = db.DichVus.Find(id);
@@ -759,7 +685,7 @@ namespace QLKhachSan.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult SavePromotion(
             int? id,
             string maCode,
@@ -778,21 +704,21 @@ namespace QLKhachSan.Controllers
             tenKhuyenMai = (tenKhuyenMai ?? "").Trim();
             moTa = string.IsNullOrWhiteSpace(moTa) ? null : moTa.Trim();
 
-            if (string.IsNullOrWhiteSpace(maCode) || string.IsNullOrWhiteSpace(tenKhuyenMai) || giaTriGiam <= 0 || ngayKetThuc.Date < ngayBatDau.Date)
+            if (string.IsNullOrWhiteSpace(maCode) || string.IsNullOrWhiteSpace(tenKhuyenMai) || giaTriGiam <= 0 || donToiThieu < 0 || (giamToiDa.HasValue && giamToiDa.Value < 0) || (soLuotSuDungToiDa.HasValue && soLuotSuDungToiDa.Value < 1) || ngayKetThuc.Date < ngayBatDau.Date)
             {
-                TempData["AdminError"] = "Thông tin khuyến mãi không hợp lệ.";
+                FailOperation(); TempData["AdminError"] = "Thông tin khuyến mãi không hợp lệ.";
                 return RedirectToAction("Promotions");
             }
 
             if (loaiGiamGia != "PhanTram" && loaiGiamGia != "SoTien")
             {
-                TempData["AdminError"] = "Loại giảm giá không hợp lệ.";
+                FailOperation(); TempData["AdminError"] = "Loại giảm giá không hợp lệ.";
                 return RedirectToAction("Promotions");
             }
 
             if (loaiGiamGia == "PhanTram" && giaTriGiam > 100)
             {
-                TempData["AdminError"] = "Phần trăm giảm không được lớn hơn 100%.";
+                FailOperation(); TempData["AdminError"] = "Phần trăm giảm không được lớn hơn 100%.";
                 return RedirectToAction("Promotions");
             }
 
@@ -802,7 +728,7 @@ namespace QLKhachSan.Controllers
 
             if (duplicate)
             {
-                TempData["AdminError"] = "Mã khuyến mãi đã tồn tại.";
+                FailOperation(); TempData["AdminError"] = "Mã khuyến mãi đã tồn tại.";
                 return RedirectToAction("Promotions");
             }
 
@@ -848,7 +774,7 @@ namespace QLKhachSan.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult TogglePromotion(int id)
         {
             var p = db.KhuyenMais.Find(id);
@@ -883,10 +809,7 @@ namespace QLKhachSan.Controllers
                 DateTime start = new DateTime(selectedYear, month, 1);
                 DateTime end = start.AddMonths(1);
 
-                decimal roomRevenue = db.ThanhToans
-                    .Where(t => t.TrangThai == "Đã thanh toán" && t.NgayThanhToan >= start && t.NgayThanhToan < end)
-                    .Select(t => (decimal?)t.SoTien)
-                    .Sum() ?? 0;
+                decimal roomRevenue = HotelOperations.RoomRevenue(db, start, end);
 
                 decimal foodRevenue = GetFoodRevenue(start, end);
 
@@ -918,7 +841,6 @@ namespace QLKhachSan.Controllers
         public ActionResult RoomCalendar(
             DateTime? date)
         {
-            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
             DateTime selectedDate =
                 date.HasValue
                 ? date.Value.Date
@@ -953,7 +875,7 @@ namespace QLKhachSan.Controllers
                     Rooms =
                         BuildRoomAvailability(
                             rooms,
-                            bookings
+                            bookings, selectedDate
                         )
                 };
 
@@ -964,6 +886,19 @@ namespace QLKhachSan.Controllers
         // =========================================================
         // CHI TIẾT BOOKING
         // =========================================================
+        public class HotelAutoCancelAuditModel
+        {
+            public long AuditId { get; set; }
+            public int BookingId { get; set; }
+            public string PreviousStatus { get; set; }
+            public string NewStatus { get; set; }
+            public DateTime CheckInDate { get; set; }
+            public DateTime ProcessedAtUtc { get; set; }
+            public bool HadPaidPayment { get; set; }
+            public bool NeedsFinancialReview { get; set; }
+            public string Reason { get; set; }
+        }
+
         public ActionResult BookingDetails(int id)
         {
             var booking =
@@ -977,6 +912,10 @@ namespace QLKhachSan.Controllers
             {
                 return HttpNotFound();
             }
+
+            var audit = db.Database.SqlQuery<HotelAutoCancelAuditModel>(
+                "SELECT * FROM dbo.HotelAutoCancelAudit WHERE BookingId = @p0", id).FirstOrDefault();
+            ViewBag.AutoCancelAudit = audit;
 
             var model =
                 new BookingDetailsViewModel
@@ -1383,9 +1322,7 @@ namespace QLKhachSan.Controllers
 
             model.UnpaidCount =
                 currentGuests.Count(b =>
-                    !b.ThanhToans.Any(t =>
-                        t.TrangThai ==
-                        "Đã thanh toán"));
+                    HotelOperations.PaymentStatus(b) != "Đã thanh toán");
 
             return View(model);
         }
@@ -1439,13 +1376,8 @@ namespace QLKhachSan.Controllers
                 in users
             )
             {
-                var bookings =
-                    db.Bookings
-                      .Include(b =>
-                          b.ThanhToans)
-                      .Where(b =>
-                          b.CustomerEmail ==
-                          user.Email)
+                var ownedIds = db.Database.SqlQuery<int>("SELECT BookingId FROM dbo.Bookings WHERE UserId=@p0", user.UserId).ToList();
+                var bookings = db.Bookings.Include(b => b.ThanhToans).Where(b => ownedIds.Contains(b.BookingId))
                       .ToList();
 
                 var paidBookings =
@@ -1485,9 +1417,7 @@ namespace QLKhachSan.Controllers
                                 b.Status ==
                                 "Đã trả phòng"),
 
-                        TotalPaid =
-                            paidBookings.Sum(b =>
-                                b.TotalAmount),
+                        TotalPaid = bookings.SelectMany(b => b.ThanhToans).Where(t => t.TrangThai == "Đã thanh toán").Sum(t => t.SoTien),
 
                         LastBookingAt =
                             bookings.Count > 0
@@ -1527,13 +1457,8 @@ namespace QLKhachSan.Controllers
                 return HttpNotFound();
             }
 
-            var bookings =
-                db.Bookings
-                  .Include(b => b.Room)
-                  .Include(b => b.ThanhToans)
-                  .Where(b =>
-                      b.CustomerEmail ==
-                      user.Email)
+            var ownedIds = db.Database.SqlQuery<int>("SELECT BookingId FROM dbo.Bookings WHERE UserId=@p0", user.UserId).ToList();
+            var bookings = db.Bookings.Include(b => b.Room).Include(b => b.ThanhToans).Where(b => ownedIds.Contains(b.BookingId))
                   .OrderByDescending(b =>
                       b.CreatedAt)
                   .ToList();
@@ -1547,14 +1472,7 @@ namespace QLKhachSan.Controllers
                     Bookings =
                         bookings,
 
-                    TotalPaid =
-                        bookings
-                            .Where(b =>
-                                b.ThanhToans.Any(t =>
-                                    t.TrangThai ==
-                                    "Đã thanh toán"))
-                            .Sum(b =>
-                                b.TotalAmount)
+                    TotalPaid = bookings.SelectMany(b => b.ThanhToans).Where(t => t.TrangThai == "Đã thanh toán").Sum(t => t.SoTien)
                 };
 
             return View(model);
@@ -1710,23 +1628,11 @@ namespace QLKhachSan.Controllers
                 in users
             )
             {
-                var bookings =
-                    db.Bookings
-                      .Include(b =>
-                          b.ThanhToans)
-                      .Where(b =>
-                          b.CustomerEmail ==
-                          user.Email)
+                var ownedIds = db.Database.SqlQuery<int>("SELECT BookingId FROM dbo.Bookings WHERE UserId=@p0", user.UserId).ToList();
+                var bookings = db.Bookings.Include(b => b.ThanhToans).Where(b => ownedIds.Contains(b.BookingId))
                       .ToList();
 
-                decimal totalPaid =
-                    bookings
-                        .Where(b =>
-                            b.ThanhToans.Any(t =>
-                                t.TrangThai ==
-                                "Đã thanh toán"))
-                        .Sum(b =>
-                            b.TotalAmount);
+                decimal totalPaid = bookings.SelectMany(b => b.ThanhToans).Where(t => t.TrangThai == "Đã thanh toán").Sum(t => t.SoTien);
 
                 sb.AppendLine(
                     Csv(user.UserId) + "," +
@@ -1765,7 +1671,7 @@ namespace QLKhachSan.Controllers
         private List<RoomAvailabilityViewModel>
             BuildRoomAvailability(
                 List<Room> rooms,
-                List<Booking> bookings)
+                List<Booking> bookings, DateTime selectedDate)
         {
             var result =
                 new List<RoomAvailabilityViewModel>();
@@ -1782,16 +1688,9 @@ namespace QLKhachSan.Controllers
                             room.RoomId)
                         .ToList();
 
-                int reservedUnits =
-                    roomBookings.Sum(b =>
-                        b.RoomCount);
-
-                int availableUnits =
-                    Math.Max(
-                        0,
-                        room.TotalRooms -
-                        reservedUnits
-                    );
+                int totalPhysical = db.PhysicalRooms.Count(p => p.RoomTypeId == room.RoomId && p.IsActive);
+                int availableUnits = HotelOperations.AvailableRooms(db, room.RoomId, selectedDate, selectedDate.AddDays(1)).Count;
+                int reservedUnits = totalPhysical - availableUnits;
 
                 int currentGuests =
                     roomBookings.Count(b =>
@@ -1817,7 +1716,7 @@ namespace QLKhachSan.Controllers
                             room.Capacity,
 
                         TotalUnits =
-                            room.TotalRooms,
+                            totalPhysical,
 
                         ReservedUnits =
                             reservedUnits,
@@ -1877,6 +1776,7 @@ namespace QLKhachSan.Controllers
                 ? ""
                 : Convert.ToString(value);
 
+            if (value is string && text.TrimStart().Length > 0 && "=+-@".IndexOf(text.TrimStart()[0]) >= 0) text = "'" + text;
             text =
                 text.Replace(
                     "\"",
@@ -1977,13 +1877,13 @@ namespace QLKhachSan.Controllers
 
         [AdminAuthorize]
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult SaveStaffPermissions(int userId, List<string> selectedPermissions)
         {
             var staff = db.Users.FirstOrDefault(u => u.UserId == userId && u.Role == "Staff");
             if (staff == null)
             {
-                TempData["AdminError"] = "Không tìm thấy nhân viên hợp lệ.";
+                FailOperation(); TempData["AdminError"] = "Không tìm thấy nhân viên hợp lệ.";
                 return RedirectToAction("StaffPermissions");
             }
 
@@ -1994,7 +1894,7 @@ namespace QLKhachSan.Controllers
             // Thêm quyền mới được chọn
             if (selectedPermissions != null && selectedPermissions.Any())
             {
-                foreach (var code in selectedPermissions)
+                foreach (var code in selectedPermissions.Distinct())
                 {
                     if (db.Permissions.Any(p => p.PermissionCode == code))
                     {
@@ -2026,114 +1926,53 @@ namespace QLKhachSan.Controllers
             public string Reason { get; set; }
             public string Note { get; set; }
             public string Status { get; set; }
+            public DateTime? EndedAt { get; set; }
         }
 
         private List<RoomMaintenanceRecord> GetRoomMaintenanceRecords()
         {
             return db.Database.SqlQuery<RoomMaintenanceRecord>(
-                @"SELECT MaintenanceId, PhysicalRoomId, StartDate, EndDate, Reason, Note, Status
+                @"SELECT MaintenanceId, PhysicalRoomId, StartDate, EndDate, Reason, Note, Status, EndedAt
                   FROM dbo.RoomMaintenances ORDER BY StartDate DESC, MaintenanceId DESC").ToList();
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         [AdminAuthorize]
         public ActionResult SaveRoomMaintenance(int physicalRoomId, DateTime? startDate,
             DateTime? endDate, string reason, string note)
         {
-            reason = (reason ?? "").Trim();
-            note = (note ?? "").Trim();
-            if (!startDate.HasValue || !endDate.HasValue ||
-                startDate.Value.Date >= endDate.Value.Date || reason.Length == 0 || reason.Length > 500 || note.Length > 2000)
-                return Json(new { success = false, message = "Ngày kết thúc phải sau ngày bắt đầu; lý do là bắt buộc (tối đa 500 ký tự)." });
-
-            DateTime start = startDate.Value.Date;
-            DateTime end = endDate.Value.Date; // ngày kết thúc không bao gồm
-            if (start < DateTime.Today)
-                return Json(new { success = false, message = "Không thể tạo lịch bảo trì bắt đầu trong quá khứ." });
             try
             {
-                using (var transaction = db.Database.BeginTransaction(System.Data.IsolationLevel.Serializable))
+                using (var transaction = db.Database.BeginTransaction())
                 {
-                    var room = db.PhysicalRooms.FirstOrDefault(p => p.PhysicalRoomId == physicalRoomId);
-                    if (room == null)
-                        return Json(new { success = false, message = "Không tìm thấy phòng vật lý." });
-
-                    string roomNumber = (room.RoomNumber ?? "").Trim();
-                    // Kiểm tra đơn trùng ngày của ĐÚNG phòng vật lý, không chặn toàn bộ loại phòng.
-                    var candidateBookings = db.Bookings.AsNoTracking()
-                        .Where(b => b.RoomId == room.RoomTypeId &&
-                            (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") &&
-                            b.CheckInDate < end && b.CheckOutDate > start)
-                        .Select(b => new { b.BookingId, b.SpecialRequest }).ToList();
-                    var overlapBooking = candidateBookings.FirstOrDefault(b =>
-                        PhysicalRoomHelper.IsBookingAssignedToRoom(b.SpecialRequest, roomNumber));
-                    if (overlapBooking != null)
-                        return Json(new
-                        {
-                            success = false,
-                            message = "Phòng " + roomNumber +
-                            " đã có đơn đặt #" + overlapBooking.BookingId + " trong thời gian bảo trì. Không thể lưu."
-                        });
-
-                    // UPDLOCK, HOLDLOCK: hai thao tác bảo trì đồng thời không thể cùng giữ một khoảng ngày.
-                    int conflicts = db.Database.SqlQuery<int>(
-                        @"SELECT COUNT(1) FROM dbo.RoomMaintenances WITH (UPDLOCK, HOLDLOCK)
-                          WHERE PhysicalRoomId = @roomId AND Status = N'Đang bảo trì'
-                            AND StartDate < @end AND EndDate > @start",
-                        new System.Data.SqlClient.SqlParameter("@roomId", physicalRoomId),
-                        new System.Data.SqlClient.SqlParameter("@start", start),
-                        new System.Data.SqlClient.SqlParameter("@end", end)).Single();
-                    if (conflicts > 0)
-                        return Json(new { success = false, message = "Phòng đã có lịch bảo trì trùng thời gian." });
-
-                    db.Database.ExecuteSqlCommand(
-                        @"INSERT INTO dbo.RoomMaintenances
-                          (PhysicalRoomId, StartDate, EndDate, Reason, Note, Status, CreatedAt)
-                          VALUES (@roomId, @start, @end, @reason, @note, N'Đang bảo trì', GETDATE())",
-                        new System.Data.SqlClient.SqlParameter("@roomId", physicalRoomId),
-                        new System.Data.SqlClient.SqlParameter("@start", start),
-                        new System.Data.SqlClient.SqlParameter("@end", end),
-                        new System.Data.SqlClient.SqlParameter("@reason", reason),
-                        new System.Data.SqlClient.SqlParameter("@note", (object)note ?? DBNull.Value));
+                    HotelOperations.LockInventory(db);
+                    HotelOperations.CreateMaintenance(db, physicalRoomId, startDate, endDate, reason, note);
+                    PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
                     transaction.Commit();
-                    return Json(new { success = true, message = "Đã lưu lịch bảo trì phòng " + roomNumber + "." });
+                    return Json(new { success = true, message = "Đã lưu lịch bảo trì." });
                 }
             }
+            catch (HotelRuleException ex) { return Json(new { success = false, message = ex.Message }); }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError("SaveRoomMaintenance: " + ex);
-                return Json(new
-                {
-                    success = false,
-                    message = Request.IsLocal
-                    ? "Không lưu được lịch bảo trì: " + ex.GetBaseException().Message
-                    : "Không lưu được lịch bảo trì. Kiểm tra bảng RoomMaintenances trên database."
-                });
+                System.Diagnostics.Trace.TraceError(ex.ToString());
+                return Json(new { success = false, message = "Không lưu được lịch bảo trì. Vui lòng kiểm tra cấu trúc dữ liệu và thử lại." });
             }
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         [AdminAuthorize]
         public ActionResult EndMaintenanceEarly(int maintenanceId)
         {
             try
             {
-                // Bảo lưu dữ liệu lịch sử; chỉ đánh dấu kết thúc, không xóa bản ghi.
-                int changed = db.Database.ExecuteSqlCommand(
-                    @"UPDATE dbo.RoomMaintenances SET Status = N'Đã kết thúc sớm', EndedAt = GETDATE()
-                      WHERE MaintenanceId = @id AND Status = N'Đang bảo trì'",
-                    new System.Data.SqlClient.SqlParameter("@id", maintenanceId));
-                return Json(changed > 0
-                    ? new { success = true, message = "Đã kết thúc lịch bảo trì." }
-                    : new { success = false, message = "Lịch bảo trì không tồn tại hoặc đã kết thúc." });
+                HotelOperations.EndMaintenance(db, maintenanceId);
+                PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
+                return Json(new { success = true, message = "Đã kết thúc bảo trì; giữ nguyên lịch sử các ngày trước." });
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Trace.TraceError("EndMaintenanceEarly: " + ex);
-                return Json(new { success = false, message = "Không thể kết thúc bảo trì. Kiểm tra bảng dữ liệu." });
-            }
+            catch (HotelRuleException ex) { return Json(new { success = false, message = ex.Message }); }
         }
 
         [HttpGet]
@@ -2142,194 +1981,38 @@ namespace QLKhachSan.Controllers
         {
             try
             {
-                DateTime targetDate;
-                if (string.IsNullOrWhiteSpace(date) ||
-                    !DateTime.TryParseExact(date, "yyyy-MM-dd",
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        System.Globalization.DateTimeStyles.None, out targetDate))
-                {
-                    targetDate = DateTime.Today;
-                }
-
-                var dateOnly = targetDate.Date;
-                var nextDate = dateOnly.AddDays(1);
-
-                // Dùng phép so sánh theo khoảng ngày để không phát sinh SQL
-                // CAST/TruncateTime và không kéo theo bảng Room qua Include.
-                var physicalRooms = db.PhysicalRooms.AsNoTracking()
-                    .Include(pr => pr.RoomType)
-                    .OrderBy(pr => pr.Floor)
-                    .ThenBy(pr => pr.RoomNumber)
-                    .ToList();
-
-                // Chỉ SELECT những cột thật sự dùng trong ma trận.
-                // Không Include(b => b.Room): quan hệ này có thể làm truy vấn
-                // thất bại nếu mapping của Room trên DB đã thay đổi.
-                var bookings = db.Bookings.AsNoTracking()
-                    .Where(b => (b.Status == "Chờ xác nhận" ||
-                                 b.Status == "Đã xác nhận" ||
-                                 b.Status == "Đang ở") &&
-                                b.CheckOutDate > dateOnly)
-                    .Select(b => new
-                    {
-                        b.BookingId,
-                        b.RoomId,
-                        b.SpecialRequest,
-                        b.CheckInDate,
-                        b.CheckOutDate,
-                        b.Status,
-                        b.CustomerName,
-                        b.CustomerPhone,
-                        b.CustomerEmail,
-                        b.TotalAmount
-                    })
-                    .OrderBy(b => b.CheckInDate)
-                    .ToList();
-
-                var activeBookings = bookings
-                    .Where(b => b.CheckInDate < nextDate && b.CheckOutDate > dateOnly)
-                    .ToList();
-
-                // Chỉ một truy vấn thanh toán thay vì truy vấn cho từng phòng.
-                var relevantBookingIds = activeBookings.Select(b => b.BookingId).ToList();
-                var paidBookingIds = new HashSet<int>(
-                    db.ThanhToans.AsNoTracking()
-                        .Where(t => relevantBookingIds.Contains(t.BookingId) &&
-                                    t.TrangThai == "Đã thanh toán")
-                        .Select(t => t.BookingId)
-                        .ToList());
-
-                var maintenanceRecords = GetRoomMaintenanceRecords();
-                var roomListResult = new List<object>();
-                foreach (var pr in physicalRooms)
-                {
-                    string roomNum = (pr.RoomNumber ?? "").Trim();
-                    string statusOnDate = "Trống";
-                    var roomMaintenanceHistory = maintenanceRecords
-                        .Where(m => m.PhysicalRoomId == pr.PhysicalRoomId).ToList();
-                    var activeMaintenance = roomMaintenanceHistory.FirstOrDefault(m =>
-                        m.Status == "Đang bảo trì" && m.StartDate < nextDate && m.EndDate > dateOnly);
-                    bool isMaintenance = pr.Status == "Bảo trì" || activeMaintenance != null;
-                    if (isMaintenance)
-                    {
-                        statusOnDate = "Bảo trì";
-                    }
-
-                    var matchedBooking = activeBookings.FirstOrDefault(b =>
-                        b.RoomId == pr.RoomTypeId &&
-                        !string.IsNullOrWhiteSpace(b.SpecialRequest) &&
-                        PhysicalRoomHelper.IsBookingAssignedToRoom(b.SpecialRequest, roomNum));
-
-                    object bookingDetail = null;
-                    if (matchedBooking != null && !isMaintenance)
-                    {
-                        if (matchedBooking.Status == "Đang ở") statusOnDate = "Đang ở";
-                        else if (matchedBooking.Status == "Đã xác nhận") statusOnDate = "Đã đặt";
-                        else statusOnDate = "Chờ xác nhận";
-
-                        bookingDetail = new
-                        {
-                            bookingId = matchedBooking.BookingId,
-                            customerName = string.IsNullOrWhiteSpace(matchedBooking.CustomerName) ? "Khách hàng" : matchedBooking.CustomerName,
-                            customerPhone = string.IsNullOrWhiteSpace(matchedBooking.CustomerPhone) ? "Chưa cung cấp" : matchedBooking.CustomerPhone,
-                            customerEmail = string.IsNullOrWhiteSpace(matchedBooking.CustomerEmail) ? "Chưa cung cấp" : matchedBooking.CustomerEmail,
-                            checkInDate = matchedBooking.CheckInDate.ToString("dd/MM/yyyy"),
-                            checkOutDate = matchedBooking.CheckOutDate.ToString("dd/MM/yyyy"),
-                            status = matchedBooking.Status,
-                            totalAmount = matchedBooking.TotalAmount.ToString("N0") + "đ",
-                            isPaid = paidBookingIds.Contains(matchedBooking.BookingId)
-                        };
-                    }
-
-                    var upcoming = bookings
-                        .Where(b => b.RoomId == pr.RoomTypeId &&
-                                    (matchedBooking == null || b.BookingId != matchedBooking.BookingId) &&
-                                    !string.IsNullOrWhiteSpace(b.SpecialRequest) &&
-                                    PhysicalRoomHelper.IsBookingAssignedToRoom(b.SpecialRequest, roomNum))
-                        .Take(5)
-                        .Select(b => new
-                        {
-                            bookingId = b.BookingId,
-                            customerName = string.IsNullOrWhiteSpace(b.CustomerName) ? "Khách hàng" : b.CustomerName,
-                            checkInDate = b.CheckInDate.ToString("dd/MM/yyyy"),
-                            checkOutDate = b.CheckOutDate.ToString("dd/MM/yyyy"),
-                            status = b.Status
-                        }).ToList();
-
-                    roomListResult.Add(new
-                    {
-                        physicalRoomId = pr.PhysicalRoomId,
-                        roomNumber = pr.RoomNumber,
-                        floor = pr.Floor,
-                        roomTypeName = pr.RoomType != null ? pr.RoomType.RoomName : "Phòng",
-                        status = statusOnDate,
-                        currentBooking = bookingDetail,
-                        currentMaintenance = activeMaintenance == null ? null : new
-                        {
-                            maintenanceId = activeMaintenance.MaintenanceId,
-                            reason = activeMaintenance.Reason,
-                            note = activeMaintenance.Note,
-                            status = activeMaintenance.Status,
-                            startDate = activeMaintenance.StartDate.ToString("dd/MM/yyyy"),
-                            endDate = activeMaintenance.EndDate.ToString("dd/MM/yyyy")
-                        },
-                        maintenanceHistory = roomMaintenanceHistory.Select(m => new
-                        {
-                            maintenanceId = m.MaintenanceId,
-                            reason = m.Reason,
-                            status = m.Status,
-                            startDate = m.StartDate.ToString("dd/MM/yyyy"),
-                            endDate = m.EndDate.ToString("dd/MM/yyyy")
-                        }).ToList(),
-                        upcomingBookings = upcoming
-                    });
-                }
-
-                return Json(new
-                {
-                    success = true,
-                    selectedDate = dateOnly.ToString("yyyy-MM-dd"),
-                    displayDate = dateOnly.ToString("dd/MM/yyyy"),
-                    rooms = roomListResult
-                }, JsonRequestBehavior.AllowGet);
+                return Json(RoomMatrixService.Load(db, RoomMatrixService.ParseDate(date)), JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 // Ghi chi tiết ở Output trên localhost để chẩn đoán đúng
                 // cột/bảng lỗi, không đưa stack trace cho người dùng.
                 System.Diagnostics.Trace.TraceError("GetPhysicalRoomsMatrixByDate: " + ex);
-                var sqlError = ex;
-                while (sqlError.InnerException != null)
-                    sqlError = sqlError.InnerException;
                 return Json(new
                 {
                     success = false,
-                    message = Request.IsLocal ? ("Không thể tải lịch phòng: " + sqlError.Message) : "Không thể tải lịch phòng. Vui lòng liên hệ quản trị viên."
+                    message = "Không thể tải lịch phòng. Vui lòng liên hệ quản trị viên."
                 }, JsonRequestBehavior.AllowGet);
             }
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         [AdminAuthorize]
         public ActionResult ClearAllBookings()
         {
-            try
+            // Preserve history; release unpaid reservations only, never guests currently staying.
+            var pending = db.Bookings.Where(b => (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận") &&
+                !b.ThanhToans.Any(t => t.TrangThai == "Đã thanh toán")).ToList();
+            foreach (var booking in pending)
             {
-                db.Database.ExecuteSqlCommand("DELETE FROM DatPhongDichVu");
-                db.Database.ExecuteSqlCommand("DELETE FROM ThanhToan");
-                db.Database.ExecuteSqlCommand("DELETE FROM DanhGia");
-                db.Database.ExecuteSqlCommand("DELETE FROM Bookings");
-                db.Database.ExecuteSqlCommand("UPDATE PhysicalRooms SET Status = 'Trống'");
-
-                PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
-                TempData["AdminSuccess"] = "Đã giải phóng toàn bộ dữ liệu đặt phòng và làm mới 40 phòng vật lý thành công!";
+                HotelOperations.ReturnPromotionUse(db, booking.BookingId);
+                booking.Status = "Đã hủy";
+                foreach (var payment in db.ThanhToans.Where(t => t.BookingId == booking.BookingId).ToList()) payment.TrangThai = "Đã hủy";
             }
-            catch (Exception ex)
-            {
-                TempData["AdminError"] = "Lỗi khi giải phóng dữ liệu: " + ex.Message;
-            }
-
+            db.SaveChanges();
+            PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
+            TempData["AdminSuccess"] = "Đã giải phóng " + pending.Count + " đơn chưa thanh toán, chưa nhận phòng. Lịch sử được giữ nguyên.";
             return RedirectToAction("Index");
         }
 
@@ -2349,20 +2032,67 @@ namespace QLKhachSan.Controllers
         // =========================================================
         private decimal GetFoodRevenue(DateTime startDate, DateTime endDate)
         {
-            // Nếu dự án chưa có module/bảng đồ ăn, tạm thời trả về 0 để hết lỗi biên dịch
-            return 0;
+            try
+            {
+                int hasTable = db.Database.SqlQuery<int>(@"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'DonDatMon'").FirstOrDefault();
+                if (hasTable == 0) return 0;
+
+                int hasPaidAt = db.Database.SqlQuery<int>(@"SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'DonDatMon' AND COLUMN_NAME = 'PaidAt'").FirstOrDefault();
+                if (hasPaidAt > 0)
+                {
+                    return db.Database.SqlQuery<decimal>(@"SELECT ISNULL(SUM(TongTien),0) FROM dbo.DonDatMon
+                        WHERE TrangThaiThanhToan=N'Đã thanh toán' AND COALESCE(PaidAt,CreatedAt)>=@p0 AND COALESCE(PaidAt,CreatedAt)<@p1", startDate, endDate).FirstOrDefault();
+                }
+                else
+                {
+                    return db.Database.SqlQuery<decimal>(@"SELECT ISNULL(SUM(TongTien),0) FROM dbo.DonDatMon
+                        WHERE TrangThaiThanhToan=N'Đã thanh toán' AND CreatedAt>=@p0 AND CreatedAt<@p1", startDate, endDate).FirstOrDefault();
+                }
+            }
+            catch
+            {
+                return 0;
+            }
         }
 
         private int GetPendingFoodOrders()
         {
-            // Tạm thời trả về 0 nếu chưa có bảng quản lý đơn đồ ăn
-            return 0;
+            try
+            {
+                int hasTable = db.Database.SqlQuery<int>(@"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'DonDatMon'").FirstOrDefault();
+                if (hasTable == 0) return 0;
+
+                return db.Database.SqlQuery<int>("SELECT COUNT(*) FROM dbo.DonDatMon WHERE TrangThai IN(N'Chờ xác nhận',N'Đã xác nhận',N'Đang chuẩn bị',N'Đang phục vụ',N'Đang giao')").FirstOrDefault();
+            }
+            catch
+            {
+                return 0;
+            }
         }
 
         private int GetPaidFoodOrders(DateTime startDate, DateTime endDate)
         {
-            // Tạm thời trả về 0 nếu chưa có bảng quản lý đơn đồ ăn
-            return 0;
+            try
+            {
+                int hasTable = db.Database.SqlQuery<int>(@"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'DonDatMon'").FirstOrDefault();
+                if (hasTable == 0) return 0;
+
+                int hasPaidAt = db.Database.SqlQuery<int>(@"SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'DonDatMon' AND COLUMN_NAME = 'PaidAt'").FirstOrDefault();
+                if (hasPaidAt > 0)
+                {
+                    return db.Database.SqlQuery<int>(@"SELECT COUNT(*) FROM dbo.DonDatMon WHERE TrangThaiThanhToan=N'Đã thanh toán'
+                        AND COALESCE(PaidAt,CreatedAt)>=@p0 AND COALESCE(PaidAt,CreatedAt)<@p1", startDate, endDate).FirstOrDefault();
+                }
+                else
+                {
+                    return db.Database.SqlQuery<int>(@"SELECT COUNT(*) FROM dbo.DonDatMon WHERE TrangThaiThanhToan=N'Đã thanh toán'
+                        AND CreatedAt>=@p0 AND CreatedAt<@p1", startDate, endDate).FirstOrDefault();
+                }
+            }
+            catch
+            {
+                return 0;
+            }
         }
     }
 }

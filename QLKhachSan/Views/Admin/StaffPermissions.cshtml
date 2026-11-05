@@ -20,6 +20,7 @@
 </head>
 
 <body class="bg-[#f4f6fb] min-h-screen">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
     @Html.Partial("~/Views/Admin/_AdminSidebar.cshtml")
 
@@ -243,7 +244,8 @@
             const checkedCount = document.querySelectorAll('.perm-checkbox:checked').length;
             if (typeof showLuxuryConfirm === 'function') {
                 e.preventDefault();
-                showLuxuryConfirm('Bạn có chắc muốn lưu ' + checkedCount + ' quyền cho nhân viên @(Model.SelectedStaff != null ? Model.SelectedStaff.FullName : "")?', 'Xác nhận lưu phân quyền', function() {
+                const staffName = @Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(Model.SelectedStaff != null ? Model.SelectedStaff.FullName : "", true));
+                showLuxuryConfirm('Bạn có chắc muốn lưu ' + checkedCount + ' quyền cho nhân viên ' + staffName + '?', 'Xác nhận lưu phân quyền', function() {
                     document.getElementById('permissionForm').submit();
                 });
                 return false;

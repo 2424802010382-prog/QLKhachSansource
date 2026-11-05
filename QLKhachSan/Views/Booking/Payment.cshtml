@@ -1,7 +1,9 @@
 @model QLKhachSan.Models.Booking
 @{
     Layout = null;
-    long amountInt = Convert.ToInt64(Math.Round(Model.TotalAmount));
+    decimal paidAmount = QLKhachSan.Models.HotelOperations.PaidAmount(Model);
+    decimal outstandingAmount = Math.Max(0, Model.TotalAmount - paidAmount);
+    long amountInt = Convert.ToInt64(Math.Round(outstandingAmount));
     string addInfo = "QLKS " + Model.BookingId;
     string accountName = "LUXURY HOTEL";
     string qrUrl = $"https://img.vietqr.io/image/970436-1038619653-compact2.png?amount={amountInt}&addInfo={Uri.EscapeDataString(addInfo)}&accountName={Uri.EscapeDataString(accountName)}";
@@ -18,6 +20,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body class="bg-[#f8f5ee] min-h-screen py-10">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
     <div class="container mx-auto px-4 max-w-4xl">
         <div class="text-center mb-8">
@@ -46,6 +49,8 @@
                         <span class="text-gray-500">Nhận - Trả:</span>
                         <span class="font-medium">@Model.CheckInDate.ToString("dd/MM/yyyy") - @Model.CheckOutDate.ToString("dd/MM/yyyy")</span>
                     </div>
+                    <div class="flex justify-between"><span>Đã thu:</span><span>@paidAmount.ToString("N0")đ</span></div>
+                    <div class="flex justify-between font-bold"><span>Còn phải thu:</span><span>@outstandingAmount.ToString("N0")đ</span></div>
                     <hr class="my-2">
                     <div class="flex justify-between text-base font-bold text-red-600">
                         <span>Tổng tiền:</span>
@@ -95,7 +100,7 @@
                         </div>
                         <div class="flex justify-between items-center">
                             <span>Số tiền:</span>
-                            <strong class="text-red-600 text-base">@Model.TotalAmount.ToString("N0")đ</strong>
+                            <strong class="text-red-600 text-base">@outstandingAmount.ToString("N0")đ</strong>
                         </div>
                         <div class="flex justify-between items-center">
                             <span>Nội dung CK:</span>
@@ -109,10 +114,10 @@
                     </div>
 
                     <div class="flex flex-col gap-2">
-                        <button onclick="simulatePaid()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow">
-                            <i class="fas fa-check-circle mr-2"></i> Mô phỏng đã chuyển khoản (Demo Testing)
+                        <button onclick="requestTransferReview(this)" disabled="@(outstandingAmount == 0)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow">
+                            <i class="fas fa-check-circle mr-2"></i> Tôi đã chuyển khoản — yêu cầu xác minh
                         </button>
-                        <span class="text-[11px] text-gray-400 italic">Chế độ giả lập dành cho môi trường thử nghiệm. Giao dịch thực tế cần được xác nhận từ nhân viên/ngân hàng.</span>
+                        <span class="text-[11px] text-gray-400 italic">Yêu cầu này chưa xác nhận đã thu tiền. Nhân viên sẽ đối soát giao dịch trước khi ghi nhận thanh toán.</span>
                     </div>
                 </div>
 
@@ -123,7 +128,7 @@
                     </div>
                     <h3 class="text-xl font-bold">Thanh toán tiền mặt tại quầy lễ tân</h3>
                     <p class="text-gray-600 max-w-md mx-auto">Bạn có thể thanh toán bằng tiền mặt hoặc thẻ ngân hàng trực tiếp tại quầy lễ tân khi đến nhận phòng (Check-in).</p>
-                    <button onclick="confirmCash()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-xl transition">
+                    <button onclick="confirmCash(this)" disabled="@(outstandingAmount == 0)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-xl transition">
                         Xác nhận đặt phòng (Thanh toán tại quầy)
                     </button>
                 </div>
@@ -158,31 +163,37 @@
             });
         }
 
-        function confirmCash() {
-            $.post('@Url.Action("ConfirmCashPayment", "Booking", new { id = Model.BookingId })', function(res) {
-                if (res.success && res.redirectUrl) {
-                    window.location.href = res.redirectUrl;
-                } else {
-                    showLuxuryAlert(res.message || 'Có lỗi xảy ra.', 'Thông báo', 'error');
-                }
-            });
+        async function submitPaymentChoice(url, button) {
+            if (button && button.disabled) return;
+            if (button) button.disabled = true;
+            try {
+                const response = await fetch(url, { method: 'POST', credentials: 'same-origin' });
+                if (!response.ok) throw new Error('Không thể gửi yêu cầu (HTTP ' + response.status + '). Vui lòng tải lại trang.');
+                const result = await response.json();
+                if (!result.success) throw new Error(result.message || 'Yêu cầu chưa được xử lý.');
+                if (result.redirectUrl) window.location.href = result.redirectUrl;
+            } catch (error) {
+                showLuxuryAlert(error.message || 'Không thể kết nối máy chủ.', 'Không thể cập nhật thanh toán', 'error');
+            } finally {
+                if (button) button.disabled = false;
+            }
         }
-
-        function simulatePaid() {
-            $.post('@Url.Action("SimulateBankTransferPaid", "Booking", new { id = Model.BookingId })', function(res) {
-                if (res.success && res.redirectUrl) {
-                    window.location.href = res.redirectUrl;
-                }
-            });
+        function confirmCash(button) {
+            return submitPaymentChoice('@Url.Action("ConfirmCashPayment", "Booking", new { id = Model.BookingId })', button);
         }
-
-        // Auto-polling kiểm tra trạng thái thanh toán mỗi 4 giây
-        setInterval(function() {
-            $.get('@Url.Action("CheckPaymentStatus", "Booking", new { id = Model.BookingId })', function(res) {
-                if (res.success && res.isPaid) {
-                    window.location.href = '@Url.Action("Success", "Booking", new { id = Model.BookingId })';
-                }
-            });
+        function requestTransferReview(button) {
+            return submitPaymentChoice('@Url.Action("RequestBankTransferReview", "Booking", new { id = Model.BookingId })', button);
+        }
+        const paymentPoll = setInterval(async function() {
+            try {
+                const response = await fetch('@Url.Action("CheckPaymentStatus", "Booking", new { id = Model.BookingId })', { cache: 'no-store' });
+                if (!response.ok) throw new Error('Không kiểm tra được trạng thái thanh toán. Vui lòng tải lại trang.');
+                const result = await response.json();
+                if (result.success && result.isPaid) window.location.href = '@Url.Action("Success", "Booking", new { id = Model.BookingId })';
+            } catch (error) {
+                clearInterval(paymentPoll);
+                showLuxuryAlert(error.message, 'Kiểm tra thanh toán', 'warning');
+            }
         }, 4000);
     </script>
     @Html.Partial("~/Views/Shared/_LuxuryModal.cshtml")

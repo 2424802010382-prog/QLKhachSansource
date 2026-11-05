@@ -13,14 +13,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 </head>
 <body class="bg-[#f8f5ee] min-h-screen flex items-center justify-center py-10">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
     <div class="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-[#e7dbc1] max-w-xl w-full text-center mx-4">
         <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl mb-6 shadow-inner">
             <i class="fas fa-check"></i>
         </div>
 
-        <h1 class="text-3xl font-extrabold text-[#21170f] mb-2">Chuyển Khoản Thành Công!</h1>
-        <p class="text-gray-600 mb-6">Thanh toán của bạn đã được xác nhận. Đơn đặt phòng hiện đang ở trạng thái <strong class="text-amber-600">Chờ xác nhận</strong> từ nhân viên khách sạn.</p>
+        <h1 class="text-3xl font-extrabold text-[#21170f] mb-2">Đã ghi nhận đơn đặt phòng</h1>
+        <p class="text-gray-600 mb-6">Trạng thái đơn: <strong class="text-amber-600">@Model.Status</strong>. Việc chuyển khoản chỉ hoàn tất sau khi nhân viên đối soát. Vui lòng xem trạng thái thanh toán tại trang thanh toán hoặc lịch sử đặt phòng.</p>
 
         <div class="bg-gray-50 p-6 rounded-2xl text-left space-y-3 mb-8 border">
             <div class="flex justify-between">

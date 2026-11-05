@@ -8,6 +8,7 @@ namespace QLKhachSan
         public static void RegisterGlobalFilters(GlobalFilterCollection filters)
         {
             filters.Add(new HandleErrorAttribute());
+            filters.Add(new QLKhachSan.Filters.HotelSecurityFilter());
         }
     }
 }

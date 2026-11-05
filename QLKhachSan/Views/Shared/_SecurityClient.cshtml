@@ -1,0 +1,60 @@
+<div hidden id="hotelCsrfToken">@Html.AntiForgeryToken()</div>
+<script>
+(function () {
+    'use strict';
+    if (window.hotelSecurityInstalled) return;
+    window.hotelSecurityInstalled = true;
+    function token() { return document.querySelector('#hotelCsrfToken input').value; }
+    function local(url) { try { return new URL(url, location.href).origin === location.origin; } catch (_) { return false; } }
+    function unsafe(method) { return !/^(GET|HEAD|OPTIONS)$/i.test(method || 'GET'); }
+    window.hotelEscapeHtml = function (value) {
+        var div = document.createElement('div'); div.textContent = value == null ? '' : String(value); return div.innerHTML;
+    };
+    function paymentOperation(url) {
+        return /\/(Admin|Staff)\/Confirm(Payment|FoodPayment)(\/|\?|$)|\/Restaurant\/UpdateOrderPayment(\/|\?|$)/i.test(new URL(url, location.href).pathname);
+    }
+    function evidence() { return window.prompt('Xác nhận đã đối soát số tiền thực nhận. Nhập số chứng từ thu tiền hoặc mã giao dịch ngân hàng (3–200 ký tự):'); }
+    var nativeFetch = window.fetch;
+    if (nativeFetch) window.fetch = function (input, options) {
+        options = options || {};
+        var url = typeof input === 'string' ? input : input.url;
+        var method = options.method || (typeof input === 'object' ? input.method : 'GET');
+        if (local(url) && unsafe(method)) {
+            options.headers = new Headers(options.headers || (typeof input === 'object' ? input.headers : undefined));
+            options.headers.set('X-CSRF-Token', token());
+            if (paymentOperation(url)) {
+                var receipt = evidence();
+                if (!receipt || receipt.trim().length < 3) return Promise.reject(new Error('Chưa cung cấp chứng từ xác minh thanh toán.'));
+                options.headers.set('X-Payment-Evidence', receipt.trim());
+            }
+        }
+        return nativeFetch.call(window, input, options).then(function (response) {
+            if (local(url) && (response.status === 401 || response.status === 403))
+                throw new Error('Phiên đăng nhập hết hạn hoặc bạn không có quyền. Vui lòng đăng nhập lại.');
+            return response;
+        });
+    };
+    var open = XMLHttpRequest.prototype.open, send = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.open = function (method, url) {
+        this.hotelCsrf = local(url) && unsafe(method);
+        return open.apply(this, arguments);
+    };
+    XMLHttpRequest.prototype.send = function () {
+        if (this.hotelCsrf) this.setRequestHeader('X-CSRF-Token', token());
+        return send.apply(this, arguments);
+    };
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (local(form.action) && unsafe(form.method) && paymentOperation(form.action)) {
+            var receipt = evidence();
+            if (!receipt || receipt.trim().length < 3) { event.preventDefault(); return; }
+            var proof = form.querySelector('[name="paymentEvidence"]') || document.createElement('input');
+            proof.type = 'hidden'; proof.name = 'paymentEvidence'; proof.value = receipt.trim(); form.appendChild(proof);
+        }
+        if (local(form.action) && unsafe(form.method) && !form.querySelector('[name="__RequestVerificationToken"]')) {
+            var field = document.createElement('input');
+            field.type = 'hidden'; field.name = '__RequestVerificationToken'; field.value = token(); form.appendChild(field);
+        }
+    }, true);
+}());
+</script>

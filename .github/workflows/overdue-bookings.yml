@@ -1,0 +1,21 @@
+name: Auto-cancel overdue hotel reservations
+on:
+  schedule:
+    - cron: '10 17 * * *'
+  workflow_dispatch:
+jobs:
+  cancel-overdue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger secured overdue check
+        env:
+          URL: ${{ secrets.OVERDUE_JOB_URL }}
+          TOKEN: ${{ secrets.OVERDUE_JOB_TOKEN }}
+        run: |
+          test -n "$URL" && test -n "$TOKEN"
+          curl --fail-with-body --show-error --silent --retry 2 \
+            --max-time 40 --request POST \
+            --header "X-Job-Token: $TOKEN" \
+            --header 'Content-Type: application/json' \
+            "$URL"

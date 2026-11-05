@@ -33,6 +33,7 @@
 
 <body class="bg-gray-100
              min-h-screen">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
 
     <!-- HEADER -->
@@ -493,7 +494,7 @@
 
                                     @foreach (
                                         string status
-                                        in statuses
+                                        in statuses.Where(s => QLKhachSan.Models.HotelOperations.CanChangeFoodStatus(order.TrangThai, s) && (s != "Đã hủy" || order.TrangThaiThanhToan != "Đã thanh toán") && (s != "Đang phục vụ" || order.HinhThuc == "Ăn tại nhà hàng") && (s != "Đang giao" || order.HinhThuc == "Giao lên phòng"))
                                     )
                                     {
                                         <option value="@status"
@@ -537,7 +538,7 @@
                                 </label>
 
 
-                                <select id="payment-@order.MaDon"
+                                <select id="payment-@order.MaDon" disabled="@(order.TrangThaiThanhToan == "Đã thanh toán" || order.TrangThai == "Đã hủy" || order.PhuongThucThanhToan == "Thanh toán cùng phòng")"
                                         class="w-full
                                                border
                                                rounded-xl
@@ -564,7 +565,7 @@
 
 
                                 <button type="button"
-                                        onclick="updateOrderPayment(
+                                        disabled="@(order.TrangThaiThanhToan == "Đã thanh toán" || order.TrangThai == "Đã hủy" || order.PhuongThucThanhToan == "Thanh toán cùng phòng")" onclick="updateOrderPayment(
                                             @order.MaDon
                                         )"
                                         class="w-full
@@ -599,20 +600,11 @@
         // CẬP NHẬT TRẠNG THÁI
         // =========================================================
 
-        async function updateOrderStatus(
-            id
-        ) {
-
-            const select =
-                document.getElementById(
-                    'status-' + id
-                );
-
-
         async function updateOrderStatus(id) {
             const select = document.getElementById('status-' + id);
             const status = select.value;
-
+            if (select.disabled) return;
+            select.disabled = true;
             try {
                 const response = await fetch(
                     '@Url.Action("UpdateOrderStatus", "Restaurant")'
@@ -621,6 +613,7 @@
                     { method: 'POST' }
                 );
 
+                if (!response.ok) throw new Error("Không thể xử lý yêu cầu (HTTP " + response.status + ").");
                 const result = await response.json();
 
                 if (!result.success) {
@@ -634,13 +627,16 @@
             }
             catch (error) {
                 console.error(error);
-                showLuxuryAlert('Không thể kết nối máy chủ. Vui lòng thử lại!', 'Lỗi', 'error');
-            }
+                showLuxuryAlert(error.message || 'Không thể kết nối máy chủ. Vui lòng thử lại!', 'Lỗi', 'error');
+            } finally { select.disabled = false; }
         }
 
         async function updateOrderPayment(id) {
             const select = document.getElementById('payment-' + id);
+            if (select.disabled) return;
             const status = select.value;
+            if (status !== 'Đã thanh toán') { showLuxuryAlert('Chọn Đã thanh toán sau khi đối soát chứng từ.', 'Xác minh thanh toán', 'warning'); return; }
+            select.disabled = true;
 
             try {
                 const response = await fetch(
@@ -650,6 +646,7 @@
                     { method: 'POST' }
                 );
 
+                if (!response.ok) throw new Error('Không thể xử lý yêu cầu (HTTP ' + response.status + ').');
                 const result = await response.json();
 
                 if (!result.success) {
@@ -664,7 +661,7 @@
             catch (error) {
                 console.error(error);
                 showLuxuryAlert('Không thể kết nối máy chủ. Vui lòng thử lại!', 'Lỗi', 'error');
-            }
+            } finally { select.disabled = false; }
         }
 
     </script>

@@ -245,6 +245,7 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
     <!-- NAVBAR HEADER -->
     <nav class="luxury-navbar text-white px-4 py-4 sticky top-0 z-50">
@@ -265,7 +266,7 @@
                 else
                 {
                     <span class="text-yellow-300 text-sm font-semibold px-2">Xin chào, @Session["FullName"]</span>
-                    <a href="@Url.Action("Logout", "Account")" class="luxury-outline-button px-3 py-1.5 rounded-lg text-xs font-bold ml-1">Đăng xuất</a>
+                    <a href="#" onclick="openLuxuryLogoutModal(event); return false;" class="luxury-outline-button px-3 py-1.5 rounded-lg text-xs font-bold ml-1">Đăng xuất</a>
                 }
             </div>
         </div>

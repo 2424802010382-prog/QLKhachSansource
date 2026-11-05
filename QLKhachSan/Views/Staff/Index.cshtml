@@ -2,9 +2,9 @@
 @{
     Layout = null;
     var perms = ViewBag.Permissions as List<string> ?? new List<string>();
-    var physicalRooms = ViewBag.PhysicalRooms as List<PhysicalRoom> ?? new List<PhysicalRoom>();
 
-    bool canViewBookings = perms.Contains("bookings.view") || perms.Contains("bookings.approve");
+
+    bool canViewBookings = perms.Contains("bookings.view") || perms.Contains("bookings.approve") || perms.Contains("bookings.checkout") || perms.Contains("payments.manage");
     bool canApproveBookings = perms.Contains("bookings.approve");
     bool canCheckIn = perms.Contains("bookings.checkin");
     bool canCheckOut = perms.Contains("bookings.checkout");
@@ -25,6 +25,7 @@
 </head>
 
 <body class="bg-[#f8f5ee] min-h-screen text-[#21170f]">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
     <!-- HEADER -->
     <header class="bg-[#241c17] text-[#f8f1e7] shadow-xl border-b border-[#d4af37]/30">
@@ -43,7 +44,7 @@
                 <a href="@Url.Action("Index", "Home")" class="bg-[#2c2018] hover:bg-[#38281f] border border-[#d4af37]/40 text-[#f5d77a] font-semibold px-4 py-2.5 rounded-xl transition text-sm">
                     <i class="fas fa-house mr-1"></i> Trang chủ
                 </a>
-                <a href="@Url.Action("Logout", "Account")" class="bg-rose-700 hover:bg-rose-800 text-white font-bold px-4 py-2.5 rounded-xl transition text-sm shadow-md">
+                <a href="#" onclick="openLuxuryLogoutModal(event); return false;" class="bg-rose-700 hover:bg-rose-800 text-white font-bold px-4 py-2.5 rounded-xl transition text-sm shadow-md">
                     <i class="fas fa-right-from-bracket mr-1"></i> Đăng xuất
                 </a>
             </div>
@@ -150,47 +151,52 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
-                    @if (physicalRooms != null && physicalRooms.Any())
-                    {
-                        foreach (var room in physicalRooms)
-                        {
-                            string bg = "bg-emerald-50 border-emerald-300 text-emerald-900";
-                            string statusText = "Trống";
-
-                            if (room.Status == "Đang ở")
-                            {
-                                bg = "bg-rose-50 border-rose-300 text-rose-900";
-                                statusText = "Đang ở";
-                            }
-                            else if (room.Status == "Đã đặt")
-                            {
-                                bg = "bg-amber-50 border-amber-300 text-amber-900";
-                                statusText = "Đã đặt";
-                            }
-                            else if (room.Status == "Chờ xác nhận")
-                            {
-                                bg = "bg-yellow-50 border-yellow-300 text-yellow-900";
-                                statusText = "Chờ xác nhận";
-                            }
-                            else if (room.Status == "Bảo trì")
-                            {
-                                bg = "bg-gray-100 border-gray-300 text-gray-600";
-                                statusText = "Bảo trì";
-                            }
-
-                            <div class="border rounded-xl p-3 text-center transition shadow-sm @bg">
-                                <div class="font-extrabold text-base">@room.RoomNumber</div>
-                                <div class="text-[11px] opacity-75 truncate">@(room.RoomType != null ? room.RoomType.RoomName : "Phòng")</div>
-                                <div class="text-[10px] font-bold mt-1 uppercase tracking-wider">@statusText</div>
+                <section id="staffRoomMatrix" data-url="@Url.Action("GetPhysicalRoomsMatrixByDate", "Staff")" data-today="@DateTime.Today.ToString("yyyy-MM-dd")" data-bookings-url="@(canViewBookings ? Url.Action("Bookings", "Staff") : canCheckIn ? Url.Action("TodayCheckIns", "Staff") : "")">
+                    <!-- THANH LỊCH CHỌN NGÀY (7 NGÀY & DATE PICKER) -->
+                    <div class="bg-[#111827] text-white p-4 rounded-2xl mb-6 shadow-md">
+                        <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+                            <!-- Controls Left: Prev 7 days, Today, Next 7 days, Refresh -->
+                            <div class="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-start">
+                                <button type="button" data-shift="-7" class="px-3.5 py-2 bg-white/10 hover:bg-yellow-500 hover:text-gray-900 rounded-xl text-xs font-bold transition flex items-center gap-1" title="7 ngày trước">
+                                    <i class="fas fa-chevron-left"></i> 7 Ngày trước
+                                </button>
+                                <button type="button" id="staffMatrixToday" class="px-3.5 py-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-900 rounded-xl text-xs font-extrabold shadow transition">
+                                    <i class="fas fa-calendar-day mr-1"></i> Hôm nay
+                                </button>
+                                <button type="button" data-shift="7" class="px-3.5 py-2 bg-white/10 hover:bg-yellow-500 hover:text-gray-900 rounded-xl text-xs font-bold transition flex items-center gap-1" title="7 ngày sau">
+                                    7 Ngày sau <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <button type="button" id="staffMatrixRefresh" class="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition" title="Tải lại">
+                                    <i class="fas fa-rotate"></i>
+                                </button>
                             </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="col-span-full text-center py-8 text-gray-400">Chưa có dữ liệu phòng vật lý.</div>
-                    }
-                </div>
+
+                            <!-- 7 Days Buttons Bar -->
+                            <div id="staffMatrixWeek" class="flex items-center gap-1.5 overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0 justify-start lg:justify-center" aria-label="Lịch 7 ngày">
+                                <!-- Dynamic 7 day pill buttons rendered by JS -->
+                            </div>
+
+                            <!-- Custom Date Picker -->
+                            <div class="flex items-center gap-2 w-full lg:w-auto justify-end">
+                                <span class="text-xs text-gray-300 font-semibold hidden sm:inline">Chọn ngày:</span>
+                                <input type="date" id="staffMatrixDate" class="bg-gray-800 text-yellow-300 border border-yellow-500/50 rounded-xl px-3 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-yellow-400" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <p id="staffMatrixLoading" role="status" class="text-sm text-amber-600 font-bold mb-3" hidden><i class="fas fa-spinner fa-spin mr-1"></i> Đang tải lịch phòng...</p>
+                    <p id="staffMatrixError" role="alert" class="text-sm text-red-700 font-semibold mb-3" hidden></p>
+                    <p id="staffMatrixDateTitle" class="font-bold text-amber-800 mb-3 text-sm"></p>
+                    <div id="staffMatrixGrid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3"></div>
+                    <div id="staffUnassigned" class="mt-4 text-sm" hidden></div>
+                    <dialog id="staffRoomDialog" class="rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-[#e7dbc1]" style="max-height:85vh;overflow:auto">
+                        <div class="flex justify-between items-center pb-3 border-b mb-3">
+                            <h4 id="staffRoomTitle" class="font-extrabold text-lg text-gray-900"></h4>
+                            <button type="button" id="staffRoomClose" aria-label="Đóng" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-bold">✕</button>
+                        </div>
+                        <div id="staffRoomBody" class="space-y-3 text-xs"></div>
+                    </dialog>
+                </section>
             </div>
         }
 
@@ -216,7 +222,7 @@
                 </div>
             }
 
-            @if (canApproveBookings || canViewBookings)
+            @if (canApproveBookings)
             {
                 <div class="bg-white rounded-2xl shadow-sm border border-[#e7dbc1] p-6">
                     <div class="w-14 h-14 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mb-5">
@@ -249,6 +255,7 @@
     </main>
 
     @Html.Partial("~/Views/Shared/_LuxuryModal.cshtml")
+    <script src="@Url.Content("~/Scripts/staff-room-matrix.js")" defer></script>
 
 </body>
 </html>

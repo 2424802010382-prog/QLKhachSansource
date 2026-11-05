@@ -8,10 +8,10 @@
             <h3 id="luxuryModalTitle" class="text-2xl font-serif font-bold text-[#f5d77a] mb-2">Thông báo</h3>
             <div id="luxuryModalMessage" class="text-gray-300 text-sm leading-relaxed mb-6 text-left bg-[#2c2018]/50 p-4 rounded-xl border border-[#d4af37]/15"></div>
             <div id="luxuryModalButtons" class="flex gap-3 justify-center">
-                <button id="luxuryModalConfirmBtn" onclick="closeLuxuryModal(true)" class="bg-gradient-to-r from-[#d4af37] to-[#f5d77a] text-[#21170f] font-bold px-8 py-2.5 rounded-xl hover:opacity-90 transition shadow-md">
+                <button id="luxuryModalConfirmBtn" type="button" onclick="closeLuxuryModal(true)" class="bg-gradient-to-r from-[#d4af37] to-[#f5d77a] text-[#21170f] font-bold px-8 py-2.5 rounded-xl hover:opacity-90 transition shadow-md">
                     Xác nhận
                 </button>
-                <button id="luxuryModalCancelBtn" onclick="closeLuxuryModal(false)" class="bg-[#2c2018] border border-[#d4af37]/30 text-[#f8f1e7] font-semibold px-6 py-2.5 rounded-xl hover:bg-[#38281f] transition hidden">
+                <button id="luxuryModalCancelBtn" type="button" onclick="closeLuxuryModal(false)" class="bg-[#2c2018] border border-[#d4af37]/30 text-[#f8f1e7] font-semibold px-6 py-2.5 rounded-xl hover:bg-[#38281f] transition hidden">
                     Hủy
                 </button>
             </div>
@@ -19,11 +19,52 @@
     </div>
 </div>
 
+<!-- LUXURY LOGOUT CONFIRMATION MODAL -->
+<div id="luxuryLogoutModalOverlay" class="fixed inset-0 z-[99999] bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-all duration-300 opacity-0">
+    <div id="luxuryLogoutModalBox" class="bg-[#241c17] border border-[#d4af37]/40 text-[#f8f1e7] rounded-2xl max-w-md w-full p-6 shadow-2xl transform scale-95 transition-all duration-300 relative">
+        <button type="button" onclick="closeLuxuryLogoutModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg p-1 transition" title="Đóng">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="text-center">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-2xl bg-[#2c2018] border border-[#d4af37]/30 text-[#d4af37]">
+                <i class="fas fa-right-from-bracket"></i>
+            </div>
+            <h3 id="luxuryLogoutModalTitle"
+                class="text-xl sm:text-2xl font-sans font-bold text-[#f5d77a] text-center mb-2"
+                style="font-family: Arial, sans-serif;">
+                Xác nhận đăng xuất
+            </h3>            <p class="text-gray-300 text-sm leading-relaxed mb-6 bg-[#2c2018]/50 p-4 rounded-xl border border-[#d4af37]/15">
+                Bạn có chắc chắn muốn đăng xuất khỏi hệ thống Luxury Hotel không?
+            </p>
+            <form id="luxuryLogoutForm" action="@Url.Action("Logout", "Account")" method="post" class="flex gap-3 justify-center">
+                @Html.AntiForgeryToken()
+                <button type="button" onclick="closeLuxuryLogoutModal()" class="bg-[#2c2018] border border-[#d4af37]/30 text-[#f8f1e7] font-semibold px-6 py-2.5 rounded-xl hover:bg-[#38281f] transition">
+                    Hủy
+                </button>
+                <button type="submit" id="luxuryLogoutSubmitBtn" class="bg-gradient-to-r from-red-600 to-rose-700 text-white font-bold px-8 py-2.5 rounded-xl hover:opacity-90 transition shadow-md flex items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
+    function hotelEscapeHtml(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     let luxuryConfirmCallback = null;
     let luxuryAlertCallback = null;
 
     function showLuxuryAlert(message, title = 'Thông báo', type = 'success', callback = null) {
+        message = message == null ? '' : String(message);
         const overlay = document.getElementById('luxuryModalOverlay');
         const box = document.getElementById('luxuryModalBox');
         const titleEl = document.getElementById('luxuryModalTitle');
@@ -37,7 +78,7 @@
 
         titleEl.innerText = title;
         if (message.includes('<') && message.includes('>')) {
-            msgEl.innerHTML = message;
+            msgEl.innerHTML = hotelEscapeHtml(message).replace(/&lt;(\/?)(strong|b|br|em|p|ul|li)&gt;/gi, '<$1$2>');
         } else {
             msgEl.innerText = message;
         }
@@ -61,6 +102,7 @@
         luxuryAlertCallback = callback;
 
         overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
         setTimeout(() => {
             overlay.classList.remove('opacity-0');
             box.classList.remove('scale-95');
@@ -91,6 +133,7 @@
         luxuryConfirmCallback = { onConfirm, onCancel };
 
         overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
         setTimeout(() => {
             overlay.classList.remove('opacity-0');
             box.classList.remove('scale-95');
@@ -110,6 +153,7 @@
 
         setTimeout(() => {
             overlay.classList.add('hidden');
+            document.body.style.overflow = '';
             if (luxuryConfirmCallback) {
                 const cb = luxuryConfirmCallback;
                 luxuryConfirmCallback = null;
@@ -129,10 +173,73 @@
         }, 300);
     }
 
+    function openLuxuryLogoutModal(event) {
+        if (event) event.preventDefault();
+        const overlay = document.getElementById('luxuryLogoutModalOverlay');
+        const box = document.getElementById('luxuryLogoutModalBox');
+        const titleEl = document.getElementById('luxuryLogoutModalTitle');
+        if (titleEl) titleEl.textContent = 'Xác nhận đăng xuất';
+        if (!overlay || !box) return;
+
+        overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => {
+            overlay.classList.remove('opacity-0');
+            box.classList.remove('scale-95');
+            box.classList.add('scale-100');
+        }, 10);
+    }
+
+    function closeLuxuryLogoutModal() {
+        const overlay = document.getElementById('luxuryLogoutModalOverlay');
+        const box = document.getElementById('luxuryLogoutModalBox');
+        if (!overlay || !box) return;
+
+        overlay.classList.add('opacity-0');
+        box.classList.remove('scale-100');
+        box.classList.add('scale-95');
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        }, 300);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const logoutForm = document.getElementById('luxuryLogoutForm');
+        if (logoutForm) {
+            logoutForm.addEventListener('submit', function () {
+                const btn = document.getElementById('luxuryLogoutSubmitBtn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Đang đăng xuất...';
+                }
+            });
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const logoutModal = document.getElementById('luxuryLogoutModalOverlay');
+                if (logoutModal && !logoutModal.classList.contains('hidden')) {
+                    closeLuxuryLogoutModal();
+                    return;
+                }
+                const modal = document.getElementById('luxuryModalOverlay');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeLuxuryModal(false);
+                }
+            }
+        });
+    });
+
     // Override alert globally for JS alerts
     window.alert = function(msg) {
-        showLuxuryAlert(msg, 'Thông báo', 'success');
+        showLuxuryAlert(msg, 'Thông báo', 'info');
     };
+
+    window.openLuxuryLogoutModal = openLuxuryLogoutModal;
+    window.closeLuxuryLogoutModal = closeLuxuryLogoutModal;
+    window.showLuxuryAlert = showLuxuryAlert;
+    window.showLuxuryConfirm = showLuxuryConfirm;
 </script>
 
 @{

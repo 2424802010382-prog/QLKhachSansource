@@ -75,6 +75,7 @@
 
 <body class="min-h-screen
              text-gray-800">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
 
     <!-- ========================================================= -->
@@ -436,7 +437,7 @@
                 <!-- ============================================= -->
 
                 <form action="@Url.Action(
-                                  "Profile",
+                                  "UserProfile",
                                   "Account"
                               )"
                       method="post">
@@ -985,10 +986,8 @@
 
                     <!-- ĐĂNG XUẤT -->
 
-                    <a href="@Url.Action(
-                                "Logout",
-                                "Account"
-                             )"
+                    <a href="#"
+                       onclick="openLuxuryLogoutModal(event); return false;"
                        class="border
                               border-red-300
                               hover:bg-red-50

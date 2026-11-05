@@ -19,6 +19,9 @@ namespace QLKhachSan.Controllers
         // =========================================================
 
         [HttpGet]
+        public ActionResult Register() { return RedirectToAction("Index", "Home", new { registerRequired = 1 }); }
+
+        [HttpGet]
         public ActionResult Login()
         {
             return View();
@@ -30,7 +33,7 @@ namespace QLKhachSan.Controllers
         // =========================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult Login(
             string username,
             string password,
@@ -99,6 +102,12 @@ namespace QLKhachSan.Controllers
             }
 
 
+            if (!user.IsActive)
+            {
+                TempData["LoginError"] = "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.";
+                return RedirectToAction("Index", "Home", new { loginRequired = 1 });
+            }
+
             // =====================================================
             // KIỂM TRA MẬT KHẨU
             // =====================================================
@@ -135,10 +144,10 @@ namespace QLKhachSan.Controllers
                 // ĐANG LƯU MẬT KHẨU THƯỜNG
                 // =================================================
 
-                if (
-                    !correctPassword &&
-                    user.PasswordHash == password
-                )
+                bool legacyPlaintext;
+                try { var decoded = Convert.FromBase64String(user.PasswordHash); legacyPlaintext = decoded.Length < 49; }
+                catch (FormatException) { legacyPlaintext = true; }
+                if (!correctPassword && legacyPlaintext && user.PasswordHash == password)
                 {
                     correctPassword =
                         true;
@@ -172,11 +181,7 @@ namespace QLKhachSan.Controllers
                 );
             }
 
-            if (!user.IsActive)
-            {
-                user.IsActive = true;
-                db.SaveChanges();
-            }
+
 
 
             // =====================================================
@@ -257,7 +262,7 @@ namespace QLKhachSan.Controllers
             // =========================================================
 
             [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult Register(
             string fullName,
             string email,
@@ -473,7 +478,7 @@ namespace QLKhachSan.Controllers
         // =========================================================
 
         [HttpGet]
-        public ActionResult Profile()
+        public new ActionResult Profile()
         {
             // =====================================================
             // PHẢI ĐĂNG NHẬP
@@ -578,7 +583,7 @@ namespace QLKhachSan.Controllers
         // =========================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult UserProfile(
             AccountProfileViewModel model
         )
@@ -630,6 +635,11 @@ namespace QLKhachSan.Controllers
             // CHUẨN HÓA DỮ LIỆU
             // =====================================================
 
+            if (model == null || !ModelState.IsValid)
+            {
+                TempData["ProfileError"] = "Thông tin hồ sơ không hợp lệ.";
+                return RedirectToAction("Profile");
+            }
             string fullName =
                 (model.FullName ?? "")
                 .Trim();
@@ -814,7 +824,7 @@ namespace QLKhachSan.Controllers
         // =========================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ChangePassword(
             string currentPassword,
             string newPassword,
@@ -1062,7 +1072,7 @@ namespace QLKhachSan.Controllers
         // =========================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ForgotPassword(
             string email
         )
@@ -1270,8 +1280,36 @@ namespace QLKhachSan.Controllers
                 );
 
 
-            TempData["DevResetUrl"] =
-                resetUrl;
+            // Reset tokens are delivered only to the mailbox owner, never to the requester.
+            try
+            {
+                var settings = System.Configuration.ConfigurationManager.GetSection("system.net/mailSettings/smtp")
+                    as System.Net.Configuration.SmtpSection;
+                if (settings == null || string.IsNullOrWhiteSpace(settings.From) || string.IsNullOrWhiteSpace(settings.Network.Host))
+                    throw new InvalidOperationException("SMTP chưa được cấu hình.");
+                using (var mail = new System.Net.Mail.MailMessage(settings.From, user.Email))
+                using (var smtp = new System.Net.Mail.SmtpClient())
+                {
+                    mail.Subject = "Đặt lại mật khẩu Luxury Hotel";
+                    mail.Body = "Liên kết đặt lại mật khẩu (hết hạn sau 30 phút): " + resetUrl;
+                    Uri publicBase;
+                    string publicUrl = System.Configuration.ConfigurationManager.AppSettings["PublicBaseUrl"];
+                    if (!Request.IsLocal)
+                    {
+                        if (!Uri.TryCreate(publicUrl, UriKind.Absolute, out publicBase) || publicBase.Scheme != Uri.UriSchemeHttps)
+                            throw new InvalidOperationException("Cần cấu hình PublicBaseUrl HTTPS trước khi gửi email trên hosting.");
+                        mail.Body = "Liên kết đặt lại mật khẩu (hết hạn sau 30 phút): " + new Uri(publicBase, Url.Action("ResetPassword", "Account", new { token = token }));
+                    }
+                    smtp.Send(mail);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("Password reset email: " + ex.GetType().Name);
+                db.Database.ExecuteSqlCommand("UPDATE dbo.PasswordResetTokens SET IsUsed=1 WHERE TokenHash=@p0", tokenHash);
+                // Keep the same public response for an unknown account and email delivery failure.
+                TempData["ForgotPasswordMessage"] = "Nếu email tồn tại trong hệ thống, yêu cầu đặt lại mật khẩu sẽ được tạo.";
+            }
 
 
             return RedirectToAction(
@@ -1405,7 +1443,7 @@ namespace QLKhachSan.Controllers
         // =========================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ResetPassword(
             ResetPasswordViewModel model
         )
@@ -1597,6 +1635,10 @@ namespace QLKhachSan.Controllers
                     // HASH MẬT KHẨU MỚI
                     // =============================================
 
+                    int consumed = db.Database.ExecuteSqlCommand(
+                        "UPDATE dbo.PasswordResetTokens SET IsUsed=1 WHERE ResetTokenId=@p0 AND IsUsed=0 AND ExpiresAt>@p1",
+                        resetToken.ResetTokenId, DateTime.UtcNow);
+                    if (consumed != 1) throw new InvalidOperationException("Token đã sử dụng hoặc hết hạn.");
                     user.PasswordHash =
                         Crypto.HashPassword(
                             model.NewPassword
@@ -1683,7 +1725,12 @@ namespace QLKhachSan.Controllers
                 }
             );
         }
-        public ActionResult Logout()
+        [HttpGet]
+        public ActionResult Logout() { return View("Logout"); }
+
+        [HttpPost, ActionName("Logout")]
+        [QLKhachSan.Filters.HotelAntiForgery]
+        public ActionResult LogoutConfirmed()
         {
             Session.Clear();
 

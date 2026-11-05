@@ -19,6 +19,7 @@
 </head>
 
 <body class="bg-[#f4f6fb] min-h-screen">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
     @Html.Partial("~/Views/Admin/_AdminSidebar.cshtml")
 
@@ -129,9 +130,7 @@
                                 foreach (var booking in Model.Bookings)
                                 {
                                     bool paid =
-                                        booking.ThanhToans != null &&
-                                        booking.ThanhToans.Any(t =>
-                                            t.TrangThai == "Đã thanh toán");
+                                        (QLKhachSan.Models.HotelOperations.PaymentStatus(booking) == "Đã thanh toán");
 
                                     <tr class="border-b hover:bg-gray-50">
 

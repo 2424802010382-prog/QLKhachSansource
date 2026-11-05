@@ -16,6 +16,7 @@
     </style>
 </head>
 <body class="bg-[#f4f6fb] min-h-screen">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
     @Html.Partial("_AdminSidebar")<div class="lg:ml-72 min-h-screen">
     <header class="bg-white border-b sticky top-0 z-30"><div class="px-5 lg:px-8 py-4 flex justify-between gap-4"><div><p class="text-xs tracking-[2px] font-bold text-indigo-500">DỊCH VỤ & ƯU ĐÃI</p><h1 class="text-3xl font-extrabold">Quản lý dịch vụ</h1></div><button type="button" onclick="openCreateModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl"><i class="fas fa-plus mr-1"></i>Thêm dịch vụ</button></div></header><main class="p-5 lg:p-8">
         @if (TempData["AdminSuccess"] != null)

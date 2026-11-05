@@ -79,6 +79,7 @@
 
 
 <body class="min-h-screen">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
 
     <!-- ========================================================= -->
@@ -2264,17 +2265,19 @@ function loadMyActiveRooms() {
 
     select.innerHTML = '<option value="">-- Đang tải phòng của bạn... --</option>';
 
-    $.get('@Url.Action("GetMyActiveRooms", "Restaurant")', function(res) {
+    fetch('@Url.Action("GetMyActiveRooms", "Restaurant")', { cache: 'no-store' })
+    .then(function(response) { if (!response.ok) throw new Error('Không tải được phòng'); return response.json(); })
+    .then(function(res) {
         if (res.success && res.rooms && res.rooms.length > 0) {
             let html = '<option value="">-- Chọn phòng lưu trú của bạn --</option>';
             res.rooms.forEach(r => {
-                html += `<option value="${r.roomName}">Phòng ${r.roomName} (${r.roomType} - Từ ${r.checkIn} đến ${r.checkOut})</option>`;
+                html += `<option value="${hotelEscapeHtml(r.roomNumber)}">Phòng ${hotelEscapeHtml(r.roomNumber)} — ${hotelEscapeHtml(r.roomName)} (${r.roomType} - Từ ${r.checkIn} đến ${r.checkOut})</option>`;
             });
             select.innerHTML = html;
         } else {
             select.innerHTML = '<option value="">-- Bạn chưa có phòng đang lưu trú hợp lệ --</option>';
         }
-    }).fail(function() {
+    }).catch(function() {
         select.innerHTML = '<option value="">-- Không thể tải danh sách phòng --</option>';
     });
 }
@@ -3850,6 +3853,7 @@ async function submitRestaurantOrder() {
                     roomBox.classList.remove(
                         'hidden'
                     );
+                    loadMyActiveRooms();
 
                 }
                 else {

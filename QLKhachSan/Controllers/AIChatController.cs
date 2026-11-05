@@ -11,7 +11,7 @@ namespace QLKhachSan.Controllers
         // GET: AIChat
         public ActionResult Index()
         {
-            return View();
+            return RedirectToAction("Index", "Home", new { ai = 1 });
         }
     }
 }

@@ -1,0 +1,9 @@
+@{ ViewBag.Title = "Đăng xuất"; }
+<div class="max-w-md mx-auto rounded-xl bg-white p-6 shadow">
+    <h1 class="text-xl font-bold mb-4">Xác nhận đăng xuất</h1>
+    <form method="post" action="@Url.Action("Logout", "Account")">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="bg-rose-700 text-white px-5 py-2 rounded-lg">Đăng xuất</button>
+        <a href="@Url.Action("Index", "Home")" class="ml-4">Quay lại</a>
+    </form>
+</div>

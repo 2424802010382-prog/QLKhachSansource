@@ -30,6 +30,7 @@
 
 
 <body class="bg-gray-100 min-h-screen">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
 
     <header class="bg-[#111827]
@@ -97,10 +98,8 @@
                 </a>
 
 
-                <a href="@Url.Action(
-                        "Logout",
-                        "Account"
-                     )"
+                <a href="#"
+                   onclick="openLuxuryLogoutModal(event); return false;"
                    class="bg-red-500
                       hover:bg-red-600
                       text-white

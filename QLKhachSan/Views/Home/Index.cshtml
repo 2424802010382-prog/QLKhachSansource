@@ -1212,6 +1212,7 @@
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
     <!-- HEADER -->
     <nav class="luxury-navbar text-white px-4 py-4 sticky top-0 z-40">
@@ -1470,10 +1471,8 @@ Session["Role"].ToString() == "Admin"
 
                         <!-- ĐĂNG XUẤT -->
 
-                        <a href="@Url.Action(
-                    "Logout",
-                    "Account"
-                 )"
+                        <a href="#"
+                           onclick="openLuxuryLogoutModal(event); return false;"
                            title="Đăng xuất"
                            class="bg-red-500
                   hover:bg-red-600
@@ -1528,7 +1527,7 @@ Session["Role"].ToString() == "Admin"
                         <a href="@Url.Action("Index", "BookingHistory")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-clock-rotate-left"></i> Lịch sử đặt phòng</a>
                     }
                     <a href="@Url.Action("Profile", "Account")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-user-gear"></i> Tài khoản</a>
-                    <a href="@Url.Action("Logout", "Account")" class="py-2.5 px-3 rounded bg-red-600 text-white text-center font-bold text-sm"><i class="fas fa-right-from-bracket mr-1"></i> Đăng xuất</a>
+                    <a href="#" onclick="openLuxuryLogoutModal(event); toggleMobileMenu(); return false;" class="py-2.5 px-3 rounded bg-red-600 text-white text-center font-bold text-sm"><i class="fas fa-right-from-bracket mr-1"></i> Đăng xuất</a>
                 }
             </div>
         </div>
@@ -1859,7 +1858,7 @@ Session["Role"].ToString() == "Admin"
                                         <button type="button"
                                                 onclick="bookRoom(
     @room.RoomId,
-    '@room.RoomName',
+    '@HttpUtility.JavaScriptStringEncode(room.RoomName ?? "")',
     @room.Price.ToString(
         System.Globalization.CultureInfo.InvariantCulture
     ),
@@ -3138,57 +3137,6 @@ Session["Role"].ToString() == "Admin"
 
                 </div>
             }
-            @if (TempData["DevResetUrl"] != null)
-            {
-                var devResetUrl =
-                    TempData["DevResetUrl"].ToString();
-
-
-                <div class="mb-5
-                rounded-lg
-                border
-                border-yellow-300
-                bg-yellow-50
-                px-4
-                py-4
-                text-sm">
-
-
-                    <p class="font-bold
-                  text-yellow-800
-                  mb-2">
-
-                        <i class="fas
-                      fa-flask
-                      mr-2">
-                        </i>
-
-                        Link reset dùng để TEST localhost
-
-                    </p>
-
-
-                    <p class="text-gray-600
-                  mb-3">
-
-                        Khi triển khai thật,
-                        link này sẽ được gửi qua email.
-
-                    </p>
-
-
-                    <a href="@devResetUrl"
-                       class="text-blue-600
-                  font-semibold
-                  underline
-                  break-all">
-
-                        Mở trang đặt lại mật khẩu
-
-                    </a>
-
-                </div>
-            }
             <!-- Form -->
             <form action="@Url.Action(
                   "ForgotPassword",
@@ -4264,15 +4212,15 @@ function toggleMobileMenu() {
                         <div class="flex-1">
 
                             <p class="font-bold text-gray-800">
-                                ${service.name}
+                                ${hotelEscapeHtml(service.name)}
                             </p>
 
                             <p class="text-sm text-gray-500 mt-1">
-                                ${service.description || ''}
+                                ${hotelEscapeHtml(service.description || '')}
                             </p>
 
                             <p class="text-yellow-700 font-bold mt-2">
-                                ${price}đ / ${service.unit || 'lần'}
+                                ${price}đ / ${hotelEscapeHtml(service.unit || 'lần')}
                             </p>
 
 
@@ -5646,8 +5594,10 @@ async function checkRoomAvailability() {
                     'specialRequest'
                 ).value.trim(),
 
+            RoomNumbers:
+                document.getElementById('selectedRoomNumber').value.split(',').map(n => n.trim()).filter(Boolean),
             RoomNumber:
-                document.getElementById('selectedRoomNumber').value.trim(),
+                document.getElementById('selectedRoomNumber').value.split(',')[0].trim(),
 
             PaymentMethod:
                 'Thanh toán tại khách sạn',
@@ -5674,7 +5624,7 @@ async function checkRoomAvailability() {
         }
 
         const roomNum = document.getElementById('selectedRoomNumber').value.trim();
-        if (!roomNum) {
+        if (!roomNum || data.RoomNumbers.length !== data.RoomCount) {
             showLuxuryAlert('Vui lòng chọn số phòng cụ thể trước khi xác nhận đặt phòng!', 'Thông báo', 'warning');
             openRoomSelectionModal();
             return;
@@ -5761,6 +5711,7 @@ async function checkRoomAvailability() {
                 '<strong>Trạng thái:</strong> Chờ xác nhận';
 
             showLuxuryAlert(successHtml, 'ĐẶT PHÒNG THÀNH CÔNG!', 'success', function() {
+                if (result.redirectUrl) { window.location.href = result.redirectUrl; return; }
                 document
                     .getElementById('bookingForm')
                     .reset();
@@ -7498,11 +7449,13 @@ function escapeDiningHtml(value) {
 
 }
 
-let tempSelectedRoomNumber = null;
+let tempSelectedRoomNumbers = [];
 
 let roomCache = {};
+let roomSelectionVersion = 0;
 
 function openRoomSelectionModal() {
+    const requestVersion = ++roomSelectionVersion;
     const roomId = document.getElementById('selectedRoomId').value;
     const checkIn = document.getElementById('checkInDate').value;
     const checkOut = document.getElementById('checkOutDate').value;
@@ -7529,6 +7482,7 @@ function openRoomSelectionModal() {
     const selectedNumInput = document.getElementById('selectedRoomNumber');
 
     if (typeNameEl) typeNameEl.innerText = roomName || 'Phòng Luxury';
+    tempSelectedRoomNumbers = selectedNumInput && selectedNumInput.value ? selectedNumInput.value.split(',').filter(Boolean) : [];
     if (selectedDisplayEl && selectedNumInput) {
         selectedDisplayEl.innerText = selectedNumInput.value ? 'Phòng ' + selectedNumInput.value : 'Chưa chọn';
     }
@@ -7540,14 +7494,11 @@ function openRoomSelectionModal() {
     if (grid) grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-300"><i class="fas fa-spinner fa-spin mr-2"></i> Đang tải danh sách phòng...</div>';
 
     const cacheKey = roomId + '_' + checkIn + '_' + checkOut;
-    if (roomCache[cacheKey]) {
-        renderPhysicalRoomsGrid(roomCache[cacheKey], grid);
-        return;
-    }
+    // Always reload: another guest may have reserved a room since the last popup.
 
     const url = '@Url.Action("GetAvailablePhysicalRooms", "Booking")' + '?roomId=' + encodeURIComponent(roomId) + '&checkIn=' + encodeURIComponent(checkIn) + '&checkOut=' + encodeURIComponent(checkOut);
 
-    fetch(url)
+    fetch(url, { cache: 'no-store' })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -7555,6 +7506,7 @@ function openRoomSelectionModal() {
             return response.json();
         })
         .then(res => {
+            if (requestVersion !== roomSelectionVersion) return;
             if (res && res.success && res.physicalRooms) {
                 roomCache[cacheKey] = res.physicalRooms;
                 renderPhysicalRoomsGrid(res.physicalRooms, grid);
@@ -7572,7 +7524,7 @@ function renderPhysicalRoomsGrid(physicalRooms, grid) {
     if (!grid) return;
     let html = '';
     const selectedNumInput = document.getElementById('selectedRoomNumber');
-    const currentSelectedNum = selectedNumInput ? selectedNumInput.value : '';
+    const currentSelectedNums = tempSelectedRoomNumbers;
 
     if (!physicalRooms || physicalRooms.length === 0) {
         grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-400">Chưa có dữ liệu phòng vật lý cho loại phòng này.</div>';
@@ -7582,7 +7534,7 @@ function renderPhysicalRoomsGrid(physicalRooms, grid) {
     for (let i = 0; i < physicalRooms.length; i++) {
         const pr = physicalRooms[i];
         const isBooked = pr.isBooked;
-        const isSelected = pr.roomNumber === currentSelectedNum;
+        const isSelected = currentSelectedNums.includes(pr.roomNumber);
 
         let cardClass = isBooked
             ? 'bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-60'
@@ -7590,18 +7542,18 @@ function renderPhysicalRoomsGrid(physicalRooms, grid) {
 
         if (isSelected && !isBooked) {
             cardClass += ' ring-2 ring-yellow-400 bg-[#38281f]';
-            tempSelectedRoomNumber = pr.roomNumber;
+            // Keep every selected room; one booking may reserve multiple physical rooms.
         }
 
         html += `
             <div class="border rounded-xl p-4 text-center transition ${cardClass}"
-                 data-room-number="${pr.roomNumber}"
+                 data-room-number="${hotelEscapeHtml(pr.roomNumber)}"
                  data-booked="${isBooked}"
                  onclick="selectPhysicalRoom(this)">
                 <div class="text-2xl mb-2 ${isBooked ? 'text-gray-600' : 'text-yellow-400'}">
                     <i class="fas fa-${isBooked ? 'lock' : 'bed'}"></i>
                 </div>
-                <div class="font-bold text-lg">Phòng ${pr.roomNumber}</div>
+                <div class="font-bold text-lg">Phòng ${hotelEscapeHtml(pr.roomNumber)}</div>
                 <div class="text-xs text-gray-400 mt-1">Tầng ${pr.floor}</div>
                 <div class="text-xs mt-2 font-semibold ${isBooked ? 'text-rose-400' : 'text-emerald-400'}">
                     ${isBooked ? 'Đã được đặt' : 'Còn trống'}
@@ -7613,49 +7565,55 @@ function renderPhysicalRoomsGrid(physicalRooms, grid) {
 }
 
 function closeRoomSelectionModal() {
+    roomSelectionVersion++;
     const modal = document.getElementById('roomSelectionModal');
     if (modal) modal.classList.add('hidden');
 }
 
 function selectPhysicalRoom(el) {
     if (el.getAttribute('data-booked') === 'true') {
-        showLuxuryAlert('Phòng này đã được đặt trong khoảng thời gian bạn chọn. Vui lòng chọn phòng khác.', 'Phòng bận', 'warning');
+        showLuxuryAlert('Phòng đã được đặt, bảo trì hoặc ngừng hoạt động trong khoảng ngày này.', 'Phòng bận', 'warning');
         return;
     }
-
+    const number = el.getAttribute('data-room-number');
+    const count = Number(document.getElementById('roomCount').value || 1);
+    if (tempSelectedRoomNumbers.includes(number)) tempSelectedRoomNumbers = tempSelectedRoomNumbers.filter(n => n !== number);
+    else {
+        if (tempSelectedRoomNumbers.length >= count) {
+            showLuxuryAlert('Bạn đã chọn đủ ' + count + ' phòng. Bỏ chọn một phòng trước khi đổi.', 'Chọn số phòng', 'warning');
+            return;
+        }
+        tempSelectedRoomNumbers.push(number);
+    }
     document.querySelectorAll('.room-card-item').forEach(card => {
-        card.classList.remove('ring-2', 'ring-yellow-400', 'bg-[#38281f]');
+        const selected = tempSelectedRoomNumbers.includes(card.getAttribute('data-room-number'));
+        ['ring-2', 'ring-yellow-400', 'bg-[#38281f]'].forEach(c => card.classList.toggle(c, selected));
     });
-
-    el.classList.add('ring-2', 'ring-yellow-400', 'bg-[#38281f]');
-    tempSelectedRoomNumber = el.getAttribute('data-room-number');
-
     const display = document.getElementById('modalSelectedRoomDisplay');
-    if (display) display.innerText = 'Phòng ' + tempSelectedRoomNumber;
+    if (display) display.textContent = tempSelectedRoomNumbers.length ? 'Phòng ' + tempSelectedRoomNumbers.join(', ') : 'Chưa chọn';
 }
 
 function confirmRoomSelection() {
-    if (!tempSelectedRoomNumber) {
-        showLuxuryAlert('Vui lòng chọn một số phòng cụ thể!', 'Thông báo', 'warning');
+    const count = Number(document.getElementById('roomCount').value || 1);
+    if (tempSelectedRoomNumbers.length !== count) {
+        showLuxuryAlert('Vui lòng chọn đúng ' + count + ' số phòng khác nhau.', 'Chọn số phòng', 'warning');
         return;
     }
-
     const selectedRoomInput = document.getElementById('selectedRoom');
     const selectedNumInput = document.getElementById('selectedRoomNumber');
-
     if (selectedRoomInput && selectedNumInput) {
-        const currentBaseName = selectedRoomInput.value.split(' - Phòng')[0];
-        selectedRoomInput.value = currentBaseName + ' - Phòng ' + tempSelectedRoomNumber;
-        selectedNumInput.value = tempSelectedRoomNumber;
+        selectedRoomInput.value = selectedRoomInput.value.split(' - Phòng')[0] + ' - Phòng ' + tempSelectedRoomNumbers.join(', ');
+        selectedNumInput.value = tempSelectedRoomNumbers.join(',');
     }
-
     closeRoomSelectionModal();
 }
 
 function resetSelectedRoomNumber() {
+    roomSelectionVersion++;
     const selectedNumInput = document.getElementById('selectedRoomNumber');
     const selectedRoomInput = document.getElementById('selectedRoom');
 
+    tempSelectedRoomNumbers = [];
     if (selectedNumInput) selectedNumInput.value = '';
     if (selectedRoomInput) {
         const baseName = selectedRoomInput.value.split(' - Phòng')[0];
@@ -7666,6 +7624,13 @@ function resetSelectedRoomNumber() {
     roomCache = {};
 }
 
+document.addEventListener('DOMContentLoaded', function () {
+    if (new URLSearchParams(location.search).get('ai') === '1') toggleAIChat();
+    ['checkInDate', 'checkOutDate', 'roomCount'].forEach(function (id) {
+        const input = document.getElementById(id);
+        if (input) input.addEventListener('change', resetSelectedRoomNumber);
+    });
+});
     </script>
 
     <!-- MODAL CHỌN SỐ PHÒNG -->
@@ -7682,7 +7647,7 @@ function resetSelectedRoomNumber() {
 
             <div class="mb-4">
                 <p class="text-sm text-gray-300">Loại phòng: <strong id="modalRoomTypeName" class="text-yellow-400">---</strong></p>
-                <p class="text-xs text-gray-400 mt-1">Vui lòng chọn một số phòng còn trống cho thời gian lưu trú đã chọn.</p>
+                <p class="text-xs text-gray-400 mt-1">Chọn đủ số phòng còn trống tương ứng với số lượng đã yêu cầu.</p>
             </div>
 
             <!-- Lưới phòng vật lý -->

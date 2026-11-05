@@ -9,8 +9,8 @@
     {
         public Configuration()
         {
-            AutomaticMigrationsEnabled = true;
-            AutomaticMigrationDataLossAllowed = true;
+            AutomaticMigrationsEnabled = false;
+            AutomaticMigrationDataLossAllowed = false;
         }
 
         protected override void Seed(QLKhachSan.Models.HotelDbContext context)
@@ -124,14 +124,15 @@
 
 
 );
-            if (!context.Users.Any(u => u.Username == "admin"))
+            string seedAdminPassword = Environment.GetEnvironmentVariable("LUXURY_HOTEL_SEED_ADMIN_PASSWORD");
+            if (!context.Users.Any(u => u.Username == "admin") && !string.IsNullOrEmpty(seedAdminPassword) && seedAdminPassword.Length >= 12)
             {
                 context.Users.Add(new QLKhachSan.Models.User
                 {
                     Username = "admin",
 
                     PasswordHash =
-                        System.Web.Helpers.Crypto.HashPassword("123456"),
+                        System.Web.Helpers.Crypto.HashPassword(seedAdminPassword),
 
                     FullName = "Quản trị viên",
 

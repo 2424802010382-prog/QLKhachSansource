@@ -17,6 +17,7 @@
     </style>
 </head>
 <body class="bg-[#f4f6fb] min-h-screen">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
     @Html.Partial("_AdminSidebar")<div class="lg:ml-72 min-h-screen">
     <header class="bg-white border-b sticky top-0 z-30"><div class="px-5 lg:px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"><div><p class="text-xs tracking-[2px] font-bold text-indigo-500">QUẢN LÝ NGƯỜI DÙNG</p><h1 class="text-3xl font-extrabold">@(roleFilter=="Customer"?"Khách hàng":roleFilter=="Staff"?"Nhân viên":"Tất cả tài khoản")</h1></div><button type="button" onclick="openStaffModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl"><i class="fas fa-user-plus mr-1"></i>Tạo nhân viên</button></div></header>
     <main class="p-5 lg:p-8">

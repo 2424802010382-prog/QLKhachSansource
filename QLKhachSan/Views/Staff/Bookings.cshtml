@@ -32,6 +32,7 @@
 
 
 <body class="bg-gray-100 min-h-screen">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
 
     <!-- ===================================================== -->
@@ -109,10 +110,8 @@
                 </a>
 
 
-                <a href="@Url.Action(
-                            "Logout",
-                            "Account"
-                         )"
+                <a href="#"
+                   onclick="openLuxuryLogoutModal(event); return false;"
                    class="bg-red-500
                           hover:bg-red-600
                           text-white
@@ -685,10 +684,7 @@
                                            .FirstOrDefault();
 
 
-                                string paymentStatus =
-                                    payment != null
-                                    ? payment.TrangThai
-                                    : "Chưa có";
+                                string paymentStatus = QLKhachSan.Models.HotelOperations.PaymentStatus(booking);
 
 
                                 <tr class="border-b

@@ -36,47 +36,18 @@ namespace QLKhachSan.Models
 
         public static void SyncPhysicalRoomStatuses(HotelDbContext db)
         {
-            try
+            // Only write operations refresh this cache; date-based screens never write.
+            var snapshots = HotelOperations.RoomSnapshot(db, DateTime.Today).ToDictionary(p => p.PhysicalRoomId);
+            var maintenanceHistory = db.RoomMaintenances.AsNoTracking().ToList();
+            foreach (var room in db.PhysicalRooms.ToList())
             {
-                DateTime today = DateTime.Today;
-
-                var physicalRooms = db.PhysicalRooms.ToList();
-                var activeBookings = db.Bookings
-                    .Where(b => (b.Status == "Đang ở" || b.Status == "Đã xác nhận" || b.Status == "Chờ xác nhận") && DbFunctions.TruncateTime(b.CheckOutDate) >= today)
-                    .ToList();
-
-                foreach (var pr in physicalRooms)
-                {
-                    if (pr.Status == "Bảo trì") continue;
-
-                    string roomNum = pr.RoomNumber.Trim();
-                    var matchedBooking = activeBookings.FirstOrDefault(b =>
-                        b.RoomId == pr.RoomTypeId &&
-                        !string.IsNullOrEmpty(b.SpecialRequest) &&
-                        IsBookingAssignedToRoom(b.SpecialRequest, roomNum)
-                    );
-
-                    string newStatus = "Trống";
-                    if (matchedBooking != null)
-                    {
-                        if (matchedBooking.Status == "Đang ở") newStatus = "Đang ở";
-                        else if (matchedBooking.Status == "Đã xác nhận") newStatus = "Đã đặt";
-                        else if (matchedBooking.Status == "Chờ xác nhận") newStatus = "Chờ xác nhận";
-                    }
-
-                    if (pr.Status != newStatus)
-                    {
-                        pr.Status = newStatus;
-                    }
-                }
-
-                db.SaveChanges();
+                if (HotelOperations.ManualMaintenance(room, maintenanceHistory)) continue;
+                var status = snapshots[room.PhysicalRoomId].Status;
+                room.Status = status == "Bảo trì" ? "Bảo trì theo lịch" : status;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("SyncPhysicalRoomStatuses Error: " + ex.Message);
-            }
+            db.SaveChanges();
         }
+
     }
 
 

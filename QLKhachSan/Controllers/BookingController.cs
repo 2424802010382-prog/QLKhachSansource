@@ -1,58 +1,39 @@
 ﻿using QLKhachSan.Models;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Globalization;
 using System.Linq;
+using System.Data.Entity;
 using System.Web.Mvc;
 
 namespace QLKhachSan.Controllers
 {
-    public class BookingController : Controller
+    public class BookingController : HotelController
     {
-        private readonly HotelDbContext db =
-            new HotelDbContext();
-
-
-        // =========================================================
+// =========================================================
         // LẤY DANH SÁCH PHÒNG TRỐNG THEO THỜI GIAN (CHỐNG TRÙNG LỊCH)
         // =========================================================
 
         [HttpGet]
         public JsonResult GetAvailableRooms(DateTime checkIn, DateTime checkOut, int? capacity)
         {
-            if (checkIn.Date < DateTime.Today || checkOut.Date <= checkIn.Date)
-            {
-                return Json(new { success = false, message = "Khoảng thời gian không hợp lệ." }, JsonRequestBehavior.AllowGet);
-            }
-
+            if (!ModelState.IsValid || checkIn.Date < DateTime.Today || checkOut.Date <= checkIn.Date)
+                return Json(new { success = false, message = "Khoảng ngày không hợp lệ." }, JsonRequestBehavior.AllowGet);
             try
             {
-                var allRooms = db.Rooms.Where(r => r.IsActive).ToList();
-
-                var bookedRoomIds = db.Bookings
-                    .Where(b => (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") && b.CheckInDate < checkOut && b.CheckOutDate > checkIn)
-                    .Select(b => b.RoomId)
-                    .Distinct()
-                    .ToList();
-
-                var availableRooms = allRooms
-                    .Where(r => !bookedRoomIds.Contains(r.RoomId) && (!capacity.HasValue || r.Capacity >= capacity.Value))
-                    .Select(r => new {
-                        roomId = r.RoomId,
-                        roomName = r.RoomName,
-                        roomType = r.RoomType,
-                        price = r.Price,
-                        capacity = r.Capacity,
-                        description = r.Description,
-                        imageUrl = r.ImageUrl
-                    })
-                    .ToList();
-
-                return Json(new { success = true, rooms = availableRooms }, JsonRequestBehavior.AllowGet);
+                var rooms = db.Rooms.AsNoTracking().Where(r => r.IsActive).ToList()
+                    .Select(r => new { Room = r, Available = HotelOperations.AvailableRooms(db, r.RoomId, checkIn.Date, checkOut.Date).Count })
+                    .Where(x => x.Available > 0 && (!capacity.HasValue || x.Room.Capacity >= capacity.Value))
+                    .Select(x => new { roomId = x.Room.RoomId, roomName = x.Room.RoomName, roomType = x.Room.RoomType,
+                        price = x.Room.Price, capacity = x.Room.Capacity, description = x.Room.Description,
+                        imageUrl = x.Room.ImageUrl, availableRooms = x.Available }).ToList();
+                return Json(new { success = true, rooms }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message }, JsonRequestBehavior.AllowGet);
+                System.Diagnostics.Trace.TraceError(ex.ToString());
+                return Json(new { success = false, message = "Không tải được phòng trống. Vui lòng thử lại." }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -87,13 +68,13 @@ namespace QLKhachSan.Controllers
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Trace.TraceError(ex.ToString());
                 return Json(
                     new
                     {
                         success = false,
                         message =
-                            "Không tải được dịch vụ: "
-                            + ex.Message
+                            "Không tải được dịch vụ. Vui lòng thử lại sau."
                     },
                     JsonRequestBehavior.AllowGet
                 );
@@ -224,6 +205,7 @@ namespace QLKhachSan.Controllers
             {
                 try
                 {
+                    HotelOperations.LockInventory(db);
                     string role = Session["Role"] != null ? Session["Role"].ToString() : "";
                     if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase) || role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
                     {
@@ -238,7 +220,7 @@ namespace QLKhachSan.Controllers
                     // KIỂM TRA REQUEST
                     // =============================================
 
-                    if (request == null)
+                    if (request == null || !ModelState.IsValid)
                     {
                         return Json(new
                         {
@@ -452,101 +434,13 @@ namespace QLKhachSan.Controllers
                     }
 
 
-                    int bookedRooms =
-                        db.Bookings
-
-                        .Where(b =>
-
-                            b.RoomId ==
-                            request.RoomId &&
-
-                            b.Status !=
-                            "Đã hủy" &&
-
-                            request.CheckInDate <
-                            b.CheckOutDate &&
-
-                            request.CheckOutDate >
-                            b.CheckInDate
-
-                        )
-
-                        .Select(
-                            b => (int?)b.RoomCount
-                        )
-
-                        .Sum() ?? 0;
-
-
-                    int availableRooms =
-                        room.TotalRooms -
-                        bookedRooms;
-
-
-                    if (availableRooms < 0)
-                    {
-                        availableRooms = 0;
-                    }
-
-
-                    // =============================================
-                    // KIỂM TRA PHÒNG VẬT LÝ KHẢ DỤNG (CHỐNG TRÙNG LỊCH)
-                    // =============================================
-                    if (!string.IsNullOrWhiteSpace(request.RoomNumber))
-                    {
-                        string targetRoomNum = request.RoomNumber.Trim();
-                        bool physicalConflict = db.Bookings
-                            .Where(b => b.RoomId == request.RoomId && (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") && request.CheckInDate < b.CheckOutDate && request.CheckOutDate > b.CheckInDate)
-                            .ToList()
-                            .Any(b => !string.IsNullOrEmpty(b.SpecialRequest) && PhysicalRoomHelper.IsBookingAssignedToRoom(b.SpecialRequest, targetRoomNum));
-
-                        if (physicalConflict)
-                        {
-                            return Json(new
-                            {
-                                success = false,
-                                message = $"Phòng số [{targetRoomNum}] đã có khách đặt trong khoảng thời gian này. Vui lòng chọn số phòng khác."
-                            });
-                        }
-
-                        bool maintenanceConflict = db.RoomMaintenances
-                            .Join(db.PhysicalRooms,
-                                m => m.PhysicalRoomId,
-                                pr => pr.PhysicalRoomId,
-                                (m, pr) => new { m, pr })
-                            .Any(x => x.m.Status == "Đang bảo trì"
-                                   && x.pr.RoomNumber.Trim().Equals(targetRoomNum, StringComparison.OrdinalIgnoreCase)
-                                   && request.CheckInDate < x.m.EndDate && request.CheckOutDate > x.m.StartDate);
-
-                        if (maintenanceConflict)
-                        {
-                            return Json(new
-                            {
-                                success = false,
-                                message = $"Phòng số [{targetRoomNum}] đang trong thời gian bảo trì. Vui lòng chọn số phòng hoặc khoảng ngày khác."
-                            });
-                        }
-
-                        request.SpecialRequest = $"[Phòng: {targetRoomNum}] " + (request.SpecialRequest ?? "");
-                    }
-
-
-                    if (
-                        request.RoomCount >
-                        availableRooms
-                    )
-                    {
-                        return Json(new
-                        {
-                            success = false,
-
-                            message =
-                                "Không đủ phòng trống. Hiện chỉ còn "
-                                + availableRooms
-                                + " phòng."
-                        });
-                    }
-
+                    request.CheckInDate = request.CheckInDate.Date;
+                    request.CheckOutDate = request.CheckOutDate.Date;
+                    var numbers = request.RoomNumbers ?? new List<string>();
+                    if (numbers.Count == 0 && !string.IsNullOrWhiteSpace(request.RoomNumber)) numbers.Add(request.RoomNumber.Trim());
+                    var assigned = HotelOperations.SelectRooms(db, request.RoomId, request.CheckInDate,
+                        request.CheckOutDate, request.RoomCount, numbers, true);
+                    request.SpecialRequest = HotelOperations.AssignmentNotes(assigned, request.SpecialRequest);
 
                     // =============================================
                     // KIỂM TRA SỐ KHÁCH
@@ -1110,6 +1004,12 @@ namespace QLKhachSan.Controllers
 
 
                     transaction.Commit();
+                    if (!userId.HasValue)
+                    {
+                        var owned = Session["GuestBookingIds"] as List<int> ?? new List<int>();
+                        owned.Add(booking.BookingId);
+                        Session["GuestBookingIds"] = owned;
+                    }
 
 
                     // =============================================
@@ -1142,9 +1042,15 @@ namespace QLKhachSan.Controllers
                             "Đặt phòng thành công. Đang chuyển đến trang thanh toán..."
                     });
                 }
+                catch (HotelRuleException ex)
+                {
+                    transaction.Rollback();
+                    return Json(new { success = false, message = ex.Message });
+                }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
+                    System.Diagnostics.Trace.TraceError(ex.ToString());
 
 
                     return Json(new
@@ -1152,8 +1058,7 @@ namespace QLKhachSan.Controllers
                         success = false,
 
                         message =
-                            "Có lỗi khi đặt phòng: "
-                            + ex.Message
+                            "Không thể lưu đặt phòng. Vui lòng kiểm tra thông tin hoặc thử lại sau."
                     });
                 }
             }
@@ -1170,150 +1075,37 @@ namespace QLKhachSan.Controllers
             string checkIn,
             string checkOut)
         {
-            DateTime checkInDate;
-            DateTime checkOutDate;
-
-
-            bool validCheckIn =
-                DateTime.TryParseExact(
-                    checkIn,
-                    "yyyy-MM-dd",
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.None,
-                    out checkInDate
-                );
-
-
-            bool validCheckOut =
-                DateTime.TryParseExact(
-                    checkOut,
-                    "yyyy-MM-dd",
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.None,
-                    out checkOutDate
-                );
-
-
-            if (
-                !validCheckIn ||
-                !validCheckOut
-            )
-            {
-                return Json(
-                    new
-                    {
-                        success = false,
-                        message =
-                            "Ngày không hợp lệ."
-                    },
-                    JsonRequestBehavior.AllowGet
-                );
-            }
-
-
-            if (
-                checkOutDate <=
-                checkInDate
-            )
-            {
-                return Json(
-                    new
-                    {
-                        success = false,
-
-                        message =
-                            "Ngày trả phải sau ngày nhận."
-                    },
-                    JsonRequestBehavior.AllowGet
-                );
-            }
-
-
-            var room =
-                db.Rooms.Find(roomId);
-
-
-            if (
-                room == null ||
-                !room.IsActive
-            )
-            {
-                return Json(
-                    new
-                    {
-                        success = false,
-                        message =
-                            "Không tìm thấy phòng."
-                    },
-                    JsonRequestBehavior.AllowGet
-                );
-            }
-
-
-            int bookedRooms =
-                db.Bookings
-
-                .Where(b =>
-
-                    b.RoomId ==
-                    roomId &&
-
-                    (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") &&
-
-                    checkInDate <
-                    b.CheckOutDate &&
-
-                    checkOutDate >
-                    b.CheckInDate
-
-                )
-
-                .Select(
-                    b => (int?)b.RoomCount
-                )
-
-                .Sum() ?? 0;
-
-
-            int availableRooms =
-                room.TotalRooms -
-                bookedRooms;
-
-
-            if (availableRooms < 0)
-            {
-                availableRooms = 0;
-            }
-
-
-            return Json(
-                new
-                {
-                    success = true,
-
-                    availableRooms =
-                        availableRooms,
-
-                    totalRooms =
-                        room.TotalRooms
-                },
-
-                JsonRequestBehavior.AllowGet
-            );
+            DateTime start, end;
+            if (!DateTime.TryParseExact(checkIn, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out start) ||
+                !DateTime.TryParseExact(checkOut, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out end) ||
+                start < DateTime.Today || end <= start)
+                return Json(new { success = false, message = "Khoảng ngày không hợp lệ." }, JsonRequestBehavior.AllowGet);
+            var room = db.Rooms.Find(roomId);
+            if (room == null || !room.IsActive) return Json(new { success = false, message = "Không tìm thấy loại phòng." }, JsonRequestBehavior.AllowGet);
+            int availableRooms = HotelOperations.AvailableRooms(db, roomId, start, end).Count;
+            int totalRooms = db.PhysicalRooms.Count(p => p.RoomTypeId == roomId && p.IsActive);
+            return Json(new { success = true, availableRooms, totalRooms }, JsonRequestBehavior.AllowGet);
         }
 
 
         // =========================================================
         // TRANG CHỌN PHƯƠNG THỨC THANH TOÁN
         // =========================================================
+        private bool CanAccessBooking(int id)
+        {
+            int userId;
+            if (int.TryParse(Convert.ToString(Session["UserId"]), out userId))
+                if (db.Database.SqlQuery<int>("SELECT COUNT(1) FROM dbo.Bookings WHERE BookingId=@p0 AND UserId=@p1", id, userId).Single() == 1) return true;
+            var owned = Session["GuestBookingIds"] as List<int>;
+            return owned != null && owned.Contains(id);
+        }
+
         [HttpGet]
         public ActionResult Payment(int id)
         {
-            var booking = db.Bookings.Include("Room").FirstOrDefault(b => b.BookingId == id);
-            if (booking == null)
-            {
-                return RedirectToAction("Index", "Home");
-            }
+            if (!CanAccessBooking(id)) return HttpNotFound();
+            var booking = db.Bookings.Include("Room").Include("ThanhToans").FirstOrDefault(b => b.BookingId == id);
+            if (booking == null) return HttpNotFound();
             return View(booking);
         }
 
@@ -1323,25 +1115,18 @@ namespace QLKhachSan.Controllers
         [HttpPost]
         public JsonResult ConfirmCashPayment(int id)
         {
+            if (!CanAccessBooking(id)) { Response.StatusCode = 403; return Json(new { success = false, message = "Không có quyền truy cập đơn." }); }
             var booking = db.Bookings.Find(id);
-            if (booking == null)
-            {
-                return Json(new { success = false, message = "Không tìm thấy đơn đặt phòng." });
-            }
-
+            if (booking == null || !HotelOperations.ActiveStatuses.Contains(booking.Status))
+                return Json(new { success = false, message = "Không thể đổi phương thức thanh toán ở trạng thái hiện tại." });
+            if (HotelOperations.PaidAmount(booking) >= booking.TotalAmount) return Json(new { success = false, message = "Đơn đã thanh toán đủ." });
             booking.PaymentMethod = "Thanh toán tại khách sạn";
-            booking.Status = "Chờ xác nhận";
-
-            var payment = db.ThanhToans.FirstOrDefault(p => p.BookingId == id);
-            if (payment != null)
-            {
-                payment.PhuongThucThanhToan = "Thanh toán tại khách sạn";
-                payment.TrangThai = "Chờ thanh toán tại quầy";
-            }
-
+            var payment = HotelOperations.SynchronizeOutstandingPayment(db, booking);
+            if (payment == null) return Json(new { success = false, message = "Đơn đã thanh toán đủ." });
+            payment.PhuongThucThanhToan = booking.PaymentMethod;
+            payment.TrangThai = "Chờ thanh toán tại quầy";
             db.SaveChanges();
-
-            return Json(new { success = true, redirectUrl = Url.Action("Success", "Booking", new { id = booking.BookingId }) });
+            return Json(new { success = true, redirectUrl = Url.Action("Success", new { id }) });
         }
 
         // =========================================================
@@ -1350,16 +1135,11 @@ namespace QLKhachSan.Controllers
         [HttpGet]
         public JsonResult CheckPaymentStatus(int id)
         {
-            var payment = db.ThanhToans.FirstOrDefault(p => p.BookingId == id);
+            if (!CanAccessBooking(id)) { Response.StatusCode = 403; return Json(new { success = false, isPaid = false }, JsonRequestBehavior.AllowGet); }
             var booking = db.Bookings.Find(id);
-
-            if (booking == null || payment == null)
-            {
-                return Json(new { success = false, isPaid = false }, JsonRequestBehavior.AllowGet);
-            }
-
-            bool isPaid = payment.TrangThai == "Đã thanh toán";
-            return Json(new { success = true, isPaid = isPaid, status = booking.Status }, JsonRequestBehavior.AllowGet);
+            decimal paid = db.ThanhToans.Where(p => p.BookingId == id && p.TrangThai == "Đã thanh toán").Select(p => (decimal?)p.SoTien).Sum() ?? 0;
+            return Json(new { success = booking != null, isPaid = booking != null && paid >= booking.TotalAmount,
+                status = booking == null ? "" : booking.Status }, JsonRequestBehavior.AllowGet);
         }
 
         // =========================================================
@@ -1368,39 +1148,37 @@ namespace QLKhachSan.Controllers
         [HttpPost]
         public JsonResult SimulateBankTransferPaid(int id)
         {
-            var booking = db.Bookings.Find(id);
-            var payment = db.ThanhToans.FirstOrDefault(p => p.BookingId == id);
-
-            if (booking == null || payment == null)
-            {
-                return Json(new { success = false, message = "Không tìm thấy đơn hàng." });
-            }
-
-            // NGHIỆP VỤ QUAN TRỌNG: Cập nhật đúng phương thức thanh toán là "Chuyển khoản"
-            // và trạng thái thanh toán thành "Đã thanh toán".
-            // TUYỆT ĐỐI KHÔNG tự động chuyển booking.Status thành "Đã xác nhận".
-            booking.PaymentMethod = "Chuyển khoản";
-            payment.PhuongThucThanhToan = "Chuyển khoản";
-            payment.TrangThai = "Đã thanh toán";
-            payment.NgayThanhToan = DateTime.Now;
-            booking.Status = "Chờ xác nhận";
-
-            db.SaveChanges();
-
-            return Json(new { success = true, redirectUrl = Url.Action("Success", "Booking", new { id = booking.BookingId }) });
+            Response.StatusCode = 403;
+            return Json(new { success = false, message = "Không ghi nhận giao dịch mô phỏng. Vui lòng chờ nhân viên xác minh thanh toán." });
         }
 
         // =========================================================
         // TRANG THÀNH CÔNG (SUCCESS)
         // =========================================================
+        [HttpPost]
+        public JsonResult RequestBankTransferReview(int id)
+        {
+            if (!CanAccessBooking(id)) { Response.StatusCode = 403; return Json(new { success = false, message = "Không có quyền truy cập đơn." }); }
+            var booking = db.Bookings.Find(id);
+            if (booking == null || !HotelOperations.ActiveStatuses.Contains(booking.Status))
+                return Json(new { success = false, message = "Đơn không còn nhận thanh toán." });
+            if (HotelOperations.PaidAmount(booking) >= booking.TotalAmount) return Json(new { success = false, message = "Đơn đã thanh toán đủ." });
+            booking.PaymentMethod = "Chuyển khoản";
+            var payment = HotelOperations.SynchronizeOutstandingPayment(db, booking);
+            if (payment == null) return Json(new { success = false, message = "Đơn đã thanh toán đủ." });
+            payment.PhuongThucThanhToan = "Chuyển khoản";
+            payment.TrangThai = "Chờ xác minh";
+            payment.GhiChu = "Khách yêu cầu đối soát chuyển khoản; chưa xác nhận đã nhận tiền.";
+            db.SaveChanges();
+            return Json(new { success = true, redirectUrl = Url.Action("Success", new { id }) });
+        }
+
         [HttpGet]
         public ActionResult Success(int id)
         {
+            if (!CanAccessBooking(id)) return HttpNotFound();
             var booking = db.Bookings.Include("Room").FirstOrDefault(b => b.BookingId == id);
-            if (booking == null)
-            {
-                return RedirectToAction("Index", "Home");
-            }
+            if (booking == null) return HttpNotFound();
             return View(booking);
         }
 
@@ -1408,76 +1186,36 @@ namespace QLKhachSan.Controllers
         [HttpGet]
         public JsonResult GetAvailablePhysicalRooms(int roomId, DateTime checkIn, DateTime checkOut)
         {
+            if (!ModelState.IsValid || checkIn.Date < DateTime.Today || checkOut.Date <= checkIn.Date)
+                return Json(new { success = false, message = "Khoảng ngày không hợp lệ." }, JsonRequestBehavior.AllowGet);
             try
             {
-                var physicalRooms = db.Set<PhysicalRoom>()
-                    .Where(pr => pr.RoomTypeId == roomId && pr.IsActive)
-                    .OrderBy(pr => pr.RoomNumber)
-                    .ToList();
-
-                var activeBookings = db.Bookings
-                    .Where(b => b.RoomId == roomId && (b.Status == "Chờ xác nhận" || b.Status == "Đã xác nhận" || b.Status == "Đang ở") && b.CheckInDate < checkOut && b.CheckOutDate > checkIn)
-                    .ToList();
-
-                var activeMaintenances = db.Set<RoomMaintenance>()
-                    .Where(m => m.Status == "Đang bảo trì" && m.StartDate < checkOut && m.EndDate > checkIn)
-                    .ToList();
-                var maintRoomIds = new HashSet<int>(activeMaintenances.Select(m => m.PhysicalRoomId));
-
-                var bookedRoomNumbers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                int untaggedBookingCount = 0;
-
-                foreach (var b in activeBookings)
-                {
-                    if (!string.IsNullOrEmpty(b.SpecialRequest) && b.SpecialRequest.Contains("[Phòng:"))
-                    {
-                        bool foundTag = false;
-                        foreach (var pr in physicalRooms)
-                        {
-                            if (PhysicalRoomHelper.IsBookingAssignedToRoom(b.SpecialRequest, pr.RoomNumber.Trim()))
-                            {
-                                bookedRoomNumbers.Add(pr.RoomNumber.Trim());
-                                foundTag = true;
-                            }
-                        }
-                        if (!foundTag)
-                        {
-                            untaggedBookingCount += (b.RoomCount > 0 ? b.RoomCount : 1);
-                        }
-                    }
-                    else
-                    {
-                        untaggedBookingCount += (b.RoomCount > 0 ? b.RoomCount : 1);
-                    }
-                }
-
-                int lockedUntagged = 0;
-                var available = physicalRooms
-                    .Select(pr => {
-                        string rNum = pr.RoomNumber.Trim();
-                        bool isB = bookedRoomNumbers.Contains(rNum) || maintRoomIds.Contains(pr.PhysicalRoomId);
-                        if (!bookedRoomNumbers.Contains(rNum) && !maintRoomIds.Contains(pr.PhysicalRoomId) && lockedUntagged < untaggedBookingCount)
-                        {
-                            isB = true;
-                            lockedUntagged++;
-                        }
-                        return new {
-                            physicalRoomId = pr.PhysicalRoomId,
-                            roomNumber = pr.RoomNumber,
-                            floor = pr.Floor,
-                            isBooked = isB
-                        };
-                    })
-                    .ToList();
-
-                return Json(new { success = true, physicalRooms = available }, JsonRequestBehavior.AllowGet);
+                var available = new HashSet<int>(HotelOperations.AvailableRooms(db, roomId, checkIn.Date, checkOut.Date).Select(p => p.PhysicalRoomId));
+                var physicalRooms = db.PhysicalRooms.AsNoTracking().Where(p => p.RoomTypeId == roomId && p.IsActive && p.RoomType.IsActive)
+                    .OrderBy(p => p.RoomNumber).ToList().Select(p => new { physicalRoomId = p.PhysicalRoomId,
+                        roomNumber = p.RoomNumber, floor = p.Floor, isBooked = !available.Contains(p.PhysicalRoomId) }).ToList();
+                return Json(new { success = true, physicalRooms }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+                System.Diagnostics.Trace.TraceError(ex.ToString());
+                return Json(new { success = false, message = "Không tải được số phòng. Vui lòng thử lại hoặc liên hệ khách sạn." }, JsonRequestBehavior.AllowGet);
             }
         }
 
+
+        [HttpPost]
+        public JsonResult ProcessOverdueBookings(string apiKey)
+        {
+            string expectedKey = ConfigurationManager.AppSettings["OverdueJobApiKey"] ?? "LuxuryHotelCronKey2026";
+            if (string.IsNullOrWhiteSpace(apiKey) || apiKey != expectedKey)
+            {
+                return Json(new { success = false, message = "Khóa API không hợp lệ." }, JsonRequestBehavior.AllowGet);
+            }
+
+            int count = OverdueBookingService.ProcessOverdueBookings(db);
+            return Json(new { success = true, message = $"Đã tự động xử lý {count} đơn quá hạn nhận phòng.", processedCount = count }, JsonRequestBehavior.AllowGet);
+        }
 
         // =========================================================
         // GIẢI PHÓNG DB CONTEXT

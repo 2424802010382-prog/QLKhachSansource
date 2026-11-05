@@ -1,19 +1,10 @@
-﻿@{
-    ViewBag.Title = "Contact";
-}
-<main aria-labelledby="title">
-    <h2 id="title">@ViewBag.Title.</h2>
-    <h3>@ViewBag.Message</h3>
-
-    <address>
-        One Microsoft Way<br />
-        Redmond, WA 98052-6399<br />
-        <abbr title="Phone">P:</abbr>
-        425.555.0100
-    </address>
-
-    <address>
-        <strong>Support:</strong>   <a href="mailto:Support@example.com">Support@example.com</a><br />
-        <strong>Marketing:</strong> <a href="mailto:Marketing@example.com">Marketing@example.com</a>
-    </address>
-</main>
+﻿@{ ViewBag.Title = "Liên hệ"; }
+<section class="max-w-3xl mx-auto bg-white border border-amber-200 rounded-2xl p-8 shadow-sm">
+    <h1 class="text-3xl font-serif font-bold text-amber-800 mb-4">Liên hệ và hỗ trợ</h1>
+    <p class="mb-4">Khi cần hỗ trợ đặt phòng, đối soát thanh toán hoặc thay đổi đơn, hãy cung cấp mã đặt phòng để nhân viên kiểm tra.</p>
+    <p class="mb-6">Bạn có thể xem chi tiết đơn trong lịch sử đặt phòng hoặc mở trợ lý trực tuyến từ trang chủ để tìm hiểu các chức năng của khách sạn.</p>
+    <div class="flex flex-wrap gap-3">
+        <a href="@Url.Action("Index", "BookingHistory")" class="bg-amber-700 text-white font-bold rounded-lg px-5 py-3">Lịch sử đặt phòng</a>
+        <a href="@Url.Action("Index", "Home", new { ai = 1 })" class="border border-amber-700 text-amber-800 font-bold rounded-lg px-5 py-3">Trợ lý trực tuyến</a>
+    </div>
+</section>

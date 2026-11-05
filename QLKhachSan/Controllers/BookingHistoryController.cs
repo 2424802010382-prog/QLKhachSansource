@@ -5,13 +5,9 @@ using System.Web.Mvc;
 
 namespace QLKhachSan.Controllers
 {
-    public class BookingHistoryController : Controller
+    public class BookingHistoryController : HotelController
     {
-        private readonly HotelDbContext db =
-            new HotelDbContext();
-
-
-        // =========================================================
+// =========================================================
         // LỊCH SỬ ĐẶT PHÒNG CỦA TÀI KHOẢN ĐANG ĐĂNG NHẬP
         // =========================================================
 
@@ -471,15 +467,9 @@ namespace QLKhachSan.Controllers
                         services,
 
 
-                    PaymentStatus =
-                        payment != null
-                            ? payment.TrangThai
-                            : null,
+                    PaymentStatus = HotelOperations.PaymentStatus(booking),
 
-                    PaymentAmount =
-                        payment != null
-                            ? payment.SoTien
-                            : 0m,
+                    PaymentAmount = HotelOperations.PaidAmount(booking),
 
                     PaymentDate =
                         payment != null
@@ -510,7 +500,7 @@ namespace QLKhachSan.Controllers
         // =========================================================
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult Cancel(int id)
         {
             // =====================================================
@@ -614,7 +604,7 @@ namespace QLKhachSan.Controllers
                 booking.Status != "Đã xác nhận"
             )
             {
-                TempData["BookingError"] =
+                FailOperation(); TempData["BookingError"] =
                     "Booking này không thể hủy ở trạng thái hiện tại.";
 
 
@@ -637,7 +627,7 @@ namespace QLKhachSan.Controllers
                 System.DateTime.Today
             )
             {
-                TempData["BookingError"] =
+                FailOperation(); TempData["BookingError"] =
                     "Không thể hủy booking khi đã tới ngày nhận phòng.";
 
 
@@ -665,7 +655,7 @@ namespace QLKhachSan.Controllers
 
             if (hasPaidPayment)
             {
-                TempData["BookingError"] =
+                FailOperation(); TempData["BookingError"] =
                     "Booking đã thanh toán. Vui lòng liên hệ khách sạn để được hỗ trợ hủy và hoàn tiền.";
 
 
@@ -715,6 +705,10 @@ namespace QLKhachSan.Controllers
             {
                 try
                 {
+                    HotelOperations.LockInventory(db);
+                    db.Entry(booking).Reload();
+                    if ((booking.Status != "Chờ xác nhận" && booking.Status != "Đã xác nhận") || db.ThanhToans.Any(p => p.BookingId == id && p.TrangThai == "Đã thanh toán"))
+                        throw new System.InvalidOperationException("Đơn đã thay đổi. Vui lòng tải lại.");
                     // =============================================
                     // ĐỔI TRẠNG THÁI BOOKING
                     // =============================================
@@ -803,7 +797,7 @@ namespace QLKhachSan.Controllers
                     transaction.Rollback();
 
 
-                    TempData["BookingError"] =
+                    FailOperation(); TempData["BookingError"] =
                         "Có lỗi xảy ra khi hủy đặt phòng. Vui lòng thử lại.";
                 }
             }
