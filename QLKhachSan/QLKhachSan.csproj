@@ -214,6 +214,33 @@
     <Compile Include="Models\OverdueBookingService.cs" />
     <Compile Include="Services\OverdueBookingJob.cs" />
     <Compile Include="Models\HotelOperations.cs" />
+    <Compile Include="Models\ChiTietDonDatMon.cs" />
+    <Compile Include="Models\DanhMucMonAn.cs" />
+    <Compile Include="Models\DonDatMon.cs" />
+    <Compile Include="Models\HotelAutoCancelAudit.cs" />
+    <Compile Include="Models\MonAn.cs" />
+    <Compile Include="Models\PasswordResetToken.cs" />
+    <Compile Include="Models\Permission.cs" />
+    <Compile Include="Models\RoomServiceBedPolicy.cs" />
+    <Compile Include="Models\RoomServiceCatalog.cs" />
+    <Compile Include="Models\RoomServiceHistory.cs" />
+    <Compile Include="Models\RoomServiceOrder.cs" />
+    <Compile Include="Models\RoomServiceProduct.cs" />
+    <Compile Include="Models\SePayEnvironment.cs" />
+    <Compile Include="Models\SePayTransaction.cs" />
+    <Compile Include="Models\UserPermission.cs" />
+    <Compile Include="Models\RefundModels.cs" />
+    <Compile Include="Models\quanlykhachsan.Context.cs">
+      <DependentUpon>quanlykhachsan.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Models\quanlykhachsan.cs">
+      <DependentUpon>quanlykhachsan.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Models\quanlykhachsan.Designer.cs">
+      <DependentUpon>quanlykhachsan.edmx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
     <Compile Include="Controllers\HotelController.cs" />
     <Compile Include="Filters\HotelSecurityFilter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -265,10 +292,29 @@
     <Content Include="Models\Model1.edmx.diagram">
       <DependentUpon>Model1.edmx</DependentUpon>
     </Content>
+    <Content Include="Models\quanlykhachsan.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>quanlykhachsan.edmx</DependentUpon>
+      <LastGenOutput>quanlykhachsan.Context.cs</LastGenOutput>
+    </Content>
+    <Content Include="Models\quanlykhachsan.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>quanlykhachsan.edmx</DependentUpon>
+      <LastGenOutput>quanlykhachsan.cs</LastGenOutput>
+    </Content>
+    <EntityDeploy Include="Models\quanlykhachsan.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>quanlykhachsan.Designer.cs</LastGenOutput>
+    </EntityDeploy>
+    <Content Include="Models\quanlykhachsan.edmx.diagram">
+      <DependentUpon>quanlykhachsan.edmx</DependentUpon>
+    </Content>
     <Content Include="appsettings.json" />
     <Content Include=".artifacts\d80e5d15-ad52-4c38-942e-8f4a8f00fa3c\architecture_plan.artifact.md" />
     <Content Include=".artifacts\d80e5d15-ad52-4c38-942e-8f4a8f00fa3c\permission_plan.artifact.md" />
     <Content Include=".artifacts\d80e5d15-ad52-4c38-942e-8f4a8f00fa3c\staff_dashboard_plan.artifact.md" />
+    <Content Include="App_Data\logs\error_20261109.log" />
+    <Content Include="App_Data\logs\roomservice-schema-20261109.log" />
     <None Include="Properties\PublishProfiles\coklingone-001-site1 - FTP.pubxml" />
     <None Include="Properties\PublishProfiles\coklingone-001-site1 - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\dothigiang2006gl-001-site1 - FTP.pubxml" />
@@ -308,6 +354,15 @@
     <Content Include="Views\Account\Profile.cshtml" />
     <Content Include="Views\Account\ResetPassword.cshtml" />
     <Content Include="Views\Restaurant\Index.cshtml" />
+    <Content Include="Views\Restaurant\Payment.cshtml" />
+    <Content Include="Views\Shared\_AIChat.cshtml" />
+    <Compile Include="Models\AIChatProfile.cs" />
+    <Compile Include="Controllers\PaymentWebhookController.cs" />
+    <Compile Include="Services\BankPaymentSettings.cs" />
+    <Compile Include="Services\SePayProtocol.cs" />
+    <Compile Include="Services\SePayLiveVerifier.cs" />
+    <Compile Include="Services\SePayPaymentService.cs" />
+    <Content Include="Scripts\payment-status.js" />
     <Content Include="Views\Restaurant\History.cshtml" />
     <Content Include="Views\Restaurant\AdminOrders.cshtml" />
     <Content Include="Views\Restaurant\ManageFoods.cshtml" />
@@ -338,11 +393,12 @@
     <Content Include="Views\Booking\Success.cshtml" />
     <Content Include="Views\Admin\Bookings.cshtml" />
     <Content Include="Views\Admin\StaffPermissions.cshtml" />
+    <Content Include="Views\Admin\RefundManagement.cshtml" />
+    <Content Include="Views\Staff\RefundRequests.cshtml" />
     <Content Include="Views\Shared\_SecurityClient.cshtml" />
     <Content Include="Views\Account\Logout.cshtml" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="App_Data\" />
     <Folder Include="Images\Foods\" />
     <Folder Include="Views\AIChat\" />
     <Folder Include="Views\Gemini\" />
@@ -453,4 +509,19 @@
   </Target>
   <Target Name="AfterBuild">
   </Target> -->
+  <ItemGroup>
+    <Compile Include="Controllers\RoomServiceController.cs" />
+    <Compile Include="Models\RoomServiceModels.cs" />
+    <Content Include="Views\RoomService\Index.cshtml" />
+    <Content Include="Views\RoomService\Details.cshtml" />
+    <Content Include="Views\RoomService\Create.cshtml" />
+    <Content Include="Views\RoomService\Orders.cshtml" />
+    <Content Include="Views\RoomService\OrderDetails.cshtml" />
+    <Content Include="Views\RoomService\Success.cshtml" />
+    <Content Include="Views\RoomService\Edit.cshtml" />
+    <Content Include="Content\room-service.css" />
+    <Content Include="Scripts\room-service.js" />
+    <Content Include="Images\room-service.svg" />
+    <Content Include="Images\RoomServices\**\*" />
+  </ItemGroup>
 </Project>

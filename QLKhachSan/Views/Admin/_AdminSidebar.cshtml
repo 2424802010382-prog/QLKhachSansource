@@ -125,7 +125,7 @@
         </p>
 
 
-        <a href="@Url.Action("Index", "Admin")#bookings"
+        <a href="@Url.Action("Bookings", "Admin")"
            class="flex
                   items-center
                   gap-3
@@ -133,15 +133,15 @@
                   py-3
                   rounded-xl
                   mb-2
-                  text-blue-100
-                  hover:bg-white/10
-                  hover:text-white
-                  transition">
+                  transition
+                  @(adminPage == "Bookings"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
 
             <i class="fas fa-calendar-check w-5 text-center"></i>
 
             <span class="font-semibold">
-                Đặt phòng
+                Danh sách đặt phòng
             </span>
 
         </a>
@@ -341,6 +341,50 @@
         </a>
 
 
+        <a href="@Url.Action("Orders", "RoomService")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  text-blue-100
+                  hover:bg-white/10
+                  hover:text-white">
+
+            <i class="fas fa-clipboard-list w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Quản lý dịch vụ phòng
+            </span>
+
+        </a>
+
+
+        <a href="@Url.Action("Index", "RoomService")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  text-blue-100
+                  hover:bg-white/10
+                  hover:text-white">
+
+            <i class="fas fa-list-check w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Danh mục dịch vụ phòng
+            </span>
+
+        </a>
+
+
         <a href="@Url.Action("Promotions", "Admin")"
            class="flex
                   items-center
@@ -430,7 +474,7 @@
 
 
 
-        <!-- THỐNG KÊ -->
+        <!-- THỐNG KÊ & TÀI CHÍNH -->
 
         <p class="px-3
                   mt-7
@@ -440,7 +484,7 @@
                   tracking-[2px]
                   text-blue-300">
 
-            THỐNG KÊ
+            THỐNG KÊ & TÀI CHÍNH
 
         </p>
 
@@ -462,6 +506,50 @@
 
             <span class="font-semibold">
                 Doanh thu
+            </span>
+
+        </a>
+
+
+        <a href="@Url.Action("Payments", "Admin")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "Payments"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-credit-card w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Lịch sử thanh toán
+            </span>
+
+        </a>
+
+
+        <a href="@Url.Action("RefundManagement", "Admin")"
+           class="flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  mb-2
+                  transition
+                  @(adminPage == "RefundManagement"
+                        ? "bg-white/15 text-white shadow"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white")">
+
+            <i class="fas fa-hand-holding-dollar w-5 text-center"></i>
+
+            <span class="font-semibold">
+                Quản lý hoàn tiền
             </span>
 
         </a>

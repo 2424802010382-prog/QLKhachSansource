@@ -68,6 +68,15 @@
     &&
     Model.PaymentStatus !=
         "Đã thanh toán";
+
+    var canContinuePayment =
+    (
+        status == "Chờ xác nhận" ||
+        status == "Đã xác nhận"
+    )
+    &&
+    Model.PaymentStatus !=
+        "Đã thanh toán";
     var canRebook =
     status == "Đã hủy" ||
     status == "Hoàn tất";
@@ -1609,6 +1618,40 @@ Model.CheckInDate.Date
                 Quay lại lịch sử
 
             </a>
+
+            @if (canContinuePayment)
+            {
+                <a href="@Url.Action(
+                            "Payment",
+                            "Booking",
+                            new
+                            {
+                                id = Model.BookingId
+                            }
+                         )"
+                   class="inline-flex
+                          items-center
+                          justify-center
+                          bg-indigo-600
+                          hover:bg-indigo-700
+                          text-white
+                          px-7
+                          py-3.5
+                          rounded-xl
+                          font-bold
+                          transition
+                          text-center
+                          shadow-md">
+
+                    <i class="fas
+                              fa-qrcode
+                              mr-2">
+                    </i>
+
+                    Tiếp tục thanh toán (Quét QR)
+
+                </a>
+            }
 
             @if (canCancel)
             {

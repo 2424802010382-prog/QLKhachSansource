@@ -453,132 +453,63 @@
                                               mr-2">
                                     </i>
 
-                                    Xử lý đơn
+                                    Trạng thái &amp; Thanh toán
 
                                 </h4>
 
+                                @if (Session["Role"] != null && Session["Role"].ToString() == "Admin")
+                                {
+                                    <div class="space-y-3 text-sm bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                        <div>
+                                            <span class="text-xs text-gray-500 font-semibold uppercase block">Trạng thái đơn:</span>
+                                            <span class="font-bold text-gray-900">@order.TrangThai</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs text-gray-500 font-semibold uppercase block">Thanh toán:</span>
+                                            <span class="font-bold @(order.TrangThaiThanhToan == "Đã thanh toán" ? "text-emerald-600" : "text-amber-600")">@order.TrangThaiThanhToan (@order.PhuongThucThanhToan)</span>
+                                        </div>
+                                        <p class="text-xs text-gray-400 italic pt-1 border-t border-gray-200">
+                                            <i class="fas fa-info-circle mr-1"></i> Chế độ chỉ đọc dành cho Admin. Việc xử lý đơn do Nhân viên đảm nhận.
+                                        </p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <!-- STATUS -->
 
-                                <!-- STATUS -->
+                                    <label class="block text-sm font-semibold mb-1">
+                                        Trạng thái đơn
+                                    </label>
 
-                                <label class="block
-                                              text-sm
-                                              font-semibold
-                                              mb-1">
-
-                                    Trạng thái đơn
-
-                                </label>
-
-
-                                <select id="status-@order.MaDon"
-                                        class="w-full
-                                               border
-                                               rounded-xl
-                                               px-3
-                                               py-2.5
-                                               mb-3">
-
-                                    @{
-                                        string[] statuses =
+                                    <select id="status-@order.MaDon" class="w-full border rounded-xl px-3 py-2.5 mb-3">
+                                        @{
+                                            string[] statuses = { "Chờ xác nhận", "Đã xác nhận", "Đang chuẩn bị", "Đang phục vụ", "Đang giao", "Hoàn tất", "Đã hủy" };
+                                        }
+                                        @foreach (string status in statuses.Where(s => QLKhachSan.Models.HotelOperations.CanChangeFoodStatus(order.TrangThai, s) && (s != "Đã hủy" || order.TrangThaiThanhToan != "Đã thanh toán") && (s != "Đang phục vụ" || order.HinhThuc == "Ăn tại nhà hàng") && (s != "Đang giao" || order.HinhThuc == "Giao lên phòng")))
                                         {
-                                            "Chờ xác nhận",
-                                            "Đã xác nhận",
-                                            "Đang chuẩn bị",
-                                            "Đang phục vụ",
-                                            "Đang giao",
-                                            "Hoàn tất",
-                                            "Đã hủy"
-                                        };
-                                    }
+                                            <option value="@status" selected="@(status == order.TrangThai)">@status</option>
+                                        }
+                                    </select>
 
+                                    <button type="button" onclick="updateOrderStatus(@order.MaDon)" class="w-full bg-yellow-500 hover:bg-yellow-600 font-bold py-2.5 rounded-xl mb-5">
+                                        Cập nhật trạng thái
+                                    </button>
 
-                                    @foreach (
-                                        string status
-                                        in statuses.Where(s => QLKhachSan.Models.HotelOperations.CanChangeFoodStatus(order.TrangThai, s) && (s != "Đã hủy" || order.TrangThaiThanhToan != "Đã thanh toán") && (s != "Đang phục vụ" || order.HinhThuc == "Ăn tại nhà hàng") && (s != "Đang giao" || order.HinhThuc == "Giao lên phòng"))
-                                    )
-                                    {
-                                        <option value="@status"
-                                                selected="@(status == order.TrangThai)">
+                                    <!-- PAYMENT -->
 
-                                            @status
+                                    <label class="block text-sm font-semibold mb-1">
+                                        Thanh toán
+                                    </label>
 
-                                        </option>
-                                    }
+                                    <select id="payment-@order.MaDon" disabled="@(order.TrangThaiThanhToan == "Đã thanh toán" || order.TrangThai == "Đã hủy" || order.PhuongThucThanhToan == "Thanh toán cùng phòng")" class="w-full border rounded-xl px-3 py-2.5 mb-3">
+                                        <option value="Chưa thanh toán" selected="@(order.TrangThaiThanhToan == "Chưa thanh toán")">Chưa thanh toán</option>
+                                        <option value="Đã thanh toán" selected="@(order.TrangThaiThanhToan == "Đã thanh toán")">Đã thanh toán</option>
+                                    </select>
 
-                                </select>
-
-
-                                <button type="button"
-                                        onclick="updateOrderStatus(
-                                            @order.MaDon
-                                        )"
-                                        class="w-full
-                                               bg-yellow-500
-                                               hover:bg-yellow-600
-                                               font-bold
-                                               py-2.5
-                                               rounded-xl
-                                               mb-5">
-
-                                    Cập nhật trạng thái
-
-                                </button>
-
-
-
-                                <!-- PAYMENT -->
-
-                                <label class="block
-                                              text-sm
-                                              font-semibold
-                                              mb-1">
-
-                                    Thanh toán
-
-                                </label>
-
-
-                                <select id="payment-@order.MaDon" disabled="@(order.TrangThaiThanhToan == "Đã thanh toán" || order.TrangThai == "Đã hủy" || order.PhuongThucThanhToan == "Thanh toán cùng phòng")"
-                                        class="w-full
-                                               border
-                                               rounded-xl
-                                               px-3
-                                               py-2.5
-                                               mb-3">
-
-                                    <option value="Chưa thanh toán"
-                                            selected="@(order.TrangThaiThanhToan == "Chưa thanh toán")">
-
-                                        Chưa thanh toán
-
-                                    </option>
-
-
-                                    <option value="Đã thanh toán"
-                                            selected="@(order.TrangThaiThanhToan == "Đã thanh toán")">
-
-                                        Đã thanh toán
-
-                                    </option>
-
-                                </select>
-
-
-                                <button type="button"
-                                        disabled="@(order.TrangThaiThanhToan == "Đã thanh toán" || order.TrangThai == "Đã hủy" || order.PhuongThucThanhToan == "Thanh toán cùng phòng")" onclick="updateOrderPayment(
-                                            @order.MaDon
-                                        )"
-                                        class="w-full
-                                               bg-green-600
-                                               hover:bg-green-700
-                                               text-white
-                                               font-bold
-                                               py-2.5
-                                               rounded-xl">
-
-                                    Xác nhận thanh toán
-
-                                </button>
+                                    <button type="button" disabled="@(order.TrangThaiThanhToan == "Đã thanh toán" || order.TrangThai == "Đã hủy" || order.PhuongThucThanhToan == "Thanh toán cùng phòng")" onclick="updateOrderPayment(@order.MaDon)" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl">
+                                        Xác nhận thanh toán
+                                    </button>
+                                }
 
                             </div>
 

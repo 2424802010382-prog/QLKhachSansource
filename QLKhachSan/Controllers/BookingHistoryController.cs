@@ -1,7 +1,9 @@
-﻿using QLKhachSan.Models;
+﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
+using QLKhachSan.Models;
 
 namespace QLKhachSan.Controllers
 {
@@ -97,8 +99,186 @@ namespace QLKhachSan.Controllers
                   )
                   .ToList();
 
+            DateTime now = DateTime.UtcNow;
+            List<RefundRequest> existingRefunds = new List<RefundRequest>();
+            try
+            {
+                existingRefunds = db.RefundRequests.Where(r => r.UserId == userId).ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceWarning("RefundRequests table not found yet: " + ex.Message);
+            }
+
+            foreach (var b in bookings)
+            {
+                var refReq = existingRefunds.FirstOrDefault(r => r.BookingId == b.BookingId);
+                decimal rate = CalculateRefundRate(b.CheckInDate, now);
+                b.RefundRate = rate;
+                b.EstimatedRefundAmount = Math.Round(b.TotalAmount * (rate / 100m), 0);
+
+                if (refReq != null)
+                {
+                    b.CanRequestRefund = false;
+                    b.RefundStatus = refReq.Status;
+                    b.RefundRate = refReq.RefundRate;
+                    b.EstimatedRefundAmount = refReq.RefundAmount;
+                    b.RefundRejectedReason = refReq.RejectedReason;
+
+                    switch (refReq.Status)
+                    {
+                        case "ChoDuyet":
+                            b.RefundStatusText = "Đang chờ duyệt hoàn tiền";
+                            break;
+                        case "NhanVienDaDuyet":
+                            b.RefundStatusText = "Nhân viên đã xác nhận - Chờ Admin chuyển khoản";
+                            break;
+                        case "DaHoanTien":
+                            b.RefundStatusText = "Đã hoàn tiền thành công (" + refReq.RefundAmount.ToString("N0") + " VNĐ)";
+                            break;
+                        case "TuChoi":
+                            b.RefundStatusText = "Yêu cầu hoàn tiền bị từ chối";
+                            break;
+                        default:
+                            b.RefundStatusText = refReq.Status;
+                            break;
+                    }
+                }
+                else
+                {
+                    bool isCancelled = (b.Status ?? "").Equals("Hủy", System.StringComparison.OrdinalIgnoreCase)
+                                     || (b.Status ?? "").Equals("Đã hủy", System.StringComparison.OrdinalIgnoreCase)
+                                     || (b.Status ?? "").Equals("Cancelled", System.StringComparison.OrdinalIgnoreCase);
+
+                    b.CanRequestRefund = !isCancelled && rate > 0;
+                    b.RefundStatus = "";
+                    b.RefundStatusText = "";
+                }
+            }
 
             return View(bookings);
+        }
+
+        // =========================================================
+        // YÊU CẦU HOÀN TIỀN CỦA KHÁCH HÀNG
+        // =========================================================
+
+        [HttpPost]
+        [QLKhachSan.Filters.HotelAntiForgery]
+        public ActionResult RequestRefund(CreateRefundRequestInputModel input)
+        {
+            if (Session["UserId"] == null)
+            {
+                TempData["RefundError"] = "Vui lòng đăng nhập để thực hiện.";
+                return RedirectToAction("Index");
+            }
+
+            int userId;
+            if (!int.TryParse(Session["UserId"].ToString(), out userId) || userId <= 0)
+            {
+                TempData["RefundError"] = "Phiên đăng nhập không hợp lệ.";
+                return RedirectToAction("Index");
+            }
+
+            if (input == null || input.BookingId <= 0)
+            {
+                TempData["RefundError"] = "Thông tin đơn đặt phòng không hợp lệ.";
+                return RedirectToAction("Index");
+            }
+
+            string bankName = (input.BankName ?? "").Trim();
+            string accountNumber = (input.AccountNumber ?? "").Trim();
+            string accountHolder = (input.AccountHolder ?? "").Trim();
+            string reason = (input.Reason ?? "").Trim();
+
+            if (string.IsNullOrWhiteSpace(bankName) || string.IsNullOrWhiteSpace(accountNumber) || string.IsNullOrWhiteSpace(accountHolder) || string.IsNullOrWhiteSpace(reason))
+            {
+                TempData["RefundError"] = "Vui lòng nhập đầy đủ Tên ngân hàng, Số tài khoản, Tên chủ tài khoản và Lý do hoàn tiền.";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                var booking = db.Bookings.FirstOrDefault(b => b.BookingId == input.BookingId && b.UserId == userId);
+                if (booking == null)
+                {
+                    TempData["RefundError"] = "Không tìm thấy đơn đặt phòng hoặc bạn không có quyền truy cập.";
+                    return RedirectToAction("Index");
+                }
+
+                bool alreadyRequested = db.RefundRequests.Any(r => r.BookingId == booking.BookingId);
+                if (alreadyRequested)
+                {
+                    TempData["RefundError"] = "Đơn đặt phòng này đã gửi yêu cầu hoàn tiền trước đó.";
+                    return RedirectToAction("Index");
+                }
+
+                DateTime now = DateTime.UtcNow;
+                decimal rate = CalculateRefundRate(booking.CheckInDate, now);
+
+                if (rate <= 0)
+                {
+                    TempData["RefundError"] = "Đơn đặt phòng này đã quá hạn thời gian được hoàn tiền theo chính sách.";
+                    return RedirectToAction("Index");
+                }
+
+                decimal refundAmount = Math.Round(booking.TotalAmount * (rate / 100m), 0);
+
+                var req = new RefundRequest
+                {
+                    BookingId = booking.BookingId,
+                    UserId = userId,
+                    CustomerName = !string.IsNullOrWhiteSpace(booking.CustomerName) ? booking.CustomerName : (Session["FullName"]?.ToString() ?? "Khách hàng"),
+                    CustomerPhone = !string.IsNullOrWhiteSpace(booking.CustomerPhone) ? booking.CustomerPhone : "",
+                    CustomerEmail = !string.IsNullOrWhiteSpace(booking.CustomerEmail) ? booking.CustomerEmail : (Session["Email"]?.ToString() ?? ""),
+                    PaidAmount = booking.TotalAmount,
+                    RefundRate = rate,
+                    RefundAmount = refundAmount,
+                    BankName = bankName,
+                    AccountNumber = accountNumber,
+                    AccountHolder = accountHolder.ToUpper(),
+                    Reason = reason,
+                    Status = "ChoDuyet",
+                    RequestedAt = now
+                };
+
+                db.RefundRequests.Add(req);
+                db.SaveChanges();
+
+                TempData["RefundSuccess"] = "Đã gửi yêu cầu hoàn tiền thành công (" + rate + "% = " + refundAmount.ToString("N0") + " VNĐ). Yêu cầu của bạn đang được nhân viên và quản lý xem xét.";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("RequestRefund Error: " + ex.Message);
+                TempData["RefundError"] = "Có lỗi xảy ra khi gửi yêu cầu hoàn tiền. Vui lòng thử lại.";
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        public static decimal CalculateRefundRate(DateTime checkInDate, DateTime requestTime)
+        {
+            DateTime checkInTime = checkInDate.Date.AddHours(14);
+            TimeSpan timeDiff = checkInTime - requestTime;
+            double hoursRemaining = timeDiff.TotalHours;
+
+            if (hoursRemaining >= 72)
+            {
+                return 100m;
+            }
+            if (hoursRemaining >= 48)
+            {
+                return 80m;
+            }
+            if (hoursRemaining >= 24)
+            {
+                return 50m;
+            }
+            if (hoursRemaining > 0)
+            {
+                return 20m;
+            }
+            return 0m;
         }
 
         // =========================================================

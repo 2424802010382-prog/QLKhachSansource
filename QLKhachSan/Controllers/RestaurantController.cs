@@ -752,6 +752,10 @@ private class FoodPriceRow
                     }
                     transaction.Commit();
 
+                    var guestOrders = Session["GuestFoodOrderIds"] as List<int> ?? new List<int>();
+                    if (!userId.HasValue) guestOrders.Add(orderId);
+                    Session["GuestFoodOrderIds"] = guestOrders;
+
 
                     // =================================================
                     // TRẢ KẾT QUẢ
@@ -766,6 +770,9 @@ private class FoodPriceRow
 
                         totalAmount =
                             totalAmount,
+
+                        paymentUrl = paymentMethod == "Chuyển khoản" && !request.ChargeToRoom
+                            ? Url.Action("Payment", "Restaurant", new { id = orderId }) : null,
 
                         message =
                             "Đặt món thành công."
@@ -825,6 +832,51 @@ private class FoodPriceRow
         // =========================================================
         // LỊCH SỬ GỌI MÓN CỦA KHÁCH
         // =========================================================
+
+        [HttpGet]
+        public ActionResult Payment(int id)
+        {
+            var order = GetOwnedFoodOrder(id);
+            if (order == null || order.PayWithBooking || order.PhuongThucThanhToan != "Chuyển khoản") return HttpNotFound();
+            return View(order);
+        }
+
+        private HotelOperations.FoodOrderState GetOwnedFoodOrder(int id)
+        {
+            var order = HotelOperations.FoodOrder(db, id);
+            if (order == null) return null;
+            int userId;
+            if (int.TryParse(Convert.ToString(Session["UserId"]), out userId) && order.UserId == userId) return order;
+            var guestOrders = Session["GuestFoodOrderIds"] as List<int>;
+            return !order.UserId.HasValue && guestOrders != null && guestOrders.Contains(id) ? order : null;
+        }
+
+        [HttpGet]
+        public JsonResult CheckPaymentStatus(int id)
+        {
+            Response.Cache.SetCacheability(System.Web.HttpCacheability.NoCache);
+            Response.Cache.SetNoStore();
+            var order = GetOwnedFoodOrder(id);
+            if (order == null) { Response.StatusCode = 403; return Json(new { success = false }, JsonRequestBehavior.AllowGet); }
+            return Json(new {
+                success = true, isPaid = order.TrangThaiThanhToan == "Đã thanh toán",
+                canPay = !order.PayWithBooking && order.TrangThai != "Đã hủy",
+                outstandingAmount = order.TrangThaiThanhToan == "Đã thanh toán" ? 0 : order.TongTien,
+                needsReview = QLKhachSan.Services.SePayPaymentService.NeedsReview(db, "Food", id),
+                status = order.TrangThai, paymentStatus = order.TrangThaiThanhToan
+            }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult RequestBankTransferReview(int id)
+        {
+            var order = GetOwnedFoodOrder(id);
+            if (order == null) { Response.StatusCode = 403; return Json(new { success = false, message = "Không có quyền truy cập đơn." }); }
+            if (order.PayWithBooking || order.PhuongThucThanhToan != "Chuyển khoản" || order.TrangThai == "Đã hủy" || order.TrangThaiThanhToan == "Đã thanh toán")
+                return Json(new { success = false, message = "Đơn không còn nhận yêu cầu thanh toán." });
+            db.Database.ExecuteSqlCommand("UPDATE dbo.DonDatMon SET TrangThaiThanhToan=N'Chờ xác minh' WHERE MaDon=@p0", id);
+            return Json(new { success = true, message = "Đã gửi yêu cầu. Nhân viên sẽ đối soát giao dịch trước khi xác nhận thanh toán." });
+        }
 
         [HttpGet]
         public ActionResult History()
@@ -1106,6 +1158,8 @@ private class FoodPriceRow
             string status
         )
         {
+            if (Convert.ToString(Session["Role"]) == "Admin")
+                return Json(new { success = false, message = "Admin không có quyền trực tiếp xử lý đơn món ăn. Nghiệp vụ này thuộc trách nhiệm Nhân viên." });
             try { HotelOperations.ChangeFoodStatus(db, id, (status ?? "").Trim()); }
             catch (HotelRuleException ex) { return Json(new { success = false, message = ex.Message }); }
             return Json(new { success = true, message = "Đã cập nhật trạng thái đơn món." });
@@ -1120,6 +1174,8 @@ private class FoodPriceRow
             string status
         )
         {
+            if (Convert.ToString(Session["Role"]) == "Admin")
+                return Json(new { success = false, message = "Admin không có quyền trực tiếp xác nhận thanh toán đơn món ăn. Nghiệp vụ này thuộc trách nhiệm Nhân viên." });
             if (status != "Đã thanh toán") return Json(new { success = false, message = "Không thể đảo thanh toán. Cần quy trình hoàn tiền riêng." });
             try { HotelOperations.ConfirmFoodPayment(db, id, Request.Headers["X-Payment-Evidence"] ?? Request["paymentEvidence"], Convert.ToInt32(Session["UserId"])); }
             catch (HotelRuleException ex) { return Json(new { success = false, message = ex.Message }); }
@@ -1873,33 +1929,62 @@ HttpPostedFileBase hinhAnhFile, string donVi,
 
         private string GetSmartFoodImage(string tenMonAn, string currentHinhAnh)
         {
-            if (!string.IsNullOrWhiteSpace(currentHinhAnh) && (currentHinhAnh.StartsWith("http") || currentHinhAnh.StartsWith("/")))
+            if (!string.IsNullOrWhiteSpace(currentHinhAnh))
             {
-                return currentHinhAnh;
+                currentHinhAnh = currentHinhAnh.Trim();
+                if (currentHinhAnh.StartsWith("/"))
+                {
+                    try
+                    {
+                        string phyPath = System.Web.Hosting.HostingEnvironment.MapPath(currentHinhAnh);
+                        if (!string.IsNullOrEmpty(phyPath) && System.IO.File.Exists(phyPath))
+                        {
+                            return currentHinhAnh;
+                        }
+                    }
+                    catch { }
+                }
+                else if (currentHinhAnh.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!currentHinhAnh.Contains("broken") && !currentHinhAnh.Contains("invalid") && !currentHinhAnh.Contains("example"))
+                    {
+                        return currentHinhAnh;
+                    }
+                }
             }
 
             string name = (tenMonAn ?? "").ToLowerInvariant();
 
-            if (name.Contains("salad") || name.Contains("rau"))
-                return "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80";
-            if (name.Contains("bò") || name.Contains("steak") || name.Contains("bít tết"))
+            if (name.Contains("phở") || name.Contains("bún") || name.Contains("hủ tiếu") || name.Contains("mì tôm") || name.Contains("mì quảng"))
+                return "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("mì ý") || name.Contains("spaghetti") || name.Contains("pasta") || name.Contains("bò bằm"))
+                return "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("pizza"))
+                return "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("burger") || name.Contains("hamburger") || name.Contains("sandwich"))
+                return "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("steak") || name.Contains("bít tết") || name.Contains("thăn bò"))
                 return "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80";
             if (name.Contains("cá hồi") || name.Contains("salmon"))
                 return "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80";
-            if (name.Contains("phở") || name.Contains("mì") || name.Contains("bún") || name.Contains("hủ tiếu") || name.Contains("soup") || name.Contains("súp"))
-                return "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("cơm"))
+                return "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("tôm") || name.Contains("hải sản") || name.Contains("cua") || name.Contains("mực") || name.Contains("sò"))
+                return "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=800&q=80";
             if (name.Contains("gà") || name.Contains("chicken"))
                 return "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80";
-            if (name.Contains("cơm") || name.Contains("rice"))
-                return "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80";
-            if (name.Contains("tôm") || name.Contains("hải sản") || name.Contains("cua") || name.Contains("mực"))
-                return "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=800&q=80";
-            if (name.Contains("pizza") || name.Contains("burger"))
-                return "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80";
-            if (name.Contains("bánh") || name.Contains("chè") || name.Contains("kem") || name.Contains("dessert") || name.Contains("cake"))
-                return "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80";
-            if (name.Contains("nước") || name.Contains("sinh tố") || name.Contains("nước ép") || name.Contains("cocktail") || name.Contains("rượu") || name.Contains("trà") || name.Contains("coffee") || name.Contains("cà phê"))
-                return "https://images.unsplash.com/photo-1541658016709-82535e94bc69?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("salad") || name.Contains("rau") || name.Contains("caesar") || name.Contains("khai vị"))
+                return "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("kem") || name.Contains("vanilla"))
+                return "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("tiramisu") || name.Contains("bánh") || name.Contains("chè") || name.Contains("dessert") || name.Contains("cake"))
+                return "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("cà phê") || name.Contains("coffee") || name.Contains("cappuccino") || name.Contains("espresso") || name.Contains("latte"))
+                return "https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("nước cam") || name.Contains("nước ép") || name.Contains("juice") || name.Contains("sinh tố") || name.Contains("smoothie"))
+                return "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80";
+            if (name.Contains("cocktail") || name.Contains("rượu") || name.Contains("trà") || name.Contains("tea") || name.Contains("nước"))
+                return "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80";
 
             return "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80";
         }

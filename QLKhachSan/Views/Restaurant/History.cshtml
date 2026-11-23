@@ -435,6 +435,10 @@
                                     <strong>
                                         @order.TrangThaiThanhToan
                                     </strong>
+                                    @if (order.PhuongThucThanhToan == "Chuyển khoản" && order.TrangThaiThanhToan != "Đã thanh toán" && order.TrangThai != "Đã hủy")
+                                    {
+                                        <a href="@Url.Action("Payment", "Restaurant", new { id = order.MaDon })" class="block mt-2 font-semibold text-indigo-600 underline">Xem thông tin chuyển khoản</a>
+                                    }
 
                                 </div>
 

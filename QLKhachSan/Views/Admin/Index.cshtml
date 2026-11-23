@@ -107,6 +107,7 @@
              text-gray-900
              min-h-screen">
     @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
+    <a href="@Url.Action("Orders", "RoomService")" class="block lg:hidden p-4 bg-[#153044] text-yellow-200">Quản lý dịch vụ phòng</a>
 
 
     <!-- ====================================================== -->
@@ -1501,90 +1502,12 @@
 
                                             <!-- ACTION -->
 
-                                            <td class="p-4
-                                                       min-w-[190px]">
-
-                                                <div class="flex
-                                                            flex-col
-                                                            gap-2">
-
-
-                                                    @if (booking.Status == "Chờ xác nhận")
-                                                    {
-                                                        <button type="button" onclick="performAdminBookingAction(@booking.BookingId, 'confirm', 'Xác nhận đơn đặt phòng', 'Xác nhận đơn đặt phòng #@booking.BookingId?')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-2 rounded-lg">
-                                                            <i class="fas fa-check mr-1"></i> Xác nhận
-                                                        </button>
-                                                    }
-
-                                                    @if ((booking.Status == "Đã xác nhận" || booking.Status == "Đang ở") && !paid)
-                                                    {
-                                                        <button type="button" onclick="performAdminBookingAction(@booking.BookingId, 'payment', 'Xác nhận Thanh toán', 'Xác nhận đơn #@booking.BookingId đã thanh toán?')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded-lg">
-                                                            <i class="fas fa-money-bill-wave mr-1"></i> Thanh toán
-                                                        </button>
-                                                    }
-
-                                                    @if (booking.Status == "Đã xác nhận" && booking.CheckInDate.Date <= DateTime.Today)
-                                                    {
-                                                        <button type="button" onclick="performAdminBookingAction(@booking.BookingId, 'checkin', 'Xác nhận Nhận phòng', 'Xác nhận khách nhận phòng cho đơn #@booking.BookingId?')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-lg">
-                                                            <i class="fas fa-door-open mr-1"></i> Nhận phòng
-                                                        </button>
-                                                    }
-
-                                                    @if (booking.Status == "Đang ở" && paid)
-                                                    {
-                                                        <button type="button" onclick="performAdminBookingAction(@booking.BookingId, 'checkout', 'Xác nhận Trả phòng', 'Xác nhận khách trả phòng cho đơn #@booking.BookingId?')" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-2 rounded-lg">
-                                                            <i class="fas fa-door-closed mr-1"></i> Trả phòng
-                                                        </button>
-                                                    }
-
-                                                    @if ((booking.Status == "Chờ xác nhận" || booking.Status == "Đã xác nhận") && !paid)
-                                                    {
-                                                        <button type="button" onclick="performAdminBookingAction(@booking.BookingId, 'cancel', 'Hủy đơn đặt phòng', 'Bạn có chắc muốn HỦY đơn #@booking.BookingId?')" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-2 rounded-lg">
-                                                            <i class="fas fa-xmark mr-1"></i> Hủy
-                                                        </button>
-                                                    }
-
-
-                                                    @if (
-                                                        booking.Status ==
-                                                        "Đã trả phòng"
-                                                        ||
-                                                        booking.Status ==
-                                                        "Đã hủy"
-                                                    )
-                                                    {
-                                                        <span class="text-center
-                                                                     text-gray-400
-                                                                     text-sm
-                                                                     whitespace-nowrap">
-
-                                                            Đã xử lý
-
-                                                        </span>
-                                                    }
-
-
-                                                    @if (
-                                                        booking.Status ==
-                                                        "Đã xác nhận"
-                                                        &&
-                                                        booking.CheckInDate.Date >
-                                                        DateTime.Today
-                                                        &&
-                                                        paid
-                                                    )
-                                                    {
-                                                        <span class="text-center
-                                                                     text-gray-400
-                                                                     text-sm">
-
-                                                            Chờ ngày nhận phòng
-
-                                                        </span>
-                                                    }
-
+                                            <td class="p-4 min-w-[190px]">
+                                                <div class="flex flex-col gap-2">
+                                                    <a href="@Url.Action("BookingDetails", "Admin", new { id = booking.BookingId })" class="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold px-3 py-2 rounded-lg text-xs text-center inline-flex items-center justify-center gap-1">
+                                                        <i class="fas fa-eye"></i> Xem chi tiết
+                                                    </a>
                                                 </div>
-
                                             </td>
 
                                         </tr>
@@ -1822,6 +1745,7 @@
         }
     </script>
 
+    @Html.Partial("~/Views/Shared/_AIChat.cshtml")
 </body>
 
 </html>

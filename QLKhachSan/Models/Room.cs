@@ -18,6 +18,7 @@ namespace QLKhachSan.Models
         public Room()
         {
             this.Bookings = new HashSet<Booking>();
+            this.PhysicalRooms = new HashSet<PhysicalRoom>();
         }
     
         public int RoomId { get; set; }
@@ -32,5 +33,8 @@ namespace QLKhachSan.Models
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<Booking> Bookings { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<PhysicalRoom> PhysicalRooms { get; set; }
+        public virtual RoomServiceBedPolicy RoomServiceBedPolicy { get; set; }
     }
 }

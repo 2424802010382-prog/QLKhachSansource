@@ -26,6 +26,21 @@ namespace QLKhachSan.Models
         public DbSet<RoomMaintenance> RoomMaintenances { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<UserPermission> UserPermissions { get; set; }
+        public DbSet<RoomServiceCatalog> RoomServiceCatalogs { get; set; }
+        public DbSet<RoomServiceProduct> RoomServiceProducts { get; set; }
+        public DbSet<RoomServiceOrder> RoomServiceOrders { get; set; }
+        public DbSet<RoomServiceHistory> RoomServiceHistories { get; set; }
+        public DbSet<RoomServiceBedPolicy> RoomServiceBedPolicies { get; set; }
+        public DbSet<SePayTransaction> SePayTransactions { get; set; }
+        public DbSet<SePayEnvironment> SePayEnvironments { get; set; }
+        public DbSet<ChiTietDonDatMon> ChiTietDonDatMons { get; set; }
+        public DbSet<DanhMucMonAn> DanhMucMonAns { get; set; }
+        public DbSet<MonAn> MonAns { get; set; }
+        public DbSet<DonDatMon> DonDatMons { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<HotelAutoCancelAudit> HotelAutoCancelAudits { get; set; }
+        public DbSet<RefundRequest> RefundRequests { get; set; }
+        public DbSet<RefundTransaction> RefundTransactions { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -43,6 +58,27 @@ namespace QLKhachSan.Models
             modelBuilder.Entity<RoomMaintenance>().HasKey(e => e.MaintenanceId).ToTable("RoomMaintenances");
             modelBuilder.Entity<Permission>().HasKey(e => e.PermissionId).ToTable("Permissions");
             modelBuilder.Entity<UserPermission>().HasKey(e => e.UserPermissionId).ToTable("UserPermissions");
+            modelBuilder.Entity<RoomServiceCatalog>().HasKey(e => e.MaDichVu).ToTable("RoomServiceCatalog");
+            modelBuilder.Entity<RoomServiceCatalog>()
+                .HasRequired(r => r.DichVu)
+                .WithOptional(d => d.RoomServiceCatalog);
+            modelBuilder.Entity<RoomServiceProduct>().HasKey(e => e.ProductId).ToTable("RoomServiceProducts");
+            modelBuilder.Entity<RoomServiceOrder>().HasKey(e => e.OrderId).ToTable("RoomServiceOrders");
+            modelBuilder.Entity<RoomServiceHistory>().HasKey(e => e.EventId).ToTable("RoomServiceHistory");
+            modelBuilder.Entity<RoomServiceBedPolicy>().HasKey(e => e.RoomId).ToTable("RoomServiceBedPolicy");
+            modelBuilder.Entity<RoomServiceBedPolicy>()
+                .HasRequired(r => r.Room)
+                .WithOptional(rm => rm.RoomServiceBedPolicy);
+            modelBuilder.Entity<SePayTransaction>().HasKey(e => e.Id).ToTable("SePayTransactions");
+            modelBuilder.Entity<SePayEnvironment>().HasKey(e => e.Id).ToTable("SePayEnvironment");
+            modelBuilder.Entity<ChiTietDonDatMon>().HasKey(e => e.MaChiTiet).ToTable("ChiTietDonDatMon");
+            modelBuilder.Entity<DanhMucMonAn>().HasKey(e => e.MaDanhMuc).ToTable("DanhMucMonAn");
+            modelBuilder.Entity<MonAn>().HasKey(e => e.MaMonAn).ToTable("MonAn");
+            modelBuilder.Entity<DonDatMon>().HasKey(e => e.MaDon).ToTable("DonDatMon");
+            modelBuilder.Entity<PasswordResetToken>().HasKey(e => e.ResetTokenId).ToTable("PasswordResetTokens");
+            modelBuilder.Entity<HotelAutoCancelAudit>().HasKey(e => e.AuditId).ToTable("HotelAutoCancelAudits");
+            modelBuilder.Entity<RefundRequest>().HasKey(e => e.RefundRequestId).ToTable("RefundRequests");
+            modelBuilder.Entity<RefundTransaction>().HasKey(e => e.RefundTransactionId).ToTable("RefundTransactions");
         }
     }
 }

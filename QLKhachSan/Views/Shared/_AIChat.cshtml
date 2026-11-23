@@ -1,0 +1,452 @@
+﻿@{
+    var chatProfile = QLKhachSan.Models.AIChatProfile.ForSession(Session["UserId"] != null,
+        Convert.ToString(Session["Role"]), Session["Permissions"] as System.Collections.Generic.List<string>);
+}
+    <!-- NÚT MỞ CHATBOT -->
+    <button id="aiChatButton"
+            type="button" aria-label="Mở @chatProfile.Title" aria-controls="aiChatBox" aria-expanded="false"
+            onclick="toggleAIChat()"
+            style="
+                position: fixed;
+                right: 25px;
+                bottom: 25px;
+                width: 65px;
+                height: 65px;
+                border: none;
+                border-radius: 50%;
+                background: @chatProfile.Color;
+                color: white;
+                font-size: 28px;
+                cursor: pointer;
+                z-index: 9999;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+            ">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <!-- NÚT GỌI DỊCH VỤ PHÒNG NHANH (Chỉ dành cho Khách hàng) -->
+    @if (Session["Role"] == null || (Session["Role"].ToString() != "Admin" && Session["Role"].ToString() != "Staff"))
+    {
+        <a href="@Url.Action("Index", "RoomService")"
+           title="Dịch vụ phòng ngay"
+           aria-label="Dịch vụ phòng ngay"
+           style="
+               position: fixed;
+               right: 100px;
+               bottom: 25px;
+               width: 55px;
+               height: 55px;
+               border: 2px solid #dfc48d;
+               border-radius: 50%;
+               background: #153044;
+               color: #dfc48d;
+               font-size: 22px;
+               display: flex;
+               align-items: center;
+               justify-content: center;
+               cursor: pointer;
+               z-index: 9998;
+               box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+               text-decoration: none;
+               transition: transform 0.2s, background 0.2s;
+           "
+           onmouseover="this.style.transform='scale(1.1)'; this.style.background='#1b3a4e';"
+           onmouseout="this.style.transform='scale(1)'; this.style.background='#153044';">
+            <i class="fas fa-concierge-bell"></i>
+        </a>
+    }
+
+    <!-- KHUNG CHATBOT -->
+    <div id="aiChatBox"
+         style="
+            display: none;
+            position: fixed;
+            right: 25px;
+            bottom: 105px;
+            width: 360px;
+            max-width: calc(100% - 30px);
+            height: 560px; max-height: calc(100dvh - 125px); flex-direction: column;
+            background: white;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 9998;
+            border: 1px solid #e5e7eb;
+         ">
+
+        <!-- TIÊU ĐỀ CHAT -->
+        <div style="
+            background: @chatProfile.Color;
+            color: white;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        ">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="
+                    width: 42px;
+                    height: 42px;
+                    background: white;
+                    color: #2563eb;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 20px;
+                ">
+                    <i class="fas fa-robot"></i>
+                </div>
+
+                <div>
+                    <div style="font-weight: bold; font-size: 17px;">
+                        @chatProfile.Title
+                    </div>
+
+                    <div style="font-size: 12px; opacity: 0.9;">
+                        Luxury Hotel · @chatProfile.Role
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="toggleAIChat()"
+                    style="
+                        background: transparent;
+                        border: none;
+                        color: white;
+                        font-size: 22px;
+                        cursor: pointer;
+                    ">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- NỘI DUNG TIN NHẮN -->
+        <div id="aiMessages"
+             style="
+                flex: 1; min-height: 0;
+                overflow-y: auto;
+                padding: 15px;
+                background: #f8fafc;
+             ">
+
+            <div style="
+                display: flex;
+                gap: 8px;
+                margin-bottom: 15px;
+            ">
+                <div style="
+                    width: 32px;
+                    height: 32px;
+                    min-width: 32px;
+                    background: #dbeafe;
+                    color: #2563eb;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    <i class="fas fa-robot"></i>
+                </div>
+
+                <div style="
+                    background: white;
+                    padding: 12px;
+                    border-radius: 12px;
+                    max-width: 80%;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+                    color: #1f2937;
+                    font-size: 14px;
+                ">
+                    @chatProfile.Greeting
+                </div>
+            </div>
+
+        </div>
+        <!-- THANH TIÊU ĐỀ GỢI Ý CÂU HỎI (CÓ THỂ THU GỌN / MỞ RỘNG) -->
+        <div onclick="toggleAISuggestions()" style="
+            padding: 8px 12px;
+            background: #f1f5f9;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            user-select: none;
+        ">
+            <span><i class="fas fa-lightbulb text-warning me-1"></i> Gợi ý câu hỏi nhanh</span>
+            <i id="aiSuggestionsToggleIcon" class="fas fa-chevron-up" style="transition: transform 0.2s;"></i>
+        </div>
+
+        <!-- CÂU HỎI NHANH (NỘI DUNG) -->
+        <div id="aiSuggestionsContent"
+             style="
+                padding: 8px 12px;
+                background: #f8fafc;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                border-top: 1px solid #e5e7eb;
+             ">
+            @foreach (var suggestion in chatProfile.Suggestions)
+            {
+                <button type="button" onclick="quickAIMessage(this.textContent.trim())"
+                        style="border: 1px solid #cbd5e1; background: white; color: @chatProfile.Color; border-radius: 20px; padding: 6px 10px; font-size: 12px; cursor: pointer; transition: background 0.2s;"
+                        onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">@suggestion</button>
+            }
+        </div>
+        <!-- Ô NHẬP TIN NHẮN -->
+        <div style="
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+        ">
+            <input type="text"
+                   id="aiMessageInput"
+                   placeholder="@chatProfile.Placeholder" maxlength="2000" aria-label="Câu hỏi cho trợ lý AI"
+                   onkeydown="if(event.key === 'Enter') sendAIMessage()"
+                   style="
+                        flex: 1;
+                        min-width: 0;
+                        border: 1px solid #d1d5db;
+                        border-radius: 25px;
+                        padding: 11px 15px;
+                        outline: none;
+                        font-size: 14px;
+                   " />
+
+            <button onclick="sendAIMessage()"
+                    style="
+                        width: 45px;
+                        height: 45px;
+                        border: none;
+                        border-radius: 50%;
+                        background: #2563eb;
+                        color: white;
+                        cursor: pointer;
+                        font-size: 16px;
+                    ">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let isAIBusy = false;
+        let aiRoleChanged = false;
+        document.addEventListener('DOMContentLoaded', function () {
+            if (new URLSearchParams(location.search).get('ai') === '1') toggleAIChat();
+        });
+
+        // THU GỌN / MỞ RỘNG GỢI Ý CÂU HỎI
+        function toggleAISuggestions() {
+            const container = document.getElementById("aiSuggestionsContent");
+            const icon = document.getElementById("aiSuggestionsToggleIcon");
+            if (container.style.display === "none") {
+                container.style.display = "flex";
+                icon.className = "fas fa-chevron-up";
+            } else {
+                container.style.display = "none";
+                icon.className = "fas fa-chevron-down";
+            }
+        }
+
+        // MỞ / ĐÓNG CHATBOT
+        function toggleAIChat() {
+            const chatBox = document.getElementById("aiChatBox");
+
+            if (chatBox.style.display === "none" ||
+                chatBox.style.display === "") {
+                chatBox.style.display = "flex";
+                document.getElementById('aiChatButton').setAttribute('aria-expanded', 'true');
+
+                setTimeout(function () {
+                    document.getElementById("aiMessageInput").focus();
+                }, 100);
+            } else {
+                chatBox.style.display = "none";
+                document.getElementById('aiChatButton').setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        function quickAIMessage(message) {
+            const input = document.getElementById("aiMessageInput");
+            input.value = message;
+            sendAIMessage();
+        }
+
+        // GỬI TIN NHẮN ĐẾN GEMINI 3.5 FLASH LITE
+        async function sendAIMessage() {
+            if (isAIBusy || aiRoleChanged) return;
+
+            const input = document.getElementById("aiMessageInput");
+            const message = input.value.trim();
+
+            if (message === "") {
+                return;
+            }
+
+            addAIMessage(message, "user");
+            input.value = "";
+
+            // Hiển thị trạng thái đang trả lời từ Gemini
+            const typingId = addAITypingIndicator();
+            isAIBusy = true;
+
+            try {
+                const formData = new FormData();
+                formData.append("message", message);
+                formData.append("contextRole", "@chatProfile.Role");
+
+                const response = await fetch('@Url.Action("Ask", "Gemini")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                removeAITypingIndicator(typingId);
+
+                if (response.status === 409) {
+                    aiRoleChanged = true;
+                    document.getElementById('aiMessages').replaceChildren();
+                    input.disabled = true;
+                    addAIMessage('Vai trò đăng nhập đã thay đổi. Vui lòng tải lại trang để mở đúng trợ lý.', 'bot');
+                    return;
+                }
+
+                if (!response.ok) {
+                    addAIMessage("Lỗi kết nối máy chủ AI (" + response.status + "). Vui lòng thử lại!", "bot");
+                    isAIBusy = false;
+                    return;
+                }
+
+                const data = await response.json();
+                if (data && data.reply) {
+                    addAIMessage(data.reply, "bot");
+                } else {
+                    addAIMessage("Trợ lý AI chưa có câu trả lời. Vui lòng thử lại sau!", "bot");
+                }
+            } catch (err) {
+                removeAITypingIndicator(typingId);
+                console.error("Gemini Chat Error:", err);
+                addAIMessage("Không thể kết nối đến trợ lý AI. Vui lòng kiểm tra lại kết nối mạng!", "bot");
+            } finally {
+                isAIBusy = false;
+            }
+        }
+
+        // HIỂN THỊ TYPING INDICATOR
+        function addAITypingIndicator() {
+            const messages = document.getElementById("aiMessages");
+            const id = "ai-typing-" + Date.now();
+            const row = document.createElement("div");
+            row.id = id;
+            row.style.cssText = "display: flex; gap: 8px; margin-bottom: 15px;";
+            row.innerHTML = `
+                    <div style="width: 32px; height: 32px; min-width: 32px; background: #dbeafe; color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div style="background: white; color: #4b5563; padding: 12px; border-radius: 12px; font-size: 13px; font-style: italic; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                        <i class="fas fa-spinner fa-spin me-1 text-primary"></i> Trợ lý đang trả lời...
+                    </div>
+                `;
+            messages.appendChild(row);
+            messages.scrollTop = messages.scrollHeight;
+            return id;
+        }
+
+        function removeAITypingIndicator(id) {
+            const elem = document.getElementById(id);
+            if (elem) elem.remove();
+        }
+
+        // THÊM TIN NHẮN VÀO KHUNG CHAT
+        function addAIMessage(message, sender) {
+            const messages = document.getElementById("aiMessages");
+            const messageRow = document.createElement("div");
+
+            if (sender === "user") {
+                messageRow.style.cssText = `
+                        display: flex;
+                        justify-content: flex-end;
+                        margin-bottom: 15px;
+                    `;
+
+                messageRow.innerHTML = `
+                        <div style="
+                            background: #2563eb;
+                            color: white;
+                            padding: 12px;
+                            border-radius: 12px;
+                            max-width: 80%;
+                            font-size: 14px;
+                            word-wrap: break-word;
+                        ">
+                            ${escapeAIText(message)}
+                        </div>
+                    `;
+            } else {
+                messageRow.style.cssText = `
+                        display: flex;
+                        gap: 8px;
+                        margin-bottom: 15px;
+                    `;
+
+                messageRow.innerHTML = `
+                        <div style="
+                            width: 32px;
+                            height: 32px;
+                            min-width: 32px;
+                            background: #dbeafe;
+                            color: #2563eb;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        ">
+                            <i class="fas fa-robot"></i>
+                        </div>
+
+                        <div style="
+                            background: white;
+                            color: #1f2937;
+                            padding: 12px;
+                            border-radius: 12px;
+                            max-width: 80%;
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+                            font-size: 14px;
+                            white-space: pre-line;
+                            line-height: 1.5;
+                        ">
+                            ${formatAIResponse(message)}
+                        </div>
+                    `;
+            }
+
+            messages.appendChild(messageRow);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // FORMAT PHẢN HỒI TỪ AI (HỖ TRỢ BOLD, LIST)
+        function formatAIResponse(text) {
+            if (!text) return "";
+            let escaped = escapeAIText(text);
+            // Replace **bold** with <strong>bold</strong>
+            escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            return escaped;
+        }
+
+        // BẢO VỆ NỘI DUNG HIỂN THỊ
+        function escapeAIText(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>

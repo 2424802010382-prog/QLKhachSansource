@@ -1,0 +1,24 @@
+﻿@model QLKhachSan.Models.RoomServiceItem
+@{ViewBag.Title="Quản trị dịch vụ phòng";}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+<link href="@Url.Content("~/Content/room-service.css")" rel="stylesheet" />
+<main class="rs"><h1>@ViewBag.Title</h1><nav><a href="@Url.Action("Index")">← Danh mục</a></nav>
+@using(Html.BeginForm("Edit","RoomService",FormMethod.Post,new{@class="rs-form"})){
+@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.MaDichVu"/>
+<label>Tên dịch vụ<input name="name" value="@Model.TenDichVu" maxlength="100" required/></label><label>Mô tả<textarea name="description" maxlength="500">@Model.MoTa</textarea></label><label>Đơn giá (VND)<input name="price" type="number" min="0" max="100000000" value="@Model.Gia.ToString("0",System.Globalization.CultureInfo.InvariantCulture)" required/></label><label>Đơn vị tính<input name="unit" value="@Model.DonVi" maxlength="50" required/></label><label>Đường dẫn hình ảnh trong /Images/<input name="imageUrl" value="@Model.ImageUrl" maxlength="500" required/></label><label><input name="active" type="checkbox" value="true" checked="@Model.HoatDong"/> Đang cung cấp</label><p>Mã: @Model.Code · Quy tắc thời điểm: @Model.Timing. Dịch vụ mới áp dụng trong thời gian lưu trú. Giá đơn đã tạo được giữ nguyên.</p><button>Lưu dịch vụ</button>
+}
+@if(Model.Code=="EXTRA_BED") {
+<h2>Chính sách giường phụ</h2><p>Chỉ khai báo khi khách sạn đã xác minh khả năng bố trí. Chưa khai báo đồng nghĩa không cho phép.</p>
+using(Html.BeginForm("BedPolicy","RoomService",FormMethod.Post,new{@class="rs-form"})){
+@Html.AntiForgeryToken()<label>Loại phòng<select name="roomId">@foreach(var r in (IEnumerable<QLKhachSan.Models.Room>)ViewBag.RoomTypes){<option value="@r.RoomId">@r.RoomName (sức chứa hiện tại: @r.Capacity)</option>}</select></label><label>Số giường phụ tối đa mỗi phòng<input name="maxExtraBeds" type="number" min="0" max="5" value="0" required/></label><button>Lưu chính sách đã xác minh</button>
+}}
+@if(Model.Code=="MINIBAR") {
+<h2>Bảng giá sản phẩm minibar</h2>
+foreach(var p in ((IEnumerable<QLKhachSan.Models.RoomServiceProduct>)ViewBag.Products).Concat(new[]{new QLKhachSan.Models.RoomServiceProduct{Active=true}})){
+using(Html.BeginForm("SaveProduct","RoomService",FormMethod.Post,new{@class="rs-form"})){
+@Html.AntiForgeryToken()<input type="hidden" name="serviceId" value="@Model.MaDichVu"/><input type="hidden" name="productId" value="@p.ProductId"/><label>Tên sản phẩm<input name="name" value="@p.Name" maxlength="150" required/></label><label>Giá VND<input name="price" type="number" min="1" max="100000000" value="@p.Price.ToString("0",System.Globalization.CultureInfo.InvariantCulture)" required/></label><label><input name="active" type="checkbox" value="true" checked="@p.Active"/> Đang cung cấp</label><button>@(p.ProductId==0 ? "Thêm sản phẩm" : "Lưu sản phẩm")</button>
+}}}
+</main><script src="@Url.Content("~/Scripts/room-service.js")"></script>
+

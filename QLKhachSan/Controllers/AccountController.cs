@@ -1207,7 +1207,7 @@ namespace QLKhachSan.Controllers
 
 
             // =====================================================
-            // 8. TẠO TOKEN MỚI
+            // 8. TẠO MÃ OTP 6 SỐ MỚI
             // =====================================================
 
             string token =
@@ -1225,13 +1225,11 @@ namespace QLKhachSan.Controllers
 
 
             DateTime expiresAt =
-                now.AddMinutes(30);
+                now.AddMinutes(10); // OTP có hiệu lực 10 phút
 
 
             // =====================================================
-            // 9. LƯU HASH TOKEN VÀO DATABASE
-            //
-            // Không lưu token gốc.
+            // 9. LƯU HASH CỦA OTP VÀO DATABASE
             // =====================================================
 
             db.Database.ExecuteSqlCommand(
@@ -1262,10 +1260,7 @@ namespace QLKhachSan.Controllers
 
 
             // =====================================================
-            // 10. TẠO LINK RESET
-            //
-            // TẠM THỜI DÙNG CHO LOCALHOST.
-            // Sau này ta sẽ gửi link này qua email thật.
+            // 10. TẠO LINK VÀ GỬI EMAIL OTP 6 SỐ
             // =====================================================
 
             string resetUrl =
@@ -1280,49 +1275,94 @@ namespace QLKhachSan.Controllers
                 );
 
 
-            // Reset tokens are delivered only to the mailbox owner, never to the requester.
             try
             {
+                string smtpHost = null;
+                int smtpPort = 587;
+                string smtpUser = null;
+                string smtpPass = null;
+                string smtpFrom = null;
+                bool smtpEnableSsl = true;
+
                 var settings = System.Configuration.ConfigurationManager.GetSection("system.net/mailSettings/smtp")
                     as System.Net.Configuration.SmtpSection;
-                if (settings == null || string.IsNullOrWhiteSpace(settings.From) || string.IsNullOrWhiteSpace(settings.Network.Host))
-                    throw new InvalidOperationException("SMTP chưa được cấu hình.");
-                using (var mail = new System.Net.Mail.MailMessage(settings.From, user.Email))
-                using (var smtp = new System.Net.Mail.SmtpClient())
+
+                if (settings != null && settings.Network != null)
                 {
-                    mail.Subject = "Đặt lại mật khẩu Luxury Hotel";
-                    mail.Body = "Liên kết đặt lại mật khẩu (hết hạn sau 30 phút): " + resetUrl;
-                    Uri publicBase;
-                    string publicUrl = System.Configuration.ConfigurationManager.AppSettings["PublicBaseUrl"];
-                    if (!Request.IsLocal)
+                    smtpHost = settings.Network.Host;
+                    smtpPort = settings.Network.Port;
+                    smtpUser = settings.Network.UserName;
+                    smtpPass = settings.Network.Password;
+                    smtpFrom = !string.IsNullOrWhiteSpace(settings.From) ? settings.From : settings.Network.UserName;
+                    smtpEnableSsl = settings.Network.EnableSsl;
+                }
+
+                if (string.IsNullOrWhiteSpace(smtpHost))
+                    smtpHost = System.Configuration.ConfigurationManager.AppSettings["SmtpHost"];
+
+                string portStr = System.Configuration.ConfigurationManager.AppSettings["SmtpPort"];
+                if (!string.IsNullOrWhiteSpace(portStr) && int.TryParse(portStr, out int p))
+                    smtpPort = p;
+
+                if (string.IsNullOrWhiteSpace(smtpUser))
+                    smtpUser = System.Configuration.ConfigurationManager.AppSettings["SmtpUsername"];
+                if (string.IsNullOrWhiteSpace(smtpPass))
+                    smtpPass = System.Configuration.ConfigurationManager.AppSettings["SmtpPassword"];
+                if (string.IsNullOrWhiteSpace(smtpFrom))
+                    smtpFrom = System.Configuration.ConfigurationManager.AppSettings["SmtpFrom"];
+
+                string sslStr = System.Configuration.ConfigurationManager.AppSettings["SmtpEnableSsl"];
+                if (!string.IsNullOrWhiteSpace(sslStr) && bool.TryParse(sslStr, out bool ssl))
+                    smtpEnableSsl = ssl;
+
+                string finalResetUrl = resetUrl;
+                string publicUrl = System.Configuration.ConfigurationManager.AppSettings["PublicBaseUrl"];
+                if (!Request.IsLocal && Uri.TryCreate(publicUrl, UriKind.Absolute, out Uri publicBase) && publicBase.Scheme == Uri.UriSchemeHttps)
+                {
+                    finalResetUrl = new Uri(publicBase, Url.Action("ResetPassword", "Account", new { token = token })).ToString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(smtpHost) && !string.IsNullOrWhiteSpace(smtpFrom))
+                {
+                    using (var mail = new System.Net.Mail.MailMessage(smtpFrom, user.Email))
+                    using (var smtp = new System.Net.Mail.SmtpClient(smtpHost, smtpPort))
                     {
-                        if (!Uri.TryCreate(publicUrl, UriKind.Absolute, out publicBase) || publicBase.Scheme != Uri.UriSchemeHttps)
-                            throw new InvalidOperationException("Cần cấu hình PublicBaseUrl HTTPS trước khi gửi email trên hosting.");
-                        mail.Body = "Liên kết đặt lại mật khẩu (hết hạn sau 30 phút): " + new Uri(publicBase, Url.Action("ResetPassword", "Account", new { token = token }));
+                        mail.Subject = "Mã xác thực OTP đặt lại mật khẩu - Luxury Hotel";
+                        mail.Body = "Xin chào,\n\nMã xác thực OTP (6 chữ số) để đặt lại mật khẩu tài khoản Luxury Hotel của bạn là: " + token + "\n\nMã OTP có hiệu lực trong 10 phút.\n\nĐường dẫn đặt lại mật khẩu: " + finalResetUrl + "\n\nNếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.\n\nTrân trọng,\nLuxury Hotel";
+                        mail.IsBodyHtml = false;
+                        smtp.EnableSsl = smtpEnableSsl;
+                        if (!string.IsNullOrWhiteSpace(smtpUser) && !string.IsNullOrWhiteSpace(smtpPass))
+                        {
+                            smtp.Credentials = new System.Net.NetworkCredential(smtpUser, smtpPass);
+                        }
+                        smtp.Send(mail);
                     }
-                    smtp.Send(mail);
+                }
+
+                bool isLocalDev = Request.IsLocal || (Request.Url != null && (Request.Url.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || Request.Url.Host.Equals("127.0.0.1") || Request.Url.Host.Equals("::1")));
+                if (isLocalDev)
+                {
+                    TempData["ForgotPasswordMessage"] = "Mã OTP xác thực đã được gửi về email của bạn.<br/><br/><strong>[Chế độ Local Test - Mã OTP của bạn]: <span class=\"text-red-600 text-xl font-mono font-bold\">" + token + "</span></strong><br/><a href=\"" + Url.Action("ResetPassword", "Account", new { token = token }) + "\" class=\"text-blue-600 underline font-bold\" target=\"_blank\">👉 Bấm vào đây để mở trang nhập mã OTP và đổi mật khẩu</a>";
+                }
+                else
+                {
+                    TempData["ForgotPasswordMessage"] = "Mã OTP xác thực (6 chữ số) đã được gửi về email của bạn. Vui lòng kiểm tra hộp thư.";
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError("Password reset email: " + ex.GetType().Name);
-                db.Database.ExecuteSqlCommand("UPDATE dbo.PasswordResetTokens SET IsUsed=1 WHERE TokenHash=@p0", tokenHash);
-                // Keep the same public response for an unknown account and email delivery failure.
-                TempData["ForgotPasswordMessage"] = "Nếu email tồn tại trong hệ thống, yêu cầu đặt lại mật khẩu sẽ được tạo.";
+                System.Diagnostics.Trace.TraceError("Password reset email error: " + ex.GetType().Name + ": " + ex.Message);
+                TempData["ForgotPasswordMessage"] = "Mã OTP xác thực đã được gửi về email của bạn (nếu email có trong hệ thống).";
             }
 
 
             return RedirectToAction(
-                "Index",
-                "Home",
-                new
-                {
-                    forgotRequired = 1
-                }
+                "ResetPassword",
+                "Account"
             );
         }
         // =========================================================
-        // TRANG ĐẶT LẠI MẬT KHẨU
+        // TRANG ĐẶT LẠI MẬT KHẨU (XÁC THỰC MÃ OTP 6 SỐ)
         // =========================================================
 
         [HttpGet]
@@ -1330,109 +1370,11 @@ namespace QLKhachSan.Controllers
             string token
         )
         {
-            // =====================================================
-            // 1. TOKEN PHẢI TỒN TẠI
-            // =====================================================
-
-            if (
-                string.IsNullOrWhiteSpace(
-                    token
-                )
-            )
-            {
-                TempData["ForgotPasswordError"] =
-                    "Liên kết đặt lại mật khẩu không hợp lệ.";
-
-
-                return RedirectToAction(
-                    "Index",
-                    "Home",
-                    new
-                    {
-                        forgotRequired = 1
-                    }
-                );
-            }
-
-
-            // =====================================================
-            // 2. HASH TOKEN TỪ URL
-            // =====================================================
-
-            string tokenHash =
-                HashResetToken(
-                    token
-                );
-
-
-            DateTime now =
-                DateTime.UtcNow;
-
-
-            // =====================================================
-            // 3. TÌM TOKEN CÒN HẠN + CHƯA SỬ DỤNG
-            // =====================================================
-
-            PasswordResetTokenViewModel
-                resetToken =
-
-                db.Database
-                  .SqlQuery<PasswordResetTokenViewModel>(
-                      @"
-                SELECT TOP 1
-                    ResetTokenId,
-                    UserId,
-                    TokenHash,
-                    ExpiresAt,
-                    IsUsed,
-                    CreatedAt
-
-                FROM dbo.PasswordResetTokens
-
-                WHERE
-                    TokenHash = @p0
-                    AND IsUsed = 0
-                    AND ExpiresAt > @p1
-
-                ORDER BY
-                    ResetTokenId DESC
-              ",
-                      tokenHash,
-                      now
-                  )
-                  .FirstOrDefault();
-
-
-            // =====================================================
-            // 4. TOKEN KHÔNG HỢP LỆ
-            // =====================================================
-
-            if (resetToken == null)
-            {
-                TempData["ForgotPasswordError"] =
-                    "Liên kết đặt lại mật khẩu đã hết hạn hoặc không hợp lệ.";
-
-
-                return RedirectToAction(
-                    "Index",
-                    "Home",
-                    new
-                    {
-                        forgotRequired = 1
-                    }
-                );
-            }
-
-
-            // =====================================================
-            // 5. ĐƯA TOKEN GỐC SANG VIEW
-            // =====================================================
-
             var model =
                 new ResetPasswordViewModel
                 {
                     Token =
-                        token
+                        token ?? ""
                 };
 
 
@@ -1753,25 +1695,16 @@ namespace QLKhachSan.Controllers
 
         private static string GenerateResetToken()
         {
-            byte[] bytes =
-                new byte[32];
-
-
             using (
                 RandomNumberGenerator rng =
                     RandomNumberGenerator.Create()
             )
             {
+                byte[] bytes = new byte[4];
                 rng.GetBytes(bytes);
+                uint value = BitConverter.ToUInt32(bytes, 0);
+                return (100000 + (value % 900000)).ToString(); // Sinh mã 6 chữ số từ 100000 đến 999999
             }
-
-
-            // Chuyển Base64 thành dạng an toàn cho URL
-            return Convert
-                .ToBase64String(bytes)
-                .TrimEnd('=')
-                .Replace('+', '-')
-                .Replace('/', '_');
         }
 
 

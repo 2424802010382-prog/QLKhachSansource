@@ -1,0 +1,438 @@
+﻿@model IEnumerable<QLKhachSan.Models.RoomServiceItem>
+@using QLKhachSan.Models
+@{
+    Layout = null;
+    ViewBag.Title = "Dịch Vụ Phòng Cao Cấp - Luxury Hotel";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #f7f2e8;
+            color: #2b2117;
+            font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+            margin: 0;
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', Georgia, serif !important;
+        }
+
+        .luxury-navbar {
+            background: rgba(25, 18, 12, 0.94) !important;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.28) !important;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.55);
+            backdrop-filter: blur(12px);
+        }
+
+        .luxury-logo {
+            color: #f5d77a !important;
+            letter-spacing: 2px;
+        }
+
+        .luxury-crown-logo {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #d4af37;
+            color: #f5d77a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            border-radius: 12px;
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .luxury-menu-link {
+            color: #f8f3e8 !important;
+            transition: all 0.2s ease;
+        }
+
+        .luxury-menu-link:hover, .luxury-menu-link.active {
+            color: #f5d77a !important;
+            background: rgba(212, 175, 55, 0.15) !important;
+        }
+
+        .luxury-outline-button {
+            color: #f5d77a !important;
+            border: 1px solid #d4af37;
+            background: transparent;
+            transition: all 0.25s ease;
+        }
+
+        .luxury-outline-button:hover {
+            background: #d4af37;
+            color: #21170f !important;
+        }
+
+        .luxury-gold-button {
+            background: linear-gradient(135deg, #d4af37, #f0c85b) !important;
+            color: #24180e !important;
+            border: 1px solid #e0bd4f;
+            box-shadow: 0 5px 15px rgba(180, 135, 20, 0.25);
+            transition: all 0.25s ease;
+        }
+
+        .luxury-gold-button:hover {
+            background: linear-gradient(135deg, #b99224, #e0b53f) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(180, 135, 20, 0.35);
+        }
+
+        .luxury-page-banner {
+            position: relative;
+            background-image: linear-gradient(180deg, rgba(15, 10, 6, 0.85) 0%, rgba(21, 48, 68, 0.92) 100%), url('/images/luxury-hotel-hero.png');
+            background-size: cover;
+            background-position: center;
+            padding: 90px 20px 70px;
+            text-align: center;
+            color: white;
+            border-bottom: 2px solid #d4af37;
+        }
+
+        .luxury-service-card {
+            background: #ffffff;
+            border: 1px solid #e8ded0;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(21, 48, 68, 0.06);
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .luxury-service-card:hover {
+            border-color: #d4af37;
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(212, 175, 55, 0.18);
+        }
+
+        .luxury-footer {
+            background-image: linear-gradient(rgba(20, 13, 8, 0.94), rgba(20, 13, 8, 0.97)), url('/images/luxury-hotel-hero.png');
+            background-size: cover;
+            background-position: center;
+            border-top: 2px solid #d4af37;
+            color: white;
+        }
+
+        .footer-link {
+            color: #d1d5db;
+            transition: color 0.2s;
+        }
+
+        .footer-link:hover {
+            color: #f5d77a;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
+
+    <!-- HEADER NAVBAR -->
+    <nav class="luxury-navbar text-white px-4 py-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="@Url.Action("Index", "Home")" class="flex items-center gap-3">
+                <div class="luxury-crown-logo"><i class="fas fa-crown"></i></div>
+                <div>
+                    <h1 class="luxury-logo text-xl md:text-2xl font-extrabold">LUXURY HOTEL</h1>
+                    <p class="text-yellow-300 text-[10px] tracking-[3px]">LUXURY &amp; COMFORT</p>
+                </div>
+            </a>
+
+            <!-- Desktop Navigation Menu -->
+            <div class="hidden xl:flex items-center gap-2">
+                <a href="@Url.Action("Index", "Home")" class="luxury-menu-link px-3.5 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5"><i class="fas fa-house text-yellow-400"></i> Trang chủ</a>
+                <a href="@Url.Action("Index", "Room")" class="luxury-menu-link px-3.5 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5"><i class="fas fa-bed text-yellow-400"></i> Danh sách phòng</a>
+                <a href="@Url.Action("Index", "Room")" class="luxury-menu-link px-3.5 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5"><i class="fas fa-calendar-check text-yellow-400"></i> Đặt phòng</a>
+                <a href="@Url.Action("Index", "RoomService")" class="luxury-menu-link active px-3.5 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5"><i class="fas fa-concierge-bell text-yellow-400"></i> Dịch vụ phòng</a>
+                <a href="@Url.Action("Index", "Restaurant")" class="luxury-menu-link px-3.5 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5"><i class="fas fa-utensils text-yellow-400"></i> Đặt món ăn</a>
+
+                @if (Session["UserId"] == null)
+                {
+                    <div class="flex items-center gap-2 pl-3">
+                        <a href="@Url.Action("Login", "Account")" class="luxury-outline-button px-4 py-2 rounded-lg text-sm font-bold"><i class="fas fa-right-to-bracket mr-1"></i> Đăng nhập</a>
+                        <a href="@Url.Action("Register", "Account")" class="luxury-gold-button px-4 py-2 rounded-lg text-sm font-bold"><i class="fas fa-user-plus mr-1"></i> Đăng ký</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex items-center gap-3 bg-black/40 p-1.5 rounded-full px-4 border border-yellow-500/40 ml-2">
+                        @if (Session["Role"] != null && Session["Role"].ToString() == "Admin")
+                        {
+                            <a href="@Url.Action("Index", "Admin")" class="text-yellow-200 hover:text-yellow-400 text-xs font-semibold whitespace-nowrap flex items-center gap-1"><i class="fas fa-hotel"></i> Quản lý khách sạn</a>
+                            <span class="text-yellow-500">|</span>
+                        }
+                        @if (Session["Role"] != null && Session["Role"].ToString() == "Staff")
+                        {
+                            <a href="@Url.Action("Index", "Staff")" class="text-yellow-200 hover:text-yellow-400 text-xs font-semibold whitespace-nowrap flex items-center gap-1"><i class="fas fa-gauge-high"></i> Dashboard</a>
+                            <span class="text-yellow-500">|</span>
+                        }
+                        @if (Session["Role"] == null || (Session["Role"].ToString() != "Admin" && Session["Role"].ToString() != "Staff"))
+                        {
+                            <a href="@Url.Action("Index", "BookingHistory")" class="text-yellow-200 hover:text-yellow-400 text-xs font-semibold whitespace-nowrap"><i class="fas fa-clock-rotate-left mr-1"></i> Lịch sử</a>
+                            <span class="text-yellow-500">|</span>
+                        }
+                        <a href="@Url.Action("Profile", "Account")" class="text-yellow-200 hover:text-yellow-400 text-xs font-semibold whitespace-nowrap"><i class="fas fa-user-gear mr-1"></i> Tài khoản</a>
+                        <span class="text-yellow-500">|</span>
+                        <span class="font-semibold text-white text-xs"><i class="fas fa-user-circle text-yellow-300 text-base mr-1"></i>@(Session["FullName"] ?? Session["Username"])</span>
+                        <a href="#" onclick="openLuxuryLogoutModal(event); return false;" title="Đăng xuất" class="bg-red-500 hover:bg-red-600 text-white text-xs px-2.5 py-1 rounded-full"><i class="fas fa-sign-out-alt"></i></a>
+                    </div>
+                }
+            </div>
+
+            <!-- Mobile Menu Toggle Button -->
+            <button type="button" onclick="toggleMobileMenu()" class="xl:hidden text-yellow-300 text-2xl p-2 focus:outline-none">
+                <i class="fas fa-bars" id="mobileMenuIcon"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobileMenu" class="hidden absolute top-full left-0 w-full bg-[#241c17]/95 backdrop-blur-md border-b border-[#d4af37]/40 shadow-2xl p-5 flex flex-col gap-3 xl:hidden z-50 text-white max-h-[85vh] overflow-y-auto">
+            <a href="@Url.Action("Index", "Home")" class="py-2.5 px-3 rounded hover:bg-white/10 font-semibold text-sm flex items-center gap-2"><i class="fas fa-house text-yellow-400"></i> Trang chủ</a>
+            <a href="@Url.Action("Index", "Room")" class="py-2.5 px-3 rounded hover:bg-white/10 font-semibold text-sm flex items-center gap-2"><i class="fas fa-bed text-yellow-400"></i> Danh sách phòng</a>
+            <a href="@Url.Action("Index", "RoomService")" class="py-2.5 px-3 rounded bg-white/10 text-yellow-300 font-semibold text-sm flex items-center gap-2"><i class="fas fa-concierge-bell text-yellow-400"></i> Dịch vụ phòng</a>
+            <a href="@Url.Action("Index", "Restaurant")" class="py-2.5 px-3 rounded hover:bg-white/10 font-semibold text-sm flex items-center gap-2"><i class="fas fa-utensils text-yellow-400"></i> Đặt món ăn</a>
+
+            <div class="border-t border-white/10 pt-3 mt-1 flex flex-col gap-2">
+                @if (Session["UserId"] == null)
+                {
+                    <a href="@Url.Action("Login", "Account")" class="w-full text-center py-2.5 bg-transparent border border-yellow-500 text-yellow-300 font-semibold rounded-lg text-sm"><i class="fas fa-right-to-bracket mr-1"></i> Đăng nhập</a>
+                    <a href="@Url.Action("Register", "Account")" class="w-full text-center py-2.5 bg-gradient-to-r from-[#d4af37] to-[#f5d77a] text-[#21170f] font-bold rounded-lg text-sm"><i class="fas fa-user-plus mr-1"></i> Đăng ký</a>
+                }
+                else
+                {
+                    <div class="text-yellow-300 text-sm font-semibold py-1"><i class="fas fa-user-circle mr-1"></i> Xin chào, @(Session["FullName"] ?? Session["Username"])</div>
+                    if (Session["Role"] != null && Session["Role"].ToString() == "Admin")
+                    {
+                        <a href="@Url.Action("Index", "Admin")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-hotel"></i> Quản lý khách sạn</a>
+                    }
+                    if (Session["Role"] == null || (Session["Role"].ToString() != "Admin" && Session["Role"].ToString() != "Staff"))
+                    {
+                        <a href="@Url.Action("Index", "BookingHistory")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-clock-rotate-left"></i> Lịch sử đặt phòng</a>
+                    }
+                    <a href="@Url.Action("Profile", "Account")" class="py-2 px-3 rounded hover:bg-white/10 text-yellow-200 text-sm font-semibold flex items-center gap-2"><i class="fas fa-user-gear"></i> Tài khoản</a>
+                    <a href="#" onclick="openLuxuryLogoutModal(event); return false;" class="py-2.5 px-3 rounded bg-red-600 text-white text-center font-bold text-sm"><i class="fas fa-right-from-bracket mr-1"></i> Đăng xuất</a>
+                }
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO BANNER -->
+    <div class="luxury-page-banner">
+        <div class="max-w-4xl mx-auto px-4">
+            <p class="text-yellow-400 font-semibold tracking-[4px] text-xs uppercase mb-3 flex items-center justify-center gap-2">
+                <i class="fas fa-crown text-yellow-400"></i> LUXURY HOTEL &bull; ROOM SERVICE 5 SAO
+            </p>
+            <h1 class="text-3xl md:text-5xl lg:text-6xl font-extrabold text-white mb-5 font-serif leading-tight drop-shadow-md">
+                Phục Vụ Tận Phòng Đẳng Cấp
+            </h1>
+            <p class="text-gray-200 text-sm md:text-base max-w-2xl mx-auto leading-relaxed opacity-90">
+                Dịch vụ phòng chuyên nghiệp 24/7, mang lại cho quý khách sự thư thái hoàn hảo, tiện nghi vượt trội và những khoảnh khắc nghỉ dưỡng tuyệt vời nhất.
+            </p>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="container mx-auto px-4 py-10 flex-grow">
+
+        <!-- NAV BAR & FILTER SECTION -->
+        <div class="bg-[#fffdf8] border border-[#e2d5b8] shadow-lg rounded-2xl p-6 mb-10">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 pb-6 border-b border-yellow-500/20">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-600 flex items-center justify-center text-white shadow-md">
+                        <i class="fas fa-concierge-bell text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold font-serif text-[#153044]">Danh Mục Dịch Vụ Phòng</h2>
+                        <p class="text-xs text-gray-500">Lựa chọn dịch vụ phục vụ tận phòng tiện lợi cho kỳ nghỉ của bạn</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 flex-wrap">
+                    <a href="@Url.Action("Orders")" class="luxury-gold-button px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2">
+                        <i class="fas fa-clock-rotate-left"></i> @(ViewBag.Manage == true ? "Quản lý yêu cầu dịch vụ" : "Lịch sử & Theo dõi dịch vụ")
+                    </a>
+                    @if (ViewBag.Admin == true)
+                    {
+                        <a href="@Url.Action("Edit")" class="bg-[#153044] hover:bg-[#1f425b] text-white px-5 py-2.5 rounded-xl font-bold text-xs transition flex items-center gap-2 shadow-md">
+                            <i class="fas fa-plus"></i> Thêm dịch vụ mới
+                        </a>
+                    }
+                </div>
+            </div>
+
+            <!-- SEARCH AND FILTER FORM -->
+            <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                <div class="md:col-span-6 relative">
+                    <input name="q" value="@Request.QueryString["q"]" placeholder="Tìm kiếm tên dịch vụ tận phòng..." aria-label="Tìm dịch vụ" class="w-full pl-11 pr-4 py-3 bg-white border border-[#cbd5e1] rounded-xl text-sm focus:outline-none focus:border-[#d4af37] focus:ring-2 focus:ring-yellow-500/20 transition" />
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+
+                <div class="md:col-span-4">
+                    <select name="timing" aria-label="Loại dịch vụ" class="w-full px-4 py-3 bg-white border border-[#cbd5e1] rounded-xl text-sm focus:outline-none focus:border-[#d4af37] focus:ring-2 focus:ring-yellow-500/20 transition">
+                        <option value="">-- Tất cả thời điểm dịch vụ --</option>
+                        <option value="Stay" @(Request.QueryString["timing"] == "Stay" ? "selected" : "")>Trong thời gian lưu trú</option>
+                        <option value="BeforeArrival" @(Request.QueryString["timing"] == "BeforeArrival" ? "selected" : "")>Có thể đặt trước khi đến</option>
+                        <option value="Luggage" @(Request.QueryString["timing"] == "Luggage" ? "selected" : "")>Hành lý & Vận chuyển</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-2">
+                    <button type="submit" class="w-full bg-[#153044] hover:bg-[#204560] text-white font-bold py-3 px-6 rounded-xl text-sm transition shadow-md flex items-center justify-center gap-2">
+                        <i class="fas fa-filter"></i> Tìm kiếm
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- SERVICES CARDS GRID -->
+        <section aria-label="Danh sách dịch vụ phòng" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            @foreach (var s in Model)
+            {
+                <article class="luxury-service-card group">
+                    <!-- Card Image Header -->
+                    <div class="relative overflow-hidden h-52 bg-[#153044]/5">
+                        <img src="@Url.Content(RoomServiceImages.Resolve(s))" alt="@s.TenDichVu" loading="lazy" decoding="async" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
+
+                        <!-- Availability Badge -->
+                        <span class="absolute top-3 right-3 text-[11px] font-extrabold px-3 py-1 rounded-full text-white backdrop-blur-md shadow-md @(s.HoatDong ? "bg-emerald-600/90 border border-emerald-400/40" : "bg-gray-600/90 border border-gray-400/40")">
+                            <i class="fas @(s.HoatDong ? "fa-check-circle" : "fa-minus-circle") mr-1"></i>
+                            @(s.HoatDong ? "Đang cung cấp" : "Ngừng cung cấp")
+                        </span>
+                    </div>
+
+                    <!-- Card Body Content -->
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h3 class="font-serif font-bold text-xl text-[#153044] mb-2.5 group-hover:text-[#b48316] transition-colors leading-snug">
+                            @s.TenDichVu
+                        </h3>
+
+                        <p class="text-gray-600 text-sm leading-relaxed mb-6 flex-grow">
+                            @s.MoTa
+                        </p>
+
+                        <!-- Price Section -->
+                        <div class="pt-4 border-t border-dashed border-yellow-500/30 mb-5 flex items-center justify-between">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Đơn giá</span>
+                            <span class="text-lg font-extrabold text-[#b48316]">
+                                @(s.Code == "MINIBAR" ? "Theo sản phẩm" : s.Gia == 0 ? "Miễn phí" : s.Gia.ToString("N0") + " đ / " + s.DonVi)
+                            </span>
+                        </div>
+
+                        <!-- Card Action Buttons -->
+                        <div class="grid grid-cols-2 gap-3 pt-1">
+                            <a class="luxury-outline-button py-2.5 px-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5" href="@Url.Action("Details", new { id = s.MaDichVu })">
+                                <i class="fas fa-circle-info"></i> Chi tiết
+                            </a>
+                            @if (ViewBag.Admin == true)
+                            {
+                                <a class="bg-[#153044] hover:bg-[#1f425b] text-white py-2.5 px-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 transition" href="@Url.Action("Edit", new { id = s.MaDichVu })">
+                                    <i class="fas fa-pen-to-square"></i> Cấu hình & Giá
+                                </a>
+                            }
+                            else if (s.HoatDong)
+                            {
+                                <a class="luxury-gold-button py-2.5 px-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5" href="@Url.Action("Create", new { id = s.MaDichVu })">
+                                    <i class="fas fa-concierge-bell"></i> Đặt dịch vụ
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </article>
+            }
+        </section>
+
+        <!-- EMPTY STATE -->
+        @if (!Model.Any())
+        {
+            <div class="text-center py-16 px-6 bg-[#fffdf8] border-2 border-dashed border-[#d4af37]/50 rounded-2xl my-10 max-w-xl mx-auto shadow-sm">
+                <div class="w-20 h-20 mx-auto rounded-full bg-yellow-500/10 flex items-center justify-center text-[#d4af37] text-3xl mb-4">
+                    <i class="fas fa-concierge-bell"></i>
+                </div>
+                <h3 class="font-serif font-bold text-2xl text-[#153044] mb-2">Không có dịch vụ phù hợp</h3>
+                <p class="text-gray-600 text-sm leading-relaxed mb-6">Rất tiếc, chúng tôi không tìm thấy dịch vụ phòng phù hợp với bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
+                <a href="@Url.Action("Index")" class="luxury-gold-button px-6 py-2.5 rounded-xl font-bold text-xs inline-flex items-center gap-2">
+                    <i class="fas fa-rotate-left"></i> Xem tất cả dịch vụ
+                </a>
+            </div>
+        }
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="luxury-footer text-gray-200 py-12 px-4 mt-auto">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
+            <div class="col-span-1 md:col-span-2">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="luxury-crown-logo small"><i class="fas fa-crown"></i></div>
+                    <div>
+                        <h1 class="text-2xl font-serif font-bold text-white">LUXURY HOTEL</h1>
+                        <p class="text-yellow-300 text-xs tracking-[3px]">LUXURY &amp; COMFORT</p>
+                    </div>
+                </div>
+                <p class="text-sm leading-7 max-w-xl text-gray-300">Mang lại trải nghiệm kỳ nghỉ đẳng cấp quốc tế với dịch vụ 5 sao hoàn hảo. Sự hài lòng của quý khách là ưu tiên hàng đầu của chúng tôi.</p>
+            </div>
+            <div>
+                <h5 class="font-serif font-bold text-white text-xl mb-4">Liên kết</h5>
+                <ul class="space-y-3 text-sm">
+                    <li><a href="@Url.Action("Index", "Home")" class="footer-link">Trang chủ</a></li>
+                    <li><a href="@Url.Action("Index", "Room")" class="footer-link">Phòng</a></li>
+                    <li><a href="@Url.Action("Index", "Room")" class="footer-link">Đặt phòng</a></li>
+                    <li><a href="@Url.Action("Index", "RoomService")" class="footer-link">Dịch vụ</a></li>
+                </ul>
+            </div>
+            <div>
+                <h5 class="font-serif font-bold text-white text-xl mb-4">Liên hệ</h5>
+                <p class="text-sm mb-3"><i class="fas fa-map-marker-alt mr-2 text-yellow-400"></i>123 Đường ABC, Quận 1, TP.HCM</p>
+                <p class="text-sm mb-3"><i class="fas fa-phone-alt mr-2 text-yellow-400"></i>Hotline: 1900 1234</p>
+                <p class="text-sm"><i class="fas fa-envelope mr-2 text-yellow-400"></i>info@luxuryhotel.com</p>
+            </div>
+        </div>
+        <div class="container mx-auto border-t border-yellow-500/30 mt-10 pt-6 text-center text-xs text-gray-500">&copy; 2026 Luxury Hotel. All rights reserved.</div>
+    </footer>
+
+    <!-- LOGOUT MODAL -->
+    <div id="luxuryLogoutModal" class="fixed inset-0 bg-black/75 hidden justify-center items-center p-4 z-50">
+        <div class="bg-[#241c17] text-white border border-[#d4af37]/60 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl">
+            <div class="w-16 h-16 mx-auto rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-2xl mb-4 border border-red-500/40">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="font-serif font-bold text-2xl text-yellow-300 mb-2">Xác nhận đăng xuất</h3>
+            <p class="text-gray-300 text-sm mb-6">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống Luxury Hotel?</p>
+            <div class="flex gap-3 justify-center">
+                <button type="button" onclick="closeLuxuryLogoutModal()" class="px-5 py-2.5 rounded-xl border border-gray-500 text-gray-300 font-bold text-xs hover:bg-white/10">Hủy bỏ</button>
+                <a href="@Url.Action("Logout", "Account")" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-lg">Đăng xuất</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleMobileMenu() {
+            var menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+        function openLuxuryLogoutModal(e) {
+            if (e) e.preventDefault();
+            var modal = document.getElementById('luxuryLogoutModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        function closeLuxuryLogoutModal() {
+            var modal = document.getElementById('luxuryLogoutModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    </script>
+</body>
+</html>

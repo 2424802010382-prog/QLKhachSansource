@@ -29,5 +29,6 @@ namespace QLKhachSan.Models
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<DatPhongDichVu> DatPhongDichVus { get; set; }
+        public virtual RoomServiceCatalog RoomServiceCatalog { get; set; }
     }
 }

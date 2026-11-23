@@ -17,9 +17,11 @@ namespace QLKhachSan.Models
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
         public Booking()
         {
+            this.RoomServiceOrders = new HashSet<RoomServiceOrder>();
             this.DanhGias = new HashSet<DanhGia>();
             this.DatPhongDichVus = new HashSet<DatPhongDichVu>();
             this.ThanhToans = new HashSet<ThanhToan>();
+            this.DonDatMons = new HashSet<DonDatMon>();
         }
     
         public int BookingId { get; set; }
@@ -37,7 +39,14 @@ namespace QLKhachSan.Models
         public decimal TotalAmount { get; set; }
         public string Status { get; set; }
         public System.DateTime CreatedAt { get; set; }
+        public Nullable<int> UserId { get; set; }
+        public Nullable<int> MaKhuyenMai { get; set; }
+        public decimal TienGiam { get; set; }
     
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<RoomServiceOrder> RoomServiceOrders { get; set; }
+        public virtual KhuyenMai KhuyenMai { get; set; }
+        public virtual User User { get; set; }
         public virtual Room Room { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<DanhGia> DanhGias { get; set; }
@@ -45,5 +54,7 @@ namespace QLKhachSan.Models
         public virtual ICollection<DatPhongDichVu> DatPhongDichVus { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<ThanhToan> ThanhToans { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<DonDatMon> DonDatMons { get; set; }
     }
 }

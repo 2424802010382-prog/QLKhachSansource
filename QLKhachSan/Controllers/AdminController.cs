@@ -1,10 +1,12 @@
 ﻿using QLKhachSan.Filters;
 using QLKhachSan.Models;
+using QLKhachSan.Services;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web.Helpers;
 using System.Web.Mvc;
 
@@ -13,7 +15,7 @@ namespace QLKhachSan.Controllers
     [AdminAuthorize]
     public class AdminController : HotelController
     {
-// =========================================================
+        // =========================================================
         // DASHBOARD VẬN HÀNH NÂNG CAO
         // =========================================================
         // DASHBOARD QUẢN TRỊ / TỔNG QUAN
@@ -65,7 +67,14 @@ namespace QLKhachSan.Controllers
 
             decimal roomMonth = HotelOperations.RoomRevenue(db, monthStart, monthEnd);
 
-            decimal foodToday = GetFoodRevenue(today, tomorrow);
+            // Một truy vấn tổng hợp thay cho nhiều truy vấn SQL lặp lại trên Dashboard.
+            DateTime firstChartDay = today.AddDays(-6);
+            DateTime firstFoodDay = monthStart < firstChartDay ? monthStart : firstChartDay;
+            var foodRevenueByDay = GetFoodRevenueByDay(firstFoodDay, tomorrow);
+            decimal foodToday = FoodRevenueOn(foodRevenueByDay, today);
+            decimal foodMonth = foodRevenueByDay
+                .Where(x => x.Key >= monthStart && x.Key < monthEnd)
+                .Sum(x => x.Value);
 
             ViewBag.Keyword = keyword;
             ViewBag.Status = status;
@@ -73,7 +82,7 @@ namespace QLKhachSan.Controllers
             ViewBag.ToDate = toDate.HasValue ? toDate.Value.ToString("yyyy-MM-dd") : "";
 
             ViewBag.TodayRevenue = roomToday + foodToday;
-            ViewBag.MonthRevenue = roomMonth + GetFoodRevenue(monthStart, monthEnd);
+            ViewBag.MonthRevenue = roomMonth + foodMonth;
             ViewBag.TodayRoomRevenue = roomToday;
             ViewBag.TodayFoodRevenue = foodToday;
 
@@ -87,17 +96,16 @@ namespace QLKhachSan.Controllers
             var roomRevenue7Days = new List<decimal>();
             var foodRevenue7Days = new List<decimal>();
 
+            var roomRevenueByDay = GetRoomRevenueByDay(firstChartDay, tomorrow);
             for (int i = 6; i >= 0; i--)
             {
                 DateTime d = today.AddDays(-i);
                 DateTime dStart = d.Date;
-                DateTime dEnd = d.Date.AddDays(1);
 
                 revenueLabels.Add(d.ToString("dd/MM"));
 
-                decimal rRev = HotelOperations.RoomRevenue(db, dStart, dEnd);
-
-                decimal fRev = GetFoodRevenue(dStart, dEnd);
+                decimal rRev = roomRevenueByDay.TryGetValue(dStart, out var rVal) ? rVal : 0m;
+                decimal fRev = FoodRevenueOn(foodRevenueByDay, dStart);
 
                 roomRevenue7Days.Add(rRev);
                 foodRevenue7Days.Add(fRev);
@@ -107,7 +115,7 @@ namespace QLKhachSan.Controllers
             ViewBag.RoomRevenue7Days = roomRevenue7Days;
             ViewBag.FoodRevenue7Days = foodRevenue7Days;
 
-            var bookingsList = query.OrderByDescending(b => b.CreatedAt).ToList();
+            var bookingsList = query.OrderByDescending(b => b.BookingId).ThenByDescending(b => b.CreatedAt).ToList();
             return View(bookingsList);
         }
 
@@ -162,13 +170,21 @@ namespace QLKhachSan.Controllers
             ViewBag.CurrentGuests = db.Bookings.Count(b => b.Status == "Đang ở");
             ViewBag.CheckedOutBookings = db.Bookings.Count(b => b.Status == "Đã trả phòng");
 
-            return View(query.OrderByDescending(b => b.CreatedAt).ToList());
+            return View(query.OrderByDescending(b => b.BookingId).ThenByDescending(b => b.CreatedAt).ToList());
+        }
+
+        private ActionResult BlockAdminOperationalAction()
+        {
+            if (Request.IsAjaxRequest()) return Json(new { success = false, message = "Admin không có quyền xử lý trực tiếp đơn. Thao tác nghiệp vụ thuộc về Nhân viên." });
+            return new HttpStatusCodeResult(403, "Admin không có quyền xử lý trực tiếp đơn. Thao tác nghiệp vụ thuộc về Nhân viên.");
         }
 
         [HttpPost]
         [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult Confirm(int id, string returnTo = null)
         {
+            if (Convert.ToString(Session["Role"]) == "Admin") return BlockAdminOperationalAction();
+
             var booking = db.Bookings.Find(id);
             if (booking == null)
             {
@@ -207,6 +223,8 @@ namespace QLKhachSan.Controllers
         [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult Cancel(int id, string returnTo = null)
         {
+            if (Convert.ToString(Session["Role"]) == "Admin") return BlockAdminOperationalAction();
+
             var booking = db.Bookings.Find(id);
             if (booking == null)
             {
@@ -254,6 +272,8 @@ namespace QLKhachSan.Controllers
         [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult ConfirmPayment(int id, string returnTo = null)
         {
+            if (Convert.ToString(Session["Role"]) == "Admin") return BlockAdminOperationalAction();
+
             var booking = db.Bookings.Find(id);
             if (booking == null) return HttpNotFound();
             try
@@ -275,6 +295,8 @@ namespace QLKhachSan.Controllers
         [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult CheckIn(int id, string returnTo = null)
         {
+            if (Convert.ToString(Session["Role"]) == "Admin") return BlockAdminOperationalAction();
+
             var booking = db.Bookings.Find(id);
             if (booking == null) return HttpNotFound();
             try { HotelOperations.ValidateCheckIn(db, booking); }
@@ -296,6 +318,8 @@ namespace QLKhachSan.Controllers
         [QLKhachSan.Filters.HotelAntiForgery]
         public ActionResult CheckOut(int id, string returnTo = null)
         {
+            if (Convert.ToString(Session["Role"]) == "Admin") return BlockAdminOperationalAction();
+
             var booking = db.Bookings.Find(id);
             if (booking == null)
             {
@@ -373,9 +397,9 @@ namespace QLKhachSan.Controllers
             int? id,
             string roomName,
             string roomType,
-            decimal price,
-            int capacity,
-            int totalRooms,
+            decimal? price,
+            int? capacity,
+            int? totalRooms,
             string description,
             string imageUrl,
             bool isActive = true)
@@ -384,20 +408,23 @@ namespace QLKhachSan.Controllers
             roomType = (roomType ?? "").Trim();
             description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
             imageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
+            decimal pVal = price ?? 0;
+            int capVal = capacity ?? 0;
+            int totVal = totalRooms ?? 0;
 
-            if (string.IsNullOrWhiteSpace(roomName) || string.IsNullOrWhiteSpace(roomType) || price < 0 || capacity <= 0 || totalRooms < 0)
+            if (string.IsNullOrWhiteSpace(roomName) || string.IsNullOrWhiteSpace(roomType) || pVal < 0 || capVal <= 0 || totVal < 0)
             {
                 FailOperation(); TempData["AdminError"] = "Thông tin phòng không hợp lệ.";
                 return RedirectToAction("Rooms");
             }
 
             int physicalCount = id.HasValue ? db.PhysicalRooms.Count(p => p.RoomTypeId == id.Value) : 0;
-            if (id.HasValue && totalRooms != physicalCount)
+            if (id.HasValue && totVal != physicalCount)
             {
                 FailOperation(); TempData["AdminError"] = "Số lượng phải khớp " + physicalCount + " phòng vật lý.";
                 return RedirectToAction("Rooms");
             }
-            if (!id.HasValue) totalRooms = 0; // A new type has no sellable physical rooms yet.
+            if (!id.HasValue) totVal = 0; // A new type has no sellable physical rooms yet.
             bool duplicate = id.HasValue
                 ? db.Rooms.Any(r => r.RoomName == roomName && r.RoomId != id.Value)
                 : db.Rooms.Any(r => r.RoomName == roomName);
@@ -415,9 +442,9 @@ namespace QLKhachSan.Controllers
 
                 room.RoomName = roomName;
                 room.RoomType = roomType;
-                room.Price = price;
-                room.Capacity = capacity;
-                room.TotalRooms = totalRooms;
+                room.Price = pVal;
+                room.Capacity = capVal;
+                room.TotalRooms = totVal;
                 room.Description = description;
                 room.ImageUrl = imageUrl;
                 room.IsActive = isActive;
@@ -428,9 +455,9 @@ namespace QLKhachSan.Controllers
                 {
                     RoomName = roomName,
                     RoomType = roomType,
-                    Price = price,
-                    Capacity = capacity,
-                    TotalRooms = totalRooms,
+                    Price = pVal,
+                    Capacity = capVal,
+                    TotalRooms = totVal,
                     Description = description,
                     ImageUrl = imageUrl,
                     IsActive = isActive
@@ -1311,6 +1338,12 @@ namespace QLKhachSan.Controllers
                 }
             }
 
+            if (db.Database.SqlQuery<int>("SELECT CASE WHEN OBJECT_ID('dbo.RoomServiceOrders','U') IS NULL THEN 0 ELSE 1 END").Single() == 1)
+            {
+                var serviceRequests = db.Database.SqlQuery<RoomServiceOrder>("SELECT TOP(20) o.*,p.RoomNumber,b.CustomerName FROM dbo.RoomServiceOrders o INNER JOIN dbo.PhysicalRooms p ON p.PhysicalRoomId=o.PhysicalRoomId INNER JOIN dbo.Bookings b ON b.BookingId=o.BookingId WHERE o.Status=N'Chờ xác nhận' OR o.PaymentStatus=N'Chờ xác minh thanh toán' ORDER BY o.CreatedAt").ToList();
+                foreach (var order in serviceRequests)
+                    model.Items.Add(new AdminNotificationItemViewModel { Type="RoomService", Level="warning", Icon="fa-bell-concierge", Title="Dịch vụ phòng #"+order.OrderId, Description=order.ServiceName+" • "+order.Status+" • "+order.PaymentStatus, TimeText=order.CreatedAt.ToString("dd/MM/yyyy HH:mm"), BookingId=order.OrderId });
+            }
             model.PendingBookingCount =
                 pendingBookings.Count;
 
@@ -2016,6 +2049,38 @@ namespace QLKhachSan.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpPost]
+        [AdminAuthorize]
+        [QLKhachSan.Filters.HotelAntiForgery]
+        public async Task<JsonResult> TestSePayApiConnection()
+        {
+            try
+            {
+                var settings = BankPaymentSettings.Load();
+                if (string.IsNullOrWhiteSpace(settings.ApiToken))
+                {
+                    string diagMsg = string.Format(
+                        "API Token chưa được cấu hình. Chẩn đoán hệ thống: FileExists={0}, XmlParsed={1}, ApiTokenLoaded={2}, SecretLoaded={3}, AccountNameLoaded={4}, Path={5}. {6}",
+                        settings.FileExists,
+                        settings.XmlParsed,
+                        settings.ApiTokenLoaded,
+                        settings.SecretLoaded,
+                        settings.AccountNameLoaded,
+                        settings.ConfigFilePath ?? "(không tìm thấy file)",
+                        settings.DiagnosticMessage ?? ""
+                    );
+                    return Json(new { success = false, statusCode = 400, message = diagMsg });
+                }
+
+                var result = await SePayLiveVerifier.TestApiConnectionAsync(settings.ApiToken);
+                return Json(new { success = result.Item1, statusCode = result.Item2, message = result.Item3 });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, statusCode = 500, message = "Lỗi kiểm tra kết nối API: " + ex.Message });
+            }
+        }
+
 
         protected override void Dispose(
             bool disposing)
@@ -2030,6 +2095,289 @@ namespace QLKhachSan.Controllers
         // =========================================================
         // CÁC HÀM BỔ SUNG ĐỂ KHẮC PHỤC LỖI THIẾU HÀM ĐỒ ĂN
         // =========================================================
+        // Kết quả truy vấn theo ngày; chỉ dùng cho thống kê Dashboard.
+        public class DailyFoodRevenueRow
+        {
+            public DateTime RevenueDate { get; set; }
+            public decimal Amount { get; set; }
+        }
+
+        private static decimal FoodRevenueOn(Dictionary<DateTime, decimal> revenue, DateTime date)
+        {
+            decimal amount;
+            return revenue.TryGetValue(date.Date, out amount) ? amount : 0m;
+        }
+
+        private Dictionary<DateTime, decimal> GetFoodRevenueByDay(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                // Kiểm tra schema một lần, thay vì mỗi lần tính doanh thu một ngày.
+                var columns = db.Database.SqlQuery<string>(@"
+                    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'DonDatMon'
+                    AND COLUMN_NAME IN ('PaidAt', 'CreatedAt', 'TongTien', 'TrangThaiThanhToan')")
+                    .ToList();
+
+                if (!columns.Contains("CreatedAt") ||
+                    !columns.Contains("TongTien") ||
+                    !columns.Contains("TrangThaiThanhToan"))
+                    return new Dictionary<DateTime, decimal>();
+
+                string paidDate = columns.Contains("PaidAt")
+                    ? "COALESCE(PaidAt, CreatedAt)" : "CreatedAt";
+
+                // paidDate chỉ được chọn từ hai biểu thức cố định bên trên,
+                // các ngày vẫn được truyền bằng tham số SQL.
+                string sql = @"SELECT CAST(" + paidDate + @" AS date) AS RevenueDate,
+                                      ISNULL(SUM(TongTien), 0) AS Amount
+                               FROM dbo.DonDatMon
+                               WHERE TrangThaiThanhToan = N'Đã thanh toán'
+                                 AND " + paidDate + @" >= @p0
+                                 AND " + paidDate + @" < @p1
+                               GROUP BY CAST(" + paidDate + @" AS date)";
+
+                return db.Database.SqlQuery<DailyFoodRevenueRow>(sql, startDate, endDate)
+                    .ToList()
+                    .ToDictionary(x => x.RevenueDate.Date, x => x.Amount);
+            }
+            catch (Exception ex)
+            {
+                // Không làm hỏng Dashboard nếu bảng món ăn chưa được cài đặt.
+                System.Diagnostics.Trace.TraceError("Dashboard food revenue: " + ex);
+                return new Dictionary<DateTime, decimal>();
+            }
+        }
+
+        // =========================================================
+        // ADMIN - QUẢN LÝ HOÀN TIỀN
+        // =========================================================
+
+        [HttpGet]
+        [AdminAuthorize]
+        public ActionResult RefundManagement(string keyword = "", string status = "")
+        {
+            keyword = (keyword ?? "").Trim().ToLower();
+            status = (status ?? "").Trim();
+
+            var list = new List<StaffRefundListViewModel>();
+            var allDbRequests = new List<RefundRequest>();
+
+            try
+            {
+                var query = db.RefundRequests.Include(r => r.Booking).AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(keyword))
+                {
+                    query = query.Where(r => r.BookingId.ToString().Contains(keyword)
+                                          || r.CustomerName.ToLower().Contains(keyword)
+                                          || r.CustomerPhone.ToLower().Contains(keyword)
+                                          || r.CustomerEmail.ToLower().Contains(keyword)
+                                          || r.BankName.ToLower().Contains(keyword)
+                                          || r.AccountNumber.Contains(keyword));
+                }
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    query = query.Where(r => r.Status == status);
+                }
+
+                var allRequests = query.OrderByDescending(r => r.RequestedAt).ToList();
+
+                list = allRequests.Select(r => new StaffRefundListViewModel
+                {
+                    RefundRequestId = r.RefundRequestId,
+                    BookingId = r.BookingId,
+                    RoomName = r.Booking != null && r.Booking.Room != null ? r.Booking.Room.RoomName : "Phòng",
+                    CustomerName = r.CustomerName,
+                    CustomerPhone = r.CustomerPhone,
+                    CustomerEmail = r.CustomerEmail,
+                    CheckInDate = r.Booking != null ? r.Booking.CheckInDate : DateTime.MinValue,
+                    CheckOutDate = r.Booking != null ? r.Booking.CheckOutDate : DateTime.MinValue,
+                    PaidAmount = r.PaidAmount,
+                    RefundRate = r.RefundRate,
+                    RefundAmount = r.RefundAmount,
+                    BankName = r.BankName,
+                    AccountNumber = r.AccountNumber,
+                    AccountHolder = r.AccountHolder,
+                    Reason = r.Reason,
+                    Status = r.Status,
+                    RequestedAt = r.RequestedAt,
+                    RejectedReason = r.RejectedReason
+                }).ToList();
+
+                allDbRequests = db.RefundRequests.ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceWarning("RefundRequests table not found yet: " + ex.Message);
+            }
+
+            var model = new AdminRefundManagementViewModel
+            {
+                Requests = list,
+                TotalRefundedAmount = allDbRequests.Where(r => r.Status == "DaHoanTien").Sum(r => (decimal?)r.RefundAmount) ?? 0m,
+                PendingCount = allDbRequests.Count(r => r.Status == "ChoDuyet"),
+                StaffApprovedCount = allDbRequests.Count(r => r.Status == "NhanVienDaDuyet"),
+                CompletedCount = allDbRequests.Count(r => r.Status == "DaHoanTien"),
+                RejectedCount = allDbRequests.Count(r => r.Status == "TuChoi")
+            };
+
+            ViewBag.Keyword = keyword;
+            ViewBag.Status = status;
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [AdminAuthorize]
+        [QLKhachSan.Filters.HotelAntiForgery]
+        public ActionResult ConfirmRefundTransaction(int refundRequestId, string transactionCode, string notes, System.Web.HttpPostedFileBase receiptFile)
+        {
+            transactionCode = (transactionCode ?? "").Trim();
+            notes = (notes ?? "").Trim();
+
+            if (string.IsNullOrWhiteSpace(transactionCode))
+            {
+                TempData["AdminError"] = "Vui lòng nhập Mã giao dịch chuyển khoản VietinBank.";
+                return RedirectToAction("RefundManagement");
+            }
+
+            int adminUserId = Convert.ToInt32(Session["UserId"]);
+
+            try
+            {
+                var req = db.RefundRequests.FirstOrDefault(r => r.RefundRequestId == refundRequestId);
+                if (req == null)
+                {
+                    TempData["AdminError"] = "Không tìm thấy yêu cầu hoàn tiền.";
+                    return RedirectToAction("RefundManagement");
+                }
+
+                if (req.Status == "DaHoanTien")
+                {
+                    TempData["AdminError"] = "Yêu cầu này đã được xác nhận hoàn tiền trước đó.";
+                    return RedirectToAction("RefundManagement");
+                }
+
+                string receiptPath = null;
+                if (receiptFile != null && receiptFile.ContentLength > 0)
+                {
+                    string ext = System.IO.Path.GetExtension(receiptFile.FileName).ToLower();
+                    if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp")
+                    {
+                        string dir = Server.MapPath("~/Images/RefundReceipts/");
+                        if (!System.IO.Directory.Exists(dir))
+                        {
+                            System.IO.Directory.CreateDirectory(dir);
+                        }
+                        string fileName = "receipt_" + req.RefundRequestId + "_" + DateTime.Now.Ticks + ext;
+                        string fullPath = System.IO.Path.Combine(dir, fileName);
+                        receiptFile.SaveAs(fullPath);
+                        receiptPath = "/Images/RefundReceipts/" + fileName;
+                    }
+                }
+
+                req.Status = "DaHoanTien";
+                req.AdminUserId = adminUserId;
+                req.AdminApprovedAt = DateTime.UtcNow;
+
+                var refTx = new RefundTransaction
+                {
+                    RefundRequestId = req.RefundRequestId,
+                    BookingId = req.BookingId,
+                    TransactionCode = transactionCode,
+                    ReceiptImageUrl = receiptPath,
+                    Amount = req.RefundAmount,
+                    ProcessedAt = DateTime.UtcNow,
+                    ProcessedByUserId = adminUserId,
+                    Notes = notes
+                };
+
+                db.RefundTransactions.Add(refTx);
+                db.SaveChanges();
+
+                TempData["AdminSuccess"] = "Đã xác nhận hoàn tiền thành công cho đơn đặt phòng #" + req.BookingId + " (Số tiền: " + req.RefundAmount.ToString("N0") + " VNĐ).";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("ConfirmRefundTransaction error: " + ex.Message);
+                TempData["AdminError"] = "Có lỗi xảy ra khi xác nhận hoàn tiền.";
+            }
+
+            return RedirectToAction("RefundManagement");
+        }
+
+        [HttpPost]
+        [AdminAuthorize]
+        [QLKhachSan.Filters.HotelAntiForgery]
+        public ActionResult AdminRejectRefundRequest(int id, string reason)
+        {
+            string rejectReason = (reason ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(rejectReason))
+            {
+                TempData["AdminError"] = "Vui lòng nhập lý do từ chối.";
+                return RedirectToAction("RefundManagement");
+            }
+
+            int adminUserId = Convert.ToInt32(Session["UserId"]);
+
+            try
+            {
+                var req = db.RefundRequests.FirstOrDefault(r => r.RefundRequestId == id);
+                if (req == null)
+                {
+                    TempData["AdminError"] = "Không tìm thấy yêu cầu hoàn tiền.";
+                    return RedirectToAction("RefundManagement");
+                }
+
+                if (req.Status == "DaHoanTien")
+                {
+                    TempData["AdminError"] = "Không thể từ chối yêu cầu đã hoàn tiền.";
+                    return RedirectToAction("RefundManagement");
+                }
+
+                req.Status = "TuChoi";
+                req.RejectedReason = rejectReason;
+                req.AdminUserId = adminUserId;
+                req.AdminApprovedAt = DateTime.UtcNow;
+
+                db.SaveChanges();
+
+                TempData["AdminSuccess"] = "Đã từ chối yêu cầu hoàn tiền #" + req.BookingId + ".";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("AdminRejectRefundRequest error: " + ex.Message);
+                TempData["AdminError"] = "Có lỗi xảy ra khi xử lý yêu cầu.";
+            }
+
+            return RedirectToAction("RefundManagement");
+        }
+
+        private Dictionary<DateTime, decimal> GetRoomRevenueByDay(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                string sql = @"SELECT CAST(NgayThanhToan AS date) AS RevenueDate,
+                                      ISNULL(SUM(SoTien), 0) AS Amount
+                               FROM dbo.ThanhToan
+                               WHERE TrangThai = N'Đã thanh toán'
+                                 AND NgayThanhToan >= @p0
+                                 AND NgayThanhToan < @p1
+                               GROUP BY CAST(NgayThanhToan AS date)";
+
+                return db.Database.SqlQuery<DailyFoodRevenueRow>(sql, startDate, endDate)
+                    .ToList()
+                    .ToDictionary(x => x.RevenueDate.Date, x => x.Amount);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("Dashboard room revenue by day: " + ex);
+                return new Dictionary<DateTime, decimal>();
+            }
+        }
+
         private decimal GetFoodRevenue(DateTime startDate, DateTime endDate)
         {
             try
@@ -2096,3 +2444,5 @@ namespace QLKhachSan.Controllers
         }
     }
 }
+
+

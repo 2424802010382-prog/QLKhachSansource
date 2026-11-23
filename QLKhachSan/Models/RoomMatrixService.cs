@@ -20,7 +20,7 @@ namespace QLKhachSan.Models
         {
             date = date.Date;
             var end = date.AddDays(1);
-            var rooms = db.PhysicalRooms.AsNoTracking().Include(p => p.RoomType)
+            var rooms = db.PhysicalRooms.AsNoTracking().Include(p => p.Room)
                 .OrderBy(p => p.Floor).ThenBy(p => p.RoomNumber).ToList();
             var bookings = db.Bookings.AsNoTracking().Where(b =>
                 HotelOperations.ActiveStatuses.Contains(b.Status) || (date < DateTime.Today && b.Status == "Đã trả phòng" && b.CheckOutDate > date))
@@ -79,7 +79,7 @@ namespace QLKhachSan.Models
                 .Where(b => b.Missing > 0).Select(b => new
                 {
                     bookingId = b.Booking.BookingId, roomTypeName = rooms.Where(p => p.RoomTypeId == b.Booking.RoomId)
-                        .Select(p => p.RoomType == null ? "Phòng" : p.RoomType.RoomName).FirstOrDefault() ?? "Loại phòng #" + b.Booking.RoomId,
+                        .Select(p => p.Room == null ? "Phòng" : p.Room.RoomName).FirstOrDefault() ?? "Loại phòng #" + b.Booking.RoomId,
                     missingRoomCount = b.Missing, checkInDate = b.Booking.CheckInDate.ToString("dd/MM/yyyy"),
                     checkOutDate = b.Booking.CheckOutDate.ToString("dd/MM/yyyy"), status = b.Booking.Status
                 }).ToList();

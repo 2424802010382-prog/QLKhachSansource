@@ -1,0 +1,108 @@
+﻿@model QLKhachSan.Models.HotelOperations.FoodOrderState
+@{
+    Layout = null;
+    var culture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+    var bank = QLKhachSan.Services.BankPaymentSettings.Load();
+    string transferContent = QLKhachSan.Services.BankPaymentSettings.Content("Food", Model.MaDon);
+    string qrUrl = bank.QrUrl(transferContent, Model.TongTien);
+    bool canPay = Model.TrangThai != "Đã hủy" && Model.TrangThaiThanhToan != "Đã thanh toán";
+    bool pending = Model.TrangThaiThanhToan == "Chờ xác minh";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thanh toán đơn món #@Model.MaDon - Luxury Hotel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+<body class="bg-[#f8f5ee] min-h-screen py-10 text-[#21170f]">
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
+    <main class="container mx-auto px-4 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2">Thanh toán đặt món</h1>
+            <p class="text-gray-600">Đơn món #@Model.MaDon đã được ghi nhận. Hoàn tất chuyển khoản theo thông tin bên dưới.</p>
+        </header>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <section class="bg-white p-6 rounded-2xl shadow-md border border-[#e7dbc1] self-start">
+                <h2 class="text-lg font-bold mb-4 border-b pb-2">Tóm tắt đơn món</h2>
+                <dl class="space-y-4 text-sm">
+                    <div class="flex justify-between gap-3"><dt>Mã đơn</dt><dd class="font-bold">#@Model.MaDon</dd></div>
+                    <div class="flex justify-between gap-3"><dt>Trạng thái đơn</dt><dd>@Model.TrangThai</dd></div>
+                    <div class="flex justify-between gap-3"><dt>Thanh toán</dt><dd id="paymentStatus" class="font-semibold text-amber-700">@Model.TrangThaiThanhToan</dd></div>
+                    <div class="flex justify-between gap-3 border-t pt-4 font-bold"><dt>Tổng tiền</dt><dd class="text-red-600">@Model.TongTien.ToString("N0", culture)đ</dd></div>
+                </dl>
+                <a href="@Url.Action("History", "Restaurant")" class="block mt-6 text-sm text-indigo-600 underline">Lịch sử gọi món</a>
+                <a href="@Url.Action("Index", "Restaurant")" class="block mt-3 text-sm text-gray-600 underline">Quay lại nhà hàng</a>
+            </section>
+            <section class="bg-white p-6 rounded-2xl shadow-md border border-[#e7dbc1] md:col-span-2">
+                <h2 class="text-lg font-bold text-indigo-600 border-b pb-4 mb-6 text-center"><i class="fas fa-qrcode mr-2" aria-hidden="true"></i>Chuyển khoản QR</h2>
+                @if (canPay)
+                {
+                    if (qrUrl != null) { <div data-transfer-instructions>
+                    <p class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 text-sm">Quét mã QR bằng ứng dụng ngân hàng. Số tiền và nội dung chuyển khoản sẽ được điền tự động.</p>
+                    <div class="text-center my-6">
+                        <img src="@qrUrl" alt="Mã QR chuyển khoản đơn món @Model.MaDon" class="w-64 h-64 max-w-full mx-auto object-contain border-2 border-dashed border-indigo-300 rounded-2xl p-3" onerror="this.hidden=true; document.getElementById('qrError').hidden=false;" />
+                        <p id="qrError" hidden class="text-amber-700">Không tải được mã QR. Bạn có thể chuyển khoản theo thông tin bên dưới.</p>
+                    </div>
+                    <dl class="text-sm space-y-4 bg-gray-50 p-4 rounded-xl">
+                        <div class="flex justify-between gap-3"><dt>Ngân hàng</dt><dd class="font-bold">@bank.BankName</dd></div>
+                        <div class="flex justify-between gap-3 flex-wrap"><dt>Số tài khoản</dt><dd><strong id="accountNumber">@bank.AccountNumber</strong> <button type="button" onclick="copyPaymentText('accountNumber', this)" class="text-indigo-600 underline ml-2">Sao chép</button></dd></div>
+                        <div class="flex justify-between gap-3"><dt>Chủ tài khoản</dt><dd class="font-bold">@bank.AccountName</dd></div>
+                        <div class="flex justify-between gap-3"><dt>Số tiền</dt><dd class="font-bold text-red-600">@Model.TongTien.ToString("N0", culture)đ</dd></div>
+                        <div class="flex justify-between gap-3 flex-wrap"><dt>Nội dung CK</dt><dd><strong id="transferContent" class="text-emerald-700">@transferContent</strong> <button type="button" onclick="copyPaymentText('transferContent', this)" class="text-indigo-600 underline ml-2">Sao chép</button></dd></div>
+                    </dl>
+                    </div>
+                    } else {
+                        <p class="text-amber-700">Chưa cấu hình tên người thụ hưởng. Vui lòng liên hệ khách sạn trước khi chuyển khoản.</p>
+                    }
+                    <details class="mt-6 text-sm text-gray-600"><summary>Cần hỗ trợ đối soát?</summary>
+                        <p class="my-2">Nếu chuyển thiếu/thừa tiền, sai nội dung hoặc chờ lâu, hãy liên hệ nhân viên. Không chuyển lại khi chưa đối soát.</p>
+                        <button type="button" id="reviewButton" onclick="requestTransferReview(this)" disabled="@pending" class="underline">@(pending ? "Đã gửi yêu cầu kiểm tra" : "Gửi yêu cầu nhân viên kiểm tra")</button>
+                    </details>
+                }
+                else
+                {
+                    <p class="bg-gray-50 p-5 rounded-xl text-center">@(Model.TrangThaiThanhToan == "Đã thanh toán" ? "Đơn món đã được xác nhận thanh toán." : "Đơn món đã hủy, không cần chuyển khoản.")</p>
+                }
+                <div id="automaticPayment" data-status-url="@Url.Action("CheckPaymentStatus", "Restaurant", new { id = Model.MaDon })"
+                     data-amount="@Model.TongTien.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-enabled="@bank.Ready.ToString().ToLowerInvariant()">
+                    <p id="automaticPaymentMessage" role="status" aria-live="polite" class="font-semibold text-emerald-700 mt-4">Đang kiểm tra thanh toán...</p>
+                </div>
+                <p id="paymentMessage" role="status" aria-live="polite" class="text-sm mt-4"></p>
+            </section>
+        </div>
+    </main>
+    <script>
+        async function copyPaymentText(id, button) {
+            try {
+                await navigator.clipboard.writeText(document.getElementById(id).textContent);
+                button.textContent = 'Đã sao chép';
+                setTimeout(() => button.textContent = 'Sao chép', 2000);
+            } catch (error) {
+                document.getElementById('paymentMessage').textContent = 'Không thể sao chép tự động. Vui lòng sao chép thông tin hiển thị phía trên.';
+            }
+        }
+        async function requestTransferReview(button) {
+            if (button.disabled) return;
+            button.disabled = true;
+            const message = document.getElementById('paymentMessage');
+            message.textContent = 'Đang gửi yêu cầu...';
+            try {
+                const response = await fetch('@Url.Action("RequestBankTransferReview", "Restaurant", new { id = Model.MaDon })', { method: 'POST', credentials: 'same-origin' });
+                if (!response.ok) throw new Error('Không thể gửi yêu cầu. Vui lòng tải lại trang và thử lại.');
+                const result = await response.json();
+                if (!result.success) throw new Error(result.message);
+                document.getElementById('paymentStatus').textContent = 'Chờ xác minh';
+                button.textContent = 'Đã gửi yêu cầu xác minh';
+                message.textContent = result.message;
+            } catch (error) {
+                message.textContent = error.message || 'Không thể kết nối máy chủ.';
+                button.disabled = false;
+            }
+        }
+    </script>
+    <script src="@Url.Content("~/Scripts/payment-status.js")"></script>
+</body>
+</html>

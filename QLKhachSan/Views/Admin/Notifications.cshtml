@@ -82,7 +82,7 @@
                                 ? "bg-purple-50 border-purple-200"
                                 : "bg-blue-50 border-blue-200";
 
-                        <a href="@Url.Action("BookingDetails", "Admin", new { id = item.BookingId })"
+                        <a href="@Url.Action(item.Type == "RoomService" ? "OrderDetails" : "BookingDetails", item.Type == "RoomService" ? "RoomService" : "Admin", new { id = item.BookingId })"
                            class="block border rounded-2xl p-5 hover:shadow-md transition @boxClass">
 
                             <div class="flex items-start gap-4">
@@ -123,3 +123,4 @@
 
 </body>
 </html>
+

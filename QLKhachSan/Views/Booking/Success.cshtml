@@ -1,6 +1,7 @@
-@model QLKhachSan.Models.Booking
+﻿@model QLKhachSan.Models.Booking
 @{
     Layout = null;
+    bool isPaid = QLKhachSan.Models.HotelOperations.PaidAmount(Model) >= Model.TotalAmount;
 }
 
 <!DOCTYPE html>
@@ -20,9 +21,10 @@
             <i class="fas fa-check"></i>
         </div>
 
-        <h1 class="text-3xl font-extrabold text-[#21170f] mb-2">Đã ghi nhận đơn đặt phòng</h1>
-        <p class="text-gray-600 mb-6">Trạng thái đơn: <strong class="text-amber-600">@Model.Status</strong>. Việc chuyển khoản chỉ hoàn tất sau khi nhân viên đối soát. Vui lòng xem trạng thái thanh toán tại trang thanh toán hoặc lịch sử đặt phòng.</p>
-
+        <h1 class="text-3xl font-extrabold text-[#21170f] mb-2">@(isPaid ? "Thanh toán thành công" : "Đã ghi nhận đơn đặt phòng")</h1>
+        <p class="text-gray-600 mb-6">Trạng thái đơn: <strong class="text-amber-600">@Model.Status</strong>.
+            @(isPaid ? "Hệ thống đã ghi nhận thanh toán. Nhân viên sẽ duyệt đơn và thực hiện nhận phòng theo quy trình." : "Đơn chưa được thanh toán đủ. Vui lòng kiểm tra trang thanh toán hoặc lịch sử đặt phòng.")
+        </p>
         <div class="bg-gray-50 p-6 rounded-2xl text-left space-y-3 mb-8 border">
             <div class="flex justify-between">
                 <span class="text-gray-500">Mã đơn đặt phòng:</span>

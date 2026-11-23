@@ -1,0 +1,77 @@
+@model QLKhachSan.Models.RoomServiceOrder
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Thanh toán thành công #@Model.OrderId - Luxury Hotel</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; padding: 36px 20px; color: #29251e; background: radial-gradient(ellipse at top, #fff9e7, transparent 65%), #f5f1e9; font-family: 'Segoe UI', Arial, sans-serif; }
+        .brand { display: block; width: fit-content; margin: 0 auto 28px; text-align: center; color: #725622; text-decoration: none; font-weight: 700; letter-spacing: 3px; }
+        .brand small { display: block; margin-top: 7px; font-size: 9px; letter-spacing: 4px; }
+        main { max-width: 650px; margin: auto; background: #fff; border: 1px solid #e9dfcc; border-radius: 28px; box-shadow: 0 24px 70px #55401d12; overflow: hidden; }
+        .hero { padding: 36px 32px 26px; text-align: center; background: linear-gradient(180deg, #fffcf4, #fff); border-top: 4px solid #bc9850; }
+        .check { display: grid; place-items: center; width: 84px; height: 84px; margin: 0 auto 22px; background: #eaf6ef; color: #27845c; border: 1px solid #cce7d7; border-radius: 50%; box-shadow: 0 0 0 9px #f3f9f5; animation: appear .5s ease-out; }
+        .eyebrow { color: #92733c; text-transform: uppercase; letter-spacing: 2px; font-size: 11px; font-weight: 700; }
+        h1 { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(26px, 5vw, 36px); margin: 12px 0; font-weight: 600; }
+        .intro { margin: 0 auto; max-width: 440px; color: #76736c; font-size: 14px; line-height: 1.7; }
+        .content { padding: 0 32px 32px; }
+        .receipt { border: 1px solid #eae4d9; border-radius: 18px; overflow: hidden; }
+        .receipt-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 17px 22px; background: #faf8f3; border-bottom: 1px solid #eae4d9; font-size: 13px; }
+        .badge { color: #23764e; background: #e8f4ec; padding: 6px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        dl { padding: 8px 22px; margin: 0; }
+        .row { display: grid; grid-template-columns: 1fr 1.4fr; gap: 18px; margin: 14px 0; font-size: 14px; line-height: 1.5; }
+        dt { color: #807b72; } dd { margin: 0; text-align: right; font-weight: 600; overflow-wrap: anywhere; }
+        .total { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 22px; border-top: 1px dashed #ded5c5; background: #fdfbf6; font-size: 14px; }
+        .total strong { color: #23764e; font-size: 28px; } .total small { font-size: 15px; }
+        .note { margin: 20px 0; padding: 14px 16px; border-radius: 12px; background: #f4f7f8; color: #606f76; font-size: 13px; line-height: 1.7; }
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .button { text-decoration: none; text-align: center; border-radius: 12px; padding: 14px 10px; font-size: 14px; font-weight: 600; border: 1px solid #dfd5c4; color: #665230; transition: background .2s; }
+        .primary { background: #29251e; border-color: #29251e; color: #f6dfaa; }
+        .button:hover { background: #f5efdf; color: #29251e; }
+        a:focus-visible { outline: 3px solid #b88e39; outline-offset: 4px; }
+        .home { display: block; width: fit-content; margin: 20px auto 0; color: #84765d; font-size: 13px; text-underline-offset: 4px; }
+        footer { text-align: center; color: #968b78; margin-top: 24px; font-size: 12px; }
+        @@keyframes appear { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
+        @@media (prefers-reduced-motion: reduce) { .check { animation: none; } }
+        @@media (max-width: 480px) { body { padding: 24px 12px; } .hero { padding: 30px 18px 24px; } .content { padding: 0 18px 24px; } .actions { grid-template-columns: 1fr; } .receipt-head, .total { padding: 16px; } dl { padding: 8px 16px; } }
+    </style>
+</head>
+<body>
+    @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
+    <a class="brand" href="@Url.Action("Index", "Home")">LUXURY HOTEL<small>LUXURY &amp; COMFORT</small></a>
+    <main>
+        <header class="hero">
+            <div class="check" aria-hidden="true"><svg width="38" height="38" viewBox="0 0 40 40" fill="none"><path d="M9 21l7 7L31 12" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+            <span class="eyebrow">Dịch vụ phòng</span>
+            <h1>Thanh toán thành công!</h1>
+            <p class="intro">Hệ thống đã ghi nhận thanh toán của quý khách.<br />Cảm ơn quý khách đã lựa chọn dịch vụ tại Luxury Hotel.</p>
+        </header>
+        <div class="content">
+            <section class="receipt" aria-label="Chi tiết thanh toán">
+                <div class="receipt-head"><strong>ĐƠN DỊCH VỤ #@Model.OrderId</strong><span class="badge">Đã thanh toán</span></div>
+                <dl>
+                    <div class="row"><dt>Khách hàng</dt><dd>@Model.CustomerName</dd></div>
+                    <div class="row"><dt>Phòng sử dụng</dt><dd>Phòng @Model.RoomNumber</dd></div>
+                    <div class="row"><dt>Dịch vụ</dt><dd>@Model.ServiceName</dd></div>
+                    <div class="row"><dt>Số lượng</dt><dd>@Model.Quantity @Model.Unit</dd></div>
+                    <div class="row"><dt>Thời gian sử dụng</dt><dd>@Model.UseAt.ToString("HH:mm · dd/MM/yyyy")</dd></div>
+                    <div class="row"><dt>Trạng thái dịch vụ</dt><dd>@Model.Status</dd></div>
+                </dl>
+                <div class="total"><span>Tổng đã thanh toán</span><strong>@Model.Total.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) <small>đ</small></strong></div>
+            </section>
+            <p class="note">Thanh toán đã được xác nhận. Quý khách có thể theo dõi tiến độ phục vụ trong chi tiết đơn dịch vụ hoặc liên hệ lễ tân khi cần hỗ trợ.</p>
+            <nav class="actions" aria-label="Thao tác tiếp theo">
+                <a class="button primary" href="@Url.Action("OrderDetails", "RoomService", new { id = Model.OrderId })">Xem chi tiết đơn</a>
+                <a class="button" href="@Url.Action("Orders", "RoomService")">Lịch sử dịch vụ</a>
+            </nav>
+            <a class="home" href="@Url.Action("Index", "Home")">Về trang chủ</a>
+        </div>
+    </main>
+    <footer>Luxury Hotel · Chăm chút từng khoảnh khắc nghỉ dưỡng</footer>
+</body>
+</html>

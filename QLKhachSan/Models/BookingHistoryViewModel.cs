@@ -29,5 +29,17 @@ namespace QLKhachSan.Models
         public string Status { get; set; }
 
         public DateTime CreatedAt { get; set; }
+
+        public bool CanRequestRefund { get; set; }
+
+        public decimal RefundRate { get; set; }
+
+        public decimal EstimatedRefundAmount { get; set; }
+
+        public string RefundStatus { get; set; }
+
+        public string RefundStatusText { get; set; }
+
+        public string RefundRejectedReason { get; set; }
     }
 }

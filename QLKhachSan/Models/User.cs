@@ -14,6 +14,19 @@ namespace QLKhachSan.Models
     
     public partial class User
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
+        public User()
+        {
+            this.Bookings = new HashSet<Booking>();
+            this.DonDatMons = new HashSet<DonDatMon>();
+            this.PasswordResetTokens = new HashSet<PasswordResetToken>();
+            this.RoomServiceHistories = new HashSet<RoomServiceHistory>();
+            this.RoomServiceOrders = new HashSet<RoomServiceOrder>();
+            this.RoomServiceOrders1 = new HashSet<RoomServiceOrder>();
+            this.RoomServiceOrders2 = new HashSet<RoomServiceOrder>();
+            this.UserPermissions = new HashSet<UserPermission>();
+        }
+    
         public int UserId { get; set; }
         public string Username { get; set; }
         public string PasswordHash { get; set; }
@@ -22,5 +35,22 @@ namespace QLKhachSan.Models
         public string Role { get; set; }
         public bool IsActive { get; set; }
         public System.DateTime CreatedAt { get; set; }
+    
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<Booking> Bookings { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<DonDatMon> DonDatMons { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<PasswordResetToken> PasswordResetTokens { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<RoomServiceHistory> RoomServiceHistories { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<RoomServiceOrder> RoomServiceOrders { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<RoomServiceOrder> RoomServiceOrders1 { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<RoomServiceOrder> RoomServiceOrders2 { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<UserPermission> UserPermissions { get; set; }
     }
 }

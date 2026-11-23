@@ -1,12 +1,20 @@
-@model QLKhachSan.Models.Booking
+﻿@model QLKhachSan.Models.Booking
 @{
     Layout = null;
     decimal paidAmount = QLKhachSan.Models.HotelOperations.PaidAmount(Model);
     decimal outstandingAmount = Math.Max(0, Model.TotalAmount - paidAmount);
-    long amountInt = Convert.ToInt64(Math.Round(outstandingAmount));
-    string addInfo = "QLKS " + Model.BookingId;
-    string accountName = "LUXURY HOTEL";
-    string qrUrl = $"https://img.vietqr.io/image/970436-1038619653-compact2.png?amount={amountInt}&addInfo={Uri.EscapeDataString(addInfo)}&accountName={Uri.EscapeDataString(accountName)}";
+    bool isPayAtHotel = (Model.PaymentMethod ?? "").Contains("Thanh toán tại khách sạn");
+    decimal payAtCounter = isPayAtHotel ? Math.Max(0, Model.TotalAmount - outstandingAmount) : 0m;
+
+    var bank = QLKhachSan.Services.BankPaymentSettings.Load();
+    string addInfo = QLKhachSan.Services.BankPaymentSettings.Content("Booking", Model.BookingId);
+
+    double elapsedSeconds = (DateTime.Now - Model.CreatedAt).TotalSeconds;
+    double remainingSeconds = Math.Max(0, 600 - elapsedSeconds);
+    bool isExpired = Model.Status == "Đã hủy" || remainingSeconds <= 0;
+
+    bool canPay = !isExpired && QLKhachSan.Models.HotelOperations.ActiveStatuses.Contains(Model.Status) && outstandingAmount > 0;
+    string qrUrl = canPay ? bank.QrUrl(addInfo, outstandingAmount) : null;
 }
 
 <!DOCTYPE html>
@@ -24,133 +32,153 @@
 
     <div class="container mx-auto px-4 max-w-4xl">
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-[#21170f]">Thanh Toán Đặt Phòng</h1>
-            <p class="text-gray-600">Vui lòng chọn phương thức thanh toán để hoàn tất đơn hàng #@Model.BookingId</p>
+            @if (isPayAtHotel)
+            {
+                <h1 class="text-3xl font-bold text-[#21170f]">Thanh Toán Cọc Giữ Phòng (40%)</h1>
+                <p class="text-gray-600 mt-1">Đơn đặt phòng #@Model.BookingId chọn thanh toán tại quầy. Yêu cầu đặt cọc trước 40% qua chuyển khoản QR (60% còn lại thanh toán tại quầy khi nhận phòng).</p>
+            }
+            else
+            {
+                <h1 class="text-3xl font-bold text-[#21170f]">Thanh Toán Đặt Phòng</h1>
+                <p class="text-gray-600 mt-1">Vui lòng chọn phương thức thanh toán để hoàn tất đơn hàng #@Model.BookingId</p>
+            }
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Cột thông tin đơn hàng -->
-            <div class="bg-white p-6 rounded-2xl shadow-md border border-[#e7dbc1] md:col-span-1">
-                <h3 class="text-lg font-bold text-[#21170f] mb-4 border-b pb-2">Tóm tắt đơn hàng</h3>
-                <div class="space-y-3 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Mã đơn:</span>
-                        <span class="font-bold text-indigo-600">#@Model.BookingId</span>
+        @if (isExpired)
+        {
+            <div class="bg-red-50 border border-red-300 text-red-700 p-8 rounded-3xl text-center shadow-xl max-w-xl mx-auto my-12">
+                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl mb-4">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+                <h3 class="font-bold text-2xl text-red-800 mb-2">Đơn Đặt Phòng Đã Hết Hạn</h3>
+                <p class="text-sm text-gray-700 leading-relaxed mb-6">Quá thời hạn 10 phút chưa hoàn tất thanh toán QR, đơn đặt phòng #@Model.BookingId đã tự động hủy và phòng đã được giải phóng.</p>
+                <a href="@Url.Action("Index", "Room")" class="inline-block bg-[#153044] hover:bg-[#1b3a4e] text-white font-bold px-8 py-3 rounded-xl text-sm shadow-md transition">
+                    <i class="fas fa-arrow-right mr-1"></i> Đặt phòng mới ngay
+                </a>
+            </div>
+        }
+        else
+        {
+            <!-- Countdown Banner -->
+            <div class="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-2xl text-xs font-bold mb-6 max-w-md mx-auto text-center shadow-sm flex items-center justify-center gap-2">
+                <i class="fas fa-stopwatch text-base text-red-600"></i> Mã QR có hiệu lực trong: <span id="countdownTimer" class="text-sm font-extrabold text-red-600">10:00</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Cột thông tin đơn hàng -->
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-[#e7dbc1] md:col-span-1">
+                    <h3 class="text-lg font-bold text-[#21170f] mb-4 border-b pb-2">Tóm tắt đơn hàng</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Mã đơn:</span>
+                            <span class="font-bold text-indigo-600">#@Model.BookingId</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Khách hàng:</span>
+                            <span class="font-medium">@Model.CustomerName</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Phòng:</span>
+                            <span class="font-medium">@(Model.Room != null ? Model.Room.RoomName : "Phòng #" + Model.RoomId)</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Nhận - Trả:</span>
+                            <span class="font-medium">@Model.CheckInDate.ToString("dd/MM/yyyy") - @Model.CheckOutDate.ToString("dd/MM/yyyy")</span>
+                        </div>
+                        @if (isPayAtHotel)
+                        {
+                            <div class="flex justify-between text-amber-700"><span>Cọc giữ phòng (40%):</span><strong class="text-amber-800">@outstandingAmount.ToString("N0")đ</strong></div>
+                            <div class="flex justify-between text-gray-600"><span>Thanh toán tại quầy (60%):</span><span>@payAtCounter.ToString("N0")đ</span></div>
+                        }
+                        else
+                        {
+                            <div class="flex justify-between"><span>Đã thu:</span><span>@paidAmount.ToString("N0")đ</span></div>
+                            <div class="flex justify-between font-bold"><span>Còn phải thu:</span><span>@outstandingAmount.ToString("N0")đ</span></div>
+                        }
+                        <hr class="my-2">
+                        <div class="flex justify-between text-base font-bold text-red-600">
+                            <span>Tổng tiền:</span>
+                            <span>@Model.TotalAmount.ToString("N0")đ</span>
+                        </div>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Khách hàng:</span>
-                        <span class="font-medium">@Model.CustomerName</span>
+                </div>
+
+                <!-- Cột phương thức thanh toán -->
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-[#e7dbc1] md:col-span-2">
+                    <div class="border-b pb-3 mb-6">
+                        <h3 class="font-bold text-gray-900 text-lg flex items-center gap-2">
+                            <i class="fas fa-qrcode text-indigo-600"></i> @(isPayAtHotel ? "Chuyển khoản QR Đặt Cọc 40%" : "Chuyển khoản QR Trực Tuyến (100%)")
+                        </h3>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Phòng:</span>
-                        <span class="font-medium">@(Model.Room != null ? Model.Room.RoomName : "Phòng #" + Model.RoomId)</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Nhận - Trả:</span>
-                        <span class="font-medium">@Model.CheckInDate.ToString("dd/MM/yyyy") - @Model.CheckOutDate.ToString("dd/MM/yyyy")</span>
-                    </div>
-                    <div class="flex justify-between"><span>Đã thu:</span><span>@paidAmount.ToString("N0")đ</span></div>
-                    <div class="flex justify-between font-bold"><span>Còn phải thu:</span><span>@outstandingAmount.ToString("N0")đ</span></div>
-                    <hr class="my-2">
-                    <div class="flex justify-between text-base font-bold text-red-600">
-                        <span>Tổng tiền:</span>
-                        <span>@Model.TotalAmount.ToString("N0")đ</span>
+
+                    <!-- Tab Chuyển khoản QR -->
+                    <div id="sectionTransfer" class="space-y-6 text-center">
+                        @if (qrUrl != null) { <div data-transfer-instructions>
+                        <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 text-sm">
+                            <i class="fas fa-info-circle mr-1"></i> Quét mã QR @bank.BankName bên dưới bằng ứng dụng ngân hàng. Số tiền và nội dung sẽ được điền tự động.
+                        </div>
+
+                        <div class="inline-block p-4 bg-white border-2 border-dashed border-indigo-300 rounded-2xl shadow-sm">
+                            <img src="@qrUrl" alt="VietQR Payment VietinBank" class="w-64 h-64 mx-auto object-contain">
+                        </div>
+
+                        <div class="text-sm space-y-2 text-gray-700 bg-gray-50 p-4 rounded-xl text-left">
+                            <div class="flex justify-between items-center">
+                                <span>Ngân hàng:</span>
+                                <strong class="text-gray-900">@bank.BankName</strong>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>Số tài khoản:</span>
+                                <div class="flex items-center gap-2">
+                                    <strong id="accNoText" class="text-indigo-600">@bank.AccountNumber</strong>
+                                    <button type="button" onclick="copyText(document.getElementById('accNoText').textContent, this)" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-semibold transition">
+                                        <i class="fas fa-copy mr-1"></i> Sao chép
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>Chủ tài khoản:</span>
+                                <strong class="text-gray-900">@bank.AccountName</strong>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>Số tiền:</span>
+                                <strong class="text-red-600 text-base">@outstandingAmount.ToString("N0")đ</strong>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>Nội dung CK:</span>
+                                <div class="flex items-center gap-2">
+                                    <strong id="contentTransferText" class="text-emerald-600">@addInfo</strong>
+                                    <button type="button" onclick="copyText(document.getElementById('contentTransferText').textContent, this)" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-semibold transition">
+                                        <i class="fas fa-copy mr-1"></i> Sao chép
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        </div>
+                        }
+                        else if (canPay)
+                        {
+                            <p class="text-amber-700">Chưa cấu hình tên người thụ hưởng. Vui lòng liên hệ khách sạn trước khi chuyển khoản.</p>
+                        }
+                        <div id="automaticPayment" data-status-url="@Url.Action("CheckPaymentStatus", "Booking", new { id = Model.BookingId })"
+                             data-success-url="@Url.Action("Success", "Booking", new { id = Model.BookingId })"
+                             data-amount="@outstandingAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-enabled="@bank.Ready.ToString().ToLowerInvariant()">
+                            <p id="automaticPaymentMessage" role="status" aria-live="polite" class="font-semibold text-emerald-700">Đang kiểm tra thanh toán...</p>
+                        </div>
+                        @if (canPay) {
+                            <details class="text-sm text-gray-600"><summary>Cần hỗ trợ đối soát?</summary>
+                                <p class="my-2">Nếu chuyển thiếu/thừa tiền, sai nội dung hoặc chờ lâu, hãy liên hệ nhân viên. Không chuyển lại khi chưa đối soát.</p>
+                                <button type="button" onclick="requestTransferReview(this)" class="underline">Gửi yêu cầu nhân viên kiểm tra</button>
+                            </details>
+                        }
                     </div>
                 </div>
             </div>
-
-            <!-- Cột phương thức thanh toán -->
-            <div class="bg-white p-6 rounded-2xl shadow-md border border-[#e7dbc1] md:col-span-2">
-                <div class="flex border-b mb-6">
-                    <button id="tabTransfer" onclick="switchTab('transfer')" class="flex-1 py-3 font-bold text-indigo-600 border-b-2 border-indigo-600 text-center">
-                        <i class="fas fa-qrcode mr-2"></i> Chuyển khoản QR
-                    </button>
-                    <button id="tabCash" onclick="switchTab('cash')" class="flex-1 py-3 font-bold text-gray-500 border-b-2 border-transparent text-center">
-                        <i class="fas fa-money-bill-wave mr-2"></i> Tiền mặt tại quầy
-                    </button>
-                </div>
-
-                <!-- Tab Chuyển khoản QR -->
-                <div id="sectionTransfer" class="space-y-6 text-center">
-                    <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 text-sm">
-                        <i class="fas fa-info-circle mr-1"></i> Quét mã QR Vietcombank bên dưới bằng ứng dụng ngân hàng. Số tiền và nội dung sẽ được điền tự động.
-                    </div>
-
-                    <div class="inline-block p-4 bg-white border-2 border-dashed border-indigo-300 rounded-2xl shadow-sm">
-                        <img src="@qrUrl" alt="VietQR Payment VCB" class="w-64 h-64 mx-auto object-contain">
-                    </div>
-
-                    <div class="text-sm space-y-2 text-gray-700 bg-gray-50 p-4 rounded-xl text-left">
-                        <div class="flex justify-between items-center">
-                            <span>Ngân hàng:</span>
-                            <strong class="text-gray-900">Vietcombank (VCB)</strong>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Số tài khoản:</span>
-                            <div class="flex items-center gap-2">
-                                <strong id="accNoText" class="text-indigo-600">1038619653</strong>
-                                <button type="button" onclick="copyText('1038619653', this)" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-semibold transition">
-                                    <i class="fas fa-copy mr-1"></i> Sao chép
-                                </button>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Chủ tài khoản:</span>
-                            <strong class="text-gray-900">LUXURY HOTEL</strong>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Số tiền:</span>
-                            <strong class="text-red-600 text-base">@outstandingAmount.ToString("N0")đ</strong>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span>Nội dung CK:</span>
-                            <div class="flex items-center gap-2">
-                                <strong id="contentTransferText" class="text-emerald-600">QLKS @Model.BookingId</strong>
-                                <button type="button" onclick="copyText('QLKS @Model.BookingId', this)" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-semibold transition">
-                                    <i class="fas fa-copy mr-1"></i> Sao chép
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col gap-2">
-                        <button onclick="requestTransferReview(this)" disabled="@(outstandingAmount == 0)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow">
-                            <i class="fas fa-check-circle mr-2"></i> Tôi đã chuyển khoản — yêu cầu xác minh
-                        </button>
-                        <span class="text-[11px] text-gray-400 italic">Yêu cầu này chưa xác nhận đã thu tiền. Nhân viên sẽ đối soát giao dịch trước khi ghi nhận thanh toán.</span>
-                    </div>
-                </div>
-
-                <!-- Tab Tiền mặt -->
-                <div id="sectionCash" class="hidden space-y-6 text-center py-10">
-                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto text-3xl mb-4">
-                        <i class="fas fa-hand-holding-usd"></i>
-                    </div>
-                    <h3 class="text-xl font-bold">Thanh toán tiền mặt tại quầy lễ tân</h3>
-                    <p class="text-gray-600 max-w-md mx-auto">Bạn có thể thanh toán bằng tiền mặt hoặc thẻ ngân hàng trực tiếp tại quầy lễ tân khi đến nhận phòng (Check-in).</p>
-                    <button onclick="confirmCash(this)" disabled="@(outstandingAmount == 0)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-xl transition">
-                        Xác nhận đặt phòng (Thanh toán tại quầy)
-                    </button>
-                </div>
-            </div>
-        </div>
+        }
     </div>
 
     <script>
-        function switchTab(tab) {
-            if (tab === 'transfer') {
-                $('#sectionTransfer').removeClass('hidden');
-                $('#sectionCash').addClass('hidden');
-                $('#tabTransfer').addClass('text-indigo-600 border-indigo-600').removeClass('text-gray-500 border-transparent');
-                $('#tabCash').removeClass('text-indigo-600 border-indigo-600').addClass('text-gray-500 border-transparent');
-            } else {
-                $('#sectionCash').removeClass('hidden');
-                $('#sectionTransfer').addClass('hidden');
-                $('#tabCash').addClass('text-indigo-600 border-indigo-600').removeClass('text-gray-500 border-transparent');
-                $('#tabTransfer').removeClass('text-indigo-600 border-indigo-600').addClass('text-gray-500 border-transparent');
-            }
-        }
-
         function copyText(text, btn) {
             navigator.clipboard.writeText(text).then(function() {
                 const originalHtml = btn.innerHTML;
@@ -178,24 +206,36 @@
                 if (button) button.disabled = false;
             }
         }
-        function confirmCash(button) {
+        function requestTransferReview(button) {
+            return submitPaymentChoice('@Url.Action("RequestBankTransferReview", "Booking", new { id = Model.BookingId })', button);
+        }
             return submitPaymentChoice('@Url.Action("ConfirmCashPayment", "Booking", new { id = Model.BookingId })', button);
         }
         function requestTransferReview(button) {
             return submitPaymentChoice('@Url.Action("RequestBankTransferReview", "Booking", new { id = Model.BookingId })', button);
         }
-        const paymentPoll = setInterval(async function() {
-            try {
-                const response = await fetch('@Url.Action("CheckPaymentStatus", "Booking", new { id = Model.BookingId })', { cache: 'no-store' });
-                if (!response.ok) throw new Error('Không kiểm tra được trạng thái thanh toán. Vui lòng tải lại trang.');
-                const result = await response.json();
-                if (result.success && result.isPaid) window.location.href = '@Url.Action("Success", "Booking", new { id = Model.BookingId })';
-            } catch (error) {
-                clearInterval(paymentPoll);
-                showLuxuryAlert(error.message, 'Kiểm tra thanh toán', 'warning');
+
+        let remainingSeconds = @(isExpired ? 0 : Math.Floor(remainingSeconds));
+        if (remainingSeconds > 0) {
+            const timerEl = document.getElementById('countdownTimer');
+            if (timerEl) {
+                const interval = setInterval(() => {
+                    remainingSeconds--;
+                    if (remainingSeconds <= 0) {
+                        clearInterval(interval);
+                        timerEl.textContent = "00:00";
+                        alert("Đã hết thời gian thanh toán 10 phút. Đơn hàng đã tự động hủy.");
+                        location.reload();
+                    } else {
+                        const m = Math.floor(remainingSeconds / 60);
+                        const s = remainingSeconds % 60;
+                        timerEl.textContent = (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+                    }
+                }, 1000);
             }
-        }, 4000);
+        }
     </script>
+    <script src="@Url.Content("~/Scripts/payment-status.js")"></script>
     @Html.Partial("~/Views/Shared/_LuxuryModal.cshtml")
 </body>
 </html>

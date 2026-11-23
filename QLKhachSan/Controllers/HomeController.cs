@@ -27,7 +27,7 @@ namespace QLKhachSan.Controllers
         public ActionResult About()
         {
             ViewBag.RoomTypeCount = db.Rooms.Count(r => r.IsActive);
-            ViewBag.PhysicalRoomCount = db.PhysicalRooms.Count(p => p.IsActive && p.RoomType.IsActive);
+            ViewBag.PhysicalRoomCount = db.PhysicalRooms.Count(p => p.IsActive && p.Room.IsActive);
 
             return View();
         }

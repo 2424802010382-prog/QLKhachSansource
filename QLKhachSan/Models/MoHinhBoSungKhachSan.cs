@@ -56,22 +56,8 @@ namespace QLKhachSan.Models
     // =====================================================
 
     [Table("Permissions")]
-    public class Permission
+    public partial class Permission
     {
-        [Key]
-        public int PermissionId { get; set; }
-
-        [Required]
-        [StringLength(100)]
-        public string PermissionCode { get; set; }
-
-        [Required]
-        [StringLength(200)]
-        public string PermissionName { get; set; }
-
-        [Required]
-        [StringLength(100)]
-        public string Category { get; set; }
     }
 
 
@@ -80,20 +66,7 @@ namespace QLKhachSan.Models
     // =====================================================
 
     [Table("UserPermissions")]
-    public class UserPermission
+    public partial class UserPermission
     {
-        [Key]
-        public int UserPermissionId { get; set; }
-
-        public int UserId { get; set; }
-
-        [Required]
-        [StringLength(100)]
-        public string PermissionCode { get; set; }
-
-        public DateTime GrantedAt { get; set; }
-
-        [ForeignKey("UserId")]
-        public virtual User User { get; set; }
     }
 }

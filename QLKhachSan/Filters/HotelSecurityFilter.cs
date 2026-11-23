@@ -18,19 +18,26 @@ namespace QLKhachSan.Filters
         }
         public void OnAuthorization(AuthorizationContext context)
         {
+            // This one server-to-server endpoint verifies HMAC over the raw body inside Receive.
+            // Never apply a generic AllowAnonymous/CSRF bypass to other actions.
+            if (context.Controller is QLKhachSan.Controllers.PaymentWebhookController &&
+                context.ActionDescriptor.ActionName == "Receive") return;
             var session = context.HttpContext.Session;
             int id;
             if (session["UserId"] != null && int.TryParse(Convert.ToString(session["UserId"]), out id))
             {
-                using (var db = new HotelDbContext())
+                if (session["Role"] == null || session["Permissions"] == null)
                 {
-                    var user = db.Users.AsNoTracking().FirstOrDefault(u => u.UserId == id && u.IsActive);
-                    if (user == null) session.Clear();
-                    else
+                    using (var db = new HotelDbContext())
                     {
-                        session["Role"] = (user.Role ?? "Customer").Trim();
-                        session["Email"] = user.Email;
-                        session["Permissions"] = db.UserPermissions.Where(p => p.UserId == id).Select(p => p.PermissionCode).ToList();
+                        var user = db.Users.AsNoTracking().FirstOrDefault(u => u.UserId == id && u.IsActive);
+                        if (user == null) session.Clear();
+                        else
+                        {
+                            session["Role"] = (user.Role ?? "Customer").Trim();
+                            session["Email"] = user.Email;
+                            session["Permissions"] = db.UserPermissions.Where(p => p.UserId == id).Select(p => p.PermissionCode).ToList();
+                        }
                     }
                 }
             }
@@ -42,7 +49,14 @@ namespace QLKhachSan.Filters
             string permission = null;
             bool denied = false;
             if (controller.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
                 denied = session["UserId"] == null || !role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+                if (new[] { "Confirm", "Cancel", "ConfirmPayment", "CheckIn", "CheckOut" }.Contains(action, StringComparer.OrdinalIgnoreCase))
+                {
+                    // Operational processing of bookings is assigned to Staff; Admin is restricted.
+                    denied = true;
+                }
+            }
             if (controller.Equals("Staff", StringComparison.OrdinalIgnoreCase))
             {
                 denied = session["UserId"] == null || !role.Equals("Staff", StringComparison.OrdinalIgnoreCase);
@@ -62,10 +76,31 @@ namespace QLKhachSan.Filters
             {
                 if (new[] { "ManageFoods", "AddFood", "EditFood", "ToggleFoodStatus" }.Contains(action, StringComparer.OrdinalIgnoreCase))
                     denied = session["UserId"] == null || !role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
-                else if (new[] { "AdminOrders", "UpdateOrderStatus", "UpdateOrderPayment" }.Contains(action, StringComparer.OrdinalIgnoreCase))
+                else if (action.Equals("AdminOrders", StringComparison.OrdinalIgnoreCase))
                 {
                     denied = session["UserId"] == null || !(role.Equals("Admin", StringComparison.OrdinalIgnoreCase) || role.Equals("Staff", StringComparison.OrdinalIgnoreCase));
+                }
+                else if (new[] { "UpdateOrderStatus", "UpdateOrderPayment" }.Contains(action, StringComparer.OrdinalIgnoreCase))
+                {
+                    denied = session["UserId"] == null || !role.Equals("Staff", StringComparison.OrdinalIgnoreCase);
                     permission = action.Equals("UpdateOrderPayment", StringComparison.OrdinalIgnoreCase) ? "payments.manage" : "restaurant.orders|restaurant.manage";
+                }
+            }
+            if (controller.Equals("RoomService", StringComparison.OrdinalIgnoreCase))
+            {
+                if (new[] { "Edit", "SaveProduct", "BedPolicy" }.Contains(action, StringComparer.OrdinalIgnoreCase))
+                {
+                    denied = session["UserId"] == null || !role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+                }
+                else if (action.Equals("Transition", StringComparison.OrdinalIgnoreCase))
+                {
+                    denied = session["UserId"] == null || !role.Equals("Staff", StringComparison.OrdinalIgnoreCase);
+                    permission = "services.manage|services.view|roomservice.orders|roomservice.manage|bookings.approve|restaurant.orders";
+                }
+                else if (action.Equals("ConfirmPayment", StringComparison.OrdinalIgnoreCase))
+                {
+                    denied = session["UserId"] == null || !role.Equals("Staff", StringComparison.OrdinalIgnoreCase);
+                    permission = "payments.manage|services.manage|roomservice.manage";
                 }
             }
             if (permission != null && !role.Equals("Admin", StringComparison.OrdinalIgnoreCase))

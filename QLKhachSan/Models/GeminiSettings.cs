@@ -37,10 +37,14 @@ namespace QLKhachSan.Models
                     (int?)gemini["MaxOutputTokens"] ?? 2048
             };
 
-            if (string.IsNullOrWhiteSpace(settings.ApiKey)
-                || string.IsNullOrWhiteSpace(settings.Model))
+            if (string.IsNullOrWhiteSpace(settings.Model) || settings.Model.Contains("3.5"))
+            {
+                settings.Model = "gemini-1.5-flash";
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.ApiKey))
                 throw new Exception(
-                    "Thiếu Gemini ApiKey hoặc Model.");
+                    "Thiếu Gemini ApiKey.");
 
             return settings;
         }

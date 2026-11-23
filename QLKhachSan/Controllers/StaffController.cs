@@ -1,5 +1,6 @@
 ﻿using QLKhachSan.Models;
 using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
@@ -161,6 +162,30 @@ namespace QLKhachSan.Controllers
                             N'Đang chuẩn bị',
                             N'Đang phục vụ',
                             N'Đang giao'
+                        )
+                  "
+                      )
+                      .FirstOrDefault();
+
+
+            // =====================================================
+            // 3B. ĐƠN DỊCH VỤ PHÒNG ĐANG CHỜ XỬ LÝ
+            // =====================================================
+
+                ViewBag.PendingRoomServices =
+                    db.Database
+                      .SqlQuery<int>(
+                          @"
+                    SELECT COUNT(*)
+
+                    FROM dbo.RoomServiceOrders
+
+                    WHERE
+                        Status IN
+                        (
+                            N'Chờ xác nhận',
+                            N'Đã xác nhận',
+                            N'Đang thực hiện'
                         )
                   "
                       )
@@ -1203,6 +1228,160 @@ namespace QLKhachSan.Controllers
             catch (HotelRuleException ex) { FailOperation(); TempData["StaffFoodError"] = ex.Message; return RedirectToAction("FoodOrders"); }
             TempData["StaffFoodSuccess"] = "Đã xác minh và thu tiền đơn món.";
             return RedirectToAction("FoodOrders");
+        }
+
+        // =========================================================
+        // NHÂN VIÊN - QUẢN LÝ YÊU CẦU HOÀN TIỀN
+        // =========================================================
+
+        [HttpGet]
+        public ActionResult RefundRequests(string keyword = "", string status = "")
+        {
+            if (!IsStaff())
+            {
+                return RedirectToAction("Index", "Home", new { loginRequired = 1 });
+            }
+
+            keyword = (keyword ?? "").Trim().ToLower();
+            status = (status ?? "").Trim();
+
+            var list = new List<StaffRefundListViewModel>();
+            try
+            {
+                var query = db.RefundRequests.Include(r => r.Booking).AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(keyword))
+                {
+                    query = query.Where(r => r.BookingId.ToString().Contains(keyword)
+                                          || r.CustomerName.ToLower().Contains(keyword)
+                                          || r.CustomerPhone.ToLower().Contains(keyword)
+                                          || r.CustomerEmail.ToLower().Contains(keyword)
+                                          || r.BankName.ToLower().Contains(keyword));
+                }
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    query = query.Where(r => r.Status == status);
+                }
+
+                list = query.OrderByDescending(r => r.RequestedAt)
+                                .ToList()
+                                .Select(r => new StaffRefundListViewModel
+                                {
+                                    RefundRequestId = r.RefundRequestId,
+                                    BookingId = r.BookingId,
+                                    RoomName = r.Booking != null && r.Booking.Room != null ? r.Booking.Room.RoomName : "Phòng",
+                                    CustomerName = r.CustomerName,
+                                    CustomerPhone = r.CustomerPhone,
+                                    CustomerEmail = r.CustomerEmail,
+                                    CheckInDate = r.Booking != null ? r.Booking.CheckInDate : DateTime.MinValue,
+                                    CheckOutDate = r.Booking != null ? r.Booking.CheckOutDate : DateTime.MinValue,
+                                    PaidAmount = r.PaidAmount,
+                                    RefundRate = r.RefundRate,
+                                    RefundAmount = r.RefundAmount,
+                                    BankName = r.BankName,
+                                    AccountNumber = r.AccountNumber,
+                                    AccountHolder = r.AccountHolder,
+                                    Reason = r.Reason,
+                                    Status = r.Status,
+                                    RequestedAt = r.RequestedAt,
+                                    RejectedReason = r.RejectedReason
+                                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceWarning("RefundRequests table not found yet: " + ex.Message);
+            }
+
+            ViewBag.Keyword = keyword;
+            ViewBag.Status = status;
+
+            return View(list);
+        }
+
+        [HttpPost]
+        [QLKhachSan.Filters.HotelAntiForgery]
+        public ActionResult VerifyRefundRequest(int id)
+        {
+            if (!IsStaff())
+            {
+                return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này." });
+            }
+
+            int staffUserId = Convert.ToInt32(Session["UserId"]);
+
+            try
+            {
+                var req = db.RefundRequests.FirstOrDefault(r => r.RefundRequestId == id);
+                if (req == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy yêu cầu hoàn tiền." });
+                }
+
+                if (req.Status != "ChoDuyet")
+                {
+                    return Json(new { success = false, message = "Yêu cầu đã được xử lý trước đó." });
+                }
+
+                req.Status = "NhanVienDaDuyet";
+                req.StaffUserId = staffUserId;
+                req.StaffVerifiedAt = DateTime.UtcNow;
+
+                db.SaveChanges();
+
+                return Json(new { success = true, message = "Đã xác nhận yêu cầu hợp lệ và chuyển cho Admin xử lý chuyển khoản." });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("VerifyRefundRequest error: " + ex.Message);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xử lý yêu cầu." });
+            }
+        }
+
+        [HttpPost]
+        [QLKhachSan.Filters.HotelAntiForgery]
+        public ActionResult RejectRefundRequest(int id, string reason)
+        {
+            if (!IsStaff())
+            {
+                return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này." });
+            }
+
+            string rejectReason = (reason ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(rejectReason))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập lý do từ chối." });
+            }
+
+            int staffUserId = Convert.ToInt32(Session["UserId"]);
+
+            try
+            {
+                var req = db.RefundRequests.FirstOrDefault(r => r.RefundRequestId == id);
+                if (req == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy yêu cầu hoàn tiền." });
+                }
+
+                if (req.Status == "DaHoanTien")
+                {
+                    return Json(new { success = false, message = "Không thể từ chối yêu cầu đã được hoàn tiền." });
+                }
+
+                req.Status = "TuChoi";
+                req.RejectedReason = rejectReason;
+                req.StaffUserId = staffUserId;
+                req.StaffVerifiedAt = DateTime.UtcNow;
+
+                db.SaveChanges();
+
+                return Json(new { success = true, message = "Đã từ chối yêu cầu hoàn tiền." });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("RejectRefundRequest error: " + ex.Message);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xử lý yêu cầu." });
+            }
         }
         protected override void Dispose(
             bool disposing

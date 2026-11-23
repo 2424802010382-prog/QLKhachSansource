@@ -73,6 +73,34 @@
         .cart-drawer {
             transition: transform .3s ease;
         }
+        #restaurantSuccessDialog {
+            width: min(440px, calc(100% - 32px));
+            border: 0;
+            border-radius: 24px;
+            padding: 32px;
+            color: #292524;
+            background: #fffdf7;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, .25);
+        }
+        #restaurantSuccessDialog::backdrop { background: rgba(0, 0, 0, .55); }
+        .order-success-icon {
+            display: grid; place-items: center; width: 64px; height: 64px;
+            margin: 0 auto 20px; border-radius: 50%;
+            color: #15803d; background: #dcfce7; font-size: 28px;
+        }
+        .order-success-details {
+            margin: 24px 0; padding: 18px; border: 1px solid #f3e5bc;
+            border-radius: 14px; background: #fffbeb;
+        }
+        .order-success-details div { display: flex; justify-content: space-between; gap: 16px; }
+        .order-success-details div + div { margin-top: 12px; }
+        .order-success-details dd { font-weight: 700; overflow-wrap: anywhere; }
+        .order-success-close {
+            width: 100%; padding: 12px; border-radius: 12px;
+            background: #eab308; color: #292524; font-weight: 700;
+        }
+        .order-success-close:hover { background: #ca8a04; }
+        .order-success-close:focus-visible { outline: 3px solid #854d0e; outline-offset: 3px; }
     </style>
 
 </head>
@@ -529,6 +557,7 @@
                         {
                             <img src="@food.HinhAnh"
                                  alt="@food.TenMonAn"
+                                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80';"
                                  class="w-full
                                         h-full
                                         object-cover" />
@@ -1363,7 +1392,29 @@
     <!-- JAVASCRIPT -->
     <!-- ========================================================= -->
 
+    <dialog id="restaurantSuccessDialog" aria-labelledby="restaurantSuccessTitle" aria-describedby="restaurantSuccessDescription">
+        <div class="order-success-icon" aria-hidden="true"><i class="fas fa-check"></i></div>
+        <h2 id="restaurantSuccessTitle" class="text-2xl font-bold text-center">Đặt món thành công!</h2>
+        <p id="restaurantSuccessDescription" class="text-center text-gray-600 mt-2">Đơn đặt món của bạn đã được ghi nhận.</p>
+        <dl class="order-success-details">
+            <div><dt>Mã đơn</dt><dd id="restaurantSuccessOrderId"></dd></div>
+            <div><dt>Tổng tiền</dt><dd id="restaurantSuccessTotal" class="text-green-700"></dd></div>
+        </dl>
+        <form method="dialog"><button class="order-success-close" autofocus>Đóng</button></form>
+    </dialog>
+
     <script>
+        function showRestaurantOrderSuccess(result) {
+            if (result.paymentUrl) {
+                window.location.assign(result.paymentUrl);
+                return;
+            }
+            document.getElementById('restaurantSuccessOrderId').textContent = '#'
+                + (result.orderId || result.maDon || result.MaDon || '---');
+            document.getElementById('restaurantSuccessTotal').textContent =
+                Number(result.totalAmount || 0).toLocaleString('vi-VN') + 'đ';
+            document.getElementById('restaurantSuccessDialog').showModal();
+        }
 
         let activeCategory =
             'all';
@@ -2602,21 +2653,7 @@ async function submitRestaurantOrder() {
             '---';
 
 
-        alert(
-            'ĐẶT MÓN THÀNH CÔNG!\n\n'
-            +
-            'Mã đơn: #'
-            +
-            orderId
-            +
-            '\n'
-            +
-            'Tổng tiền: '
-            +
-            formatMoney(
-                result.totalAmount
-            )
-        );
+        showRestaurantOrderSuccess(result);
 
 
     }
@@ -4303,21 +4340,7 @@ window.submitRestaurantOrder =
             closeOrderModal();
 
 
-            alert(
-                'ĐẶT MÓN THÀNH CÔNG!\\n\\n'
-                +
-                'Mã đơn: #'
-                +
-                result.orderId
-                +
-                '\\n'
-                +
-                'Tổng tiền: '
-                +
-                restaurantFormatMoney(
-                    result.totalAmount
-                )
-            );
+            showRestaurantOrderSuccess(result);
 
 
             // =================================================

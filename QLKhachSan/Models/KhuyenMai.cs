@@ -14,6 +14,12 @@ namespace QLKhachSan.Models
     
     public partial class KhuyenMai
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
+        public KhuyenMai()
+        {
+            this.Bookings = new HashSet<Booking>();
+        }
+    
         public int MaKhuyenMai { get; set; }
         public string MaCode { get; set; }
         public string TenKhuyenMai { get; set; }
@@ -27,5 +33,8 @@ namespace QLKhachSan.Models
         public Nullable<int> SoLuotSuDungToiDa { get; set; }
         public int SoLuotDaSuDung { get; set; }
         public bool HoatDong { get; set; }
+    
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<Booking> Bookings { get; set; }
     }
 }

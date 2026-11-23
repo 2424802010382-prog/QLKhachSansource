@@ -1,0 +1,2138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema Namespace="QLKhachSanDBModel1.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="__MigrationHistory">
+          <Key>
+            <PropertyRef Name="MigrationId" />
+            <PropertyRef Name="ContextKey" />
+          </Key>
+          <Property Name="MigrationId" Type="nvarchar" MaxLength="150" Nullable="false" />
+          <Property Name="ContextKey" Type="nvarchar" MaxLength="300" Nullable="false" />
+          <Property Name="Model" Type="varbinary(max)" Nullable="false" />
+          <Property Name="ProductVersion" Type="nvarchar" MaxLength="32" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Bookings">
+          <Key>
+            <PropertyRef Name="BookingId" />
+          </Key>
+          <Property Name="BookingId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="RoomId" Type="int" Nullable="false" />
+          <Property Name="CustomerName" Type="nvarchar(max)" />
+          <Property Name="CustomerPhone" Type="nvarchar(max)" />
+          <Property Name="CustomerEmail" Type="nvarchar(max)" />
+          <Property Name="CustomerCCCD" Type="nvarchar(max)" />
+          <Property Name="CheckInDate" Type="datetime" Nullable="false" />
+          <Property Name="CheckOutDate" Type="datetime" Nullable="false" />
+          <Property Name="GuestCount" Type="int" Nullable="false" />
+          <Property Name="RoomCount" Type="int" Nullable="false" />
+          <Property Name="SpecialRequest" Type="nvarchar(max)" />
+          <Property Name="PaymentMethod" Type="nvarchar(max)" />
+          <Property Name="TotalAmount" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="Status" Type="nvarchar(max)" />
+          <Property Name="CreatedAt" Type="datetime" Nullable="false" />
+          <Property Name="UserId" Type="int" />
+          <Property Name="MaKhuyenMai" Type="int" />
+          <Property Name="TienGiam" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ChiTietDonDatMon">
+          <Key>
+            <PropertyRef Name="MaChiTiet" />
+          </Key>
+          <Property Name="MaChiTiet" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="MaDon" Type="int" Nullable="false" />
+          <Property Name="MaMonAn" Type="int" Nullable="false" />
+          <Property Name="SoLuong" Type="int" Nullable="false" />
+          <Property Name="DonGia" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+          <Property Name="ThanhTien" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+        </EntityType>
+        <EntityType Name="DanhGia">
+          <Key>
+            <PropertyRef Name="MaDanhGia" />
+          </Key>
+          <Property Name="MaDanhGia" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="BookingId" Type="int" Nullable="false" />
+          <Property Name="SoSao" Type="int" Nullable="false" />
+          <Property Name="BinhLuan" Type="nvarchar(max)" />
+          <Property Name="NgayDanhGia" Type="datetime" Nullable="false" />
+          <Property Name="HoatDong" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="DanhMucMonAn">
+          <Key>
+            <PropertyRef Name="MaDanhMuc" />
+          </Key>
+          <Property Name="MaDanhMuc" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="TenDanhMuc" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="MoTa" Type="nvarchar" MaxLength="500" />
+          <Property Name="ThuTu" Type="int" Nullable="false" />
+          <Property Name="HoatDong" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="DatPhongDichVu">
+          <Key>
+            <PropertyRef Name="MaDatPhongDichVu" />
+          </Key>
+          <Property Name="MaDatPhongDichVu" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="BookingId" Type="int" Nullable="false" />
+          <Property Name="MaDichVu" Type="int" Nullable="false" />
+          <Property Name="SoLuong" Type="int" Nullable="false" />
+          <Property Name="DonGia" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="ThanhTien" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+        </EntityType>
+        <EntityType Name="DichVu">
+          <Key>
+            <PropertyRef Name="MaDichVu" />
+          </Key>
+          <Property Name="MaDichVu" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="TenDichVu" Type="nvarchar(max)" />
+          <Property Name="MoTa" Type="nvarchar(max)" />
+          <Property Name="Gia" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="DonVi" Type="nvarchar(max)" />
+          <Property Name="HoatDong" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="DonDatMon">
+          <Key>
+            <PropertyRef Name="MaDon" />
+          </Key>
+          <Property Name="MaDon" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="UserId" Type="int" />
+          <Property Name="BookingId" Type="int" />
+          <Property Name="HoTen" Type="nvarchar" MaxLength="150" Nullable="false" />
+          <Property Name="SoDienThoai" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="HinhThuc" Type="nvarchar" MaxLength="30" Nullable="false" />
+          <Property Name="SoBan" Type="nvarchar" MaxLength="20" />
+          <Property Name="SoPhong" Type="nvarchar" MaxLength="20" />
+          <Property Name="GhiChu" Type="nvarchar" MaxLength="1000" />
+          <Property Name="TongTien" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+          <Property Name="TrangThai" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="PhuongThucThanhToan" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="TrangThaiThanhToan" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime2" Precision="7" Nullable="false" />
+          <Property Name="PaidAt" Type="datetime2" Precision="7" />
+          <Property Name="PaymentReference" Type="nvarchar" MaxLength="200" />
+          <Property Name="PaymentEvidence" Type="nvarchar" MaxLength="500" />
+          <Property Name="PayWithBooking" Type="bit" Nullable="false" />
+          <Property Name="BookingServiceId" Type="int" />
+        </EntityType>
+        <EntityType Name="HotelAutoCancelAudit">
+          <Key>
+            <PropertyRef Name="AuditId" />
+          </Key>
+          <Property Name="AuditId" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="BookingId" Type="int" Nullable="false" />
+          <Property Name="PreviousStatus" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="NewStatus" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="CheckInDate" Type="datetime" Nullable="false" />
+          <Property Name="ProcessedAtUtc" Type="datetime" Nullable="false" />
+          <Property Name="HadPaidPayment" Type="bit" Nullable="false" />
+          <Property Name="NeedsFinancialReview" Type="bit" Nullable="false" />
+          <Property Name="Reason" Type="nvarchar" MaxLength="300" Nullable="false" />
+        </EntityType>
+        <EntityType Name="KhuyenMai">
+          <Key>
+            <PropertyRef Name="MaKhuyenMai" />
+          </Key>
+          <Property Name="MaKhuyenMai" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="MaCode" Type="nvarchar(max)" />
+          <Property Name="TenKhuyenMai" Type="nvarchar(max)" />
+          <Property Name="MoTa" Type="nvarchar(max)" />
+          <Property Name="LoaiGiamGia" Type="nvarchar(max)" />
+          <Property Name="GiaTriGiam" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="DonToiThieu" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="GiamToiDa" Type="decimal" Precision="18" Scale="2" />
+          <Property Name="NgayBatDau" Type="datetime" Nullable="false" />
+          <Property Name="NgayKetThuc" Type="datetime" Nullable="false" />
+          <Property Name="SoLuotSuDungToiDa" Type="int" />
+          <Property Name="SoLuotDaSuDung" Type="int" Nullable="false" />
+          <Property Name="HoatDong" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="MonAn">
+          <Key>
+            <PropertyRef Name="MaMonAn" />
+          </Key>
+          <Property Name="MaMonAn" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="MaDanhMuc" Type="int" Nullable="false" />
+          <Property Name="TenMonAn" Type="nvarchar" MaxLength="150" Nullable="false" />
+          <Property Name="MoTa" Type="nvarchar" MaxLength="1000" />
+          <Property Name="Gia" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+          <Property Name="HinhAnh" Type="nvarchar" MaxLength="500" />
+          <Property Name="DonVi" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="ThoiGianChuanBi" Type="int" />
+          <Property Name="NoiBat" Type="bit" Nullable="false" />
+          <Property Name="HoatDong" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="PasswordResetTokens">
+          <Key>
+            <PropertyRef Name="ResetTokenId" />
+          </Key>
+          <Property Name="ResetTokenId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="UserId" Type="int" Nullable="false" />
+          <Property Name="TokenHash" Type="nvarchar" MaxLength="64" Nullable="false" />
+          <Property Name="ExpiresAt" Type="datetime2" Precision="7" Nullable="false" />
+          <Property Name="IsUsed" Type="bit" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime2" Precision="7" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Permissions">
+          <Key>
+            <PropertyRef Name="PermissionId" />
+          </Key>
+          <Property Name="PermissionId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="PermissionCode" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="PermissionName" Type="nvarchar" MaxLength="200" Nullable="false" />
+          <Property Name="Category" Type="nvarchar" MaxLength="100" Nullable="false" />
+        </EntityType>
+        <EntityType Name="PhysicalRooms">
+          <Key>
+            <PropertyRef Name="PhysicalRoomId" />
+          </Key>
+          <Property Name="PhysicalRoomId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="RoomTypeId" Type="int" Nullable="false" />
+          <Property Name="RoomNumber" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="Floor" Type="int" Nullable="false" />
+          <Property Name="Status" Type="nvarchar" MaxLength="50" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="RoomMaintenances">
+          <Key>
+            <PropertyRef Name="MaintenanceId" />
+          </Key>
+          <Property Name="MaintenanceId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="PhysicalRoomId" Type="int" Nullable="false" />
+          <Property Name="StartDate" Type="date" Nullable="false" />
+          <Property Name="EndDate" Type="date" Nullable="false" />
+          <Property Name="Reason" Type="nvarchar" MaxLength="500" Nullable="false" />
+          <Property Name="Note" Type="nvarchar" MaxLength="2000" />
+          <Property Name="Status" Type="nvarchar" MaxLength="40" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime" Nullable="false" />
+          <Property Name="EndedAt" Type="datetime" />
+        </EntityType>
+        <EntityType Name="Rooms">
+          <Key>
+            <PropertyRef Name="RoomId" />
+          </Key>
+          <Property Name="RoomId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="RoomName" Type="nvarchar(max)" />
+          <Property Name="RoomType" Type="nvarchar(max)" />
+          <Property Name="Price" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="Capacity" Type="int" Nullable="false" />
+          <Property Name="Description" Type="nvarchar(max)" />
+          <Property Name="ImageUrl" Type="nvarchar(max)" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="TotalRooms" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="RoomServiceBedPolicy">
+          <Key>
+            <PropertyRef Name="RoomId" />
+          </Key>
+          <Property Name="RoomId" Type="int" Nullable="false" />
+          <Property Name="MaxExtraBeds" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="RoomServiceCatalog">
+          <Key>
+            <PropertyRef Name="MaDichVu" />
+          </Key>
+          <Property Name="MaDichVu" Type="int" Nullable="false" />
+          <Property Name="Code" Type="varchar" MaxLength="40" Nullable="false" />
+          <Property Name="ImageUrl" Type="nvarchar" MaxLength="500" Nullable="false" />
+          <Property Name="Timing" Type="varchar" MaxLength="20" Nullable="false" />
+        </EntityType>
+        <EntityType Name="RoomServiceHistory">
+          <Key>
+            <PropertyRef Name="EventId" />
+          </Key>
+          <Property Name="EventId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="OrderId" Type="int" Nullable="false" />
+          <Property Name="ActorId" Type="int" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime2" Precision="7" Nullable="false" />
+          <Property Name="Message" Type="nvarchar" MaxLength="1000" Nullable="false" />
+        </EntityType>
+        <EntityType Name="RoomServiceOrders">
+          <Key>
+            <PropertyRef Name="OrderId" />
+          </Key>
+          <Property Name="OrderId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="BookingId" Type="int" Nullable="false" />
+          <Property Name="PhysicalRoomId" Type="int" Nullable="false" />
+          <Property Name="UserId" Type="int" Nullable="false" />
+          <Property Name="ServiceId" Type="int" Nullable="false" />
+          <Property Name="ProductId" Type="int" />
+          <Property Name="ServiceName" Type="nvarchar" MaxLength="300" Nullable="false" />
+          <Property Name="Unit" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="Timing" Type="varchar" MaxLength="20" Nullable="false" />
+          <Property Name="Quantity" Type="int" Nullable="false" />
+          <Property Name="UnitPrice" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="Total" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="PaymentMethod" Type="nvarchar" MaxLength="13" StoreGeneratedPattern="Computed" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime2" Precision="7" Nullable="false" />
+          <Property Name="UseAt" Type="datetime2" Precision="7" Nullable="false" />
+          <Property Name="Note" Type="nvarchar" MaxLength="1000" />
+          <Property Name="PaymentStatus" Type="nvarchar" MaxLength="40" Nullable="false" />
+          <Property Name="Status" Type="nvarchar" MaxLength="40" Nullable="false" />
+          <Property Name="RequestKey" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="CreatedBy" Type="int" Nullable="false" />
+          <Property Name="Evidence" Type="nvarchar" MaxLength="200" />
+          <Property Name="PaidAt" Type="datetime2" Precision="7" />
+          <Property Name="PaidBy" Type="int" />
+        </EntityType>
+        <EntityType Name="RoomServiceProducts">
+          <Key>
+            <PropertyRef Name="ProductId" />
+          </Key>
+          <Property Name="ProductId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="MaDichVu" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="150" Nullable="false" />
+          <Property Name="Price" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="Active" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="SePayEnvironment">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Mode" Type="varchar" MaxLength="10" Nullable="false" />
+        </EntityType>
+        <EntityType Name="SePayTransactions">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="SePayId" Type="bigint" Nullable="false" />
+          <Property Name="Mode" Type="varchar" MaxLength="10" Nullable="false" />
+          <Property Name="Bank" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="AccountNumber" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="BankReference" Type="nvarchar" MaxLength="200" />
+          <Property Name="OrderType" Type="varchar" MaxLength="10" />
+          <Property Name="OrderId" Type="int" />
+          <Property Name="Amount" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="Direction" Type="varchar" MaxLength="10" Nullable="false" />
+          <Property Name="Status" Type="varchar" MaxLength="20" Nullable="false" />
+          <Property Name="Reason" Type="varchar" MaxLength="80" Nullable="false" />
+          <Property Name="TransactionDate" Type="datetime2" Precision="7" Nullable="false" />
+          <Property Name="ReceivedAtUtc" Type="datetime2" Precision="7" Nullable="false" />
+          <Property Name="PayloadHash" Type="char" MaxLength="64" Nullable="false" />
+          <Property Name="PaymentId" Type="int" />
+        </EntityType>
+        <EntityType Name="ThanhToan">
+          <Key>
+            <PropertyRef Name="MaThanhToan" />
+          </Key>
+          <Property Name="MaThanhToan" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="BookingId" Type="int" Nullable="false" />
+          <Property Name="PhuongThucThanhToan" Type="nvarchar(max)" />
+          <Property Name="SoTien" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="NgayThanhToan" Type="datetime" Nullable="false" />
+          <Property Name="TrangThai" Type="nvarchar(max)" />
+          <Property Name="MaGiaoDich" Type="nvarchar(max)" />
+          <Property Name="GhiChu" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="UserPermissions">
+          <Key>
+            <PropertyRef Name="UserPermissionId" />
+          </Key>
+          <Property Name="UserPermissionId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="UserId" Type="int" Nullable="false" />
+          <Property Name="PermissionCode" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="GrantedAt" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Users">
+          <Key>
+            <PropertyRef Name="UserId" />
+          </Key>
+          <Property Name="UserId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Username" Type="nvarchar(max)" />
+          <Property Name="PasswordHash" Type="nvarchar(max)" />
+          <Property Name="FullName" Type="nvarchar(max)" />
+          <Property Name="Email" Type="nvarchar(max)" />
+          <Property Name="Role" Type="nvarchar(max)" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime" Nullable="false" />
+        </EntityType>
+        <Association Name="FK__RoomServi__Actor__056ECC6A">
+          <End Role="Users" Type="Self.Users" Multiplicity="1" />
+          <End Role="RoomServiceHistory" Type="Self.RoomServiceHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="RoomServiceHistory">
+              <PropertyRef Name="ActorId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Booki__762C88DA">
+          <End Role="Bookings" Type="Self.Bookings" Multiplicity="1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrders" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bookings">
+              <PropertyRef Name="BookingId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="BookingId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Creat__7FB5F314">
+          <End Role="Users" Type="Self.Users" Multiplicity="1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrders" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="CreatedBy" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__MaDic__68D28DBC">
+          <End Role="DichVu" Type="Self.DichVu" Multiplicity="1" />
+          <End Role="RoomServiceCatalog" Type="Self.RoomServiceCatalog" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="DichVu">
+              <PropertyRef Name="MaDichVu" />
+            </Principal>
+            <Dependent Role="RoomServiceCatalog">
+              <PropertyRef Name="MaDichVu" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__MaDic__6D9742D9">
+          <End Role="RoomServiceCatalog" Type="Self.RoomServiceCatalog" Multiplicity="1" />
+          <End Role="RoomServiceProducts" Type="Self.RoomServiceProducts" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="RoomServiceCatalog">
+              <PropertyRef Name="MaDichVu" />
+            </Principal>
+            <Dependent Role="RoomServiceProducts">
+              <PropertyRef Name="MaDichVu" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Order__047AA831">
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrders" Multiplicity="1" />
+          <End Role="RoomServiceHistory" Type="Self.RoomServiceHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="RoomServiceOrders">
+              <PropertyRef Name="OrderId" />
+            </Principal>
+            <Dependent Role="RoomServiceHistory">
+              <PropertyRef Name="OrderId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__PaidB__00AA174D">
+          <End Role="Users" Type="Self.Users" Multiplicity="0..1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrders" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="PaidBy" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Physi__7720AD13">
+          <End Role="PhysicalRooms" Type="Self.PhysicalRooms" Multiplicity="1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrders" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="PhysicalRooms">
+              <PropertyRef Name="PhysicalRoomId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="PhysicalRoomId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Produ__79FD19BE">
+          <End Role="RoomServiceProducts" Type="Self.RoomServiceProducts" Multiplicity="0..1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrders" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="RoomServiceProducts">
+              <PropertyRef Name="ProductId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="ProductId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__RoomI__7167D3BD">
+          <End Role="Rooms" Type="Self.Rooms" Multiplicity="1" />
+          <End Role="RoomServiceBedPolicy" Type="Self.RoomServiceBedPolicy" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="Rooms">
+              <PropertyRef Name="RoomId" />
+            </Principal>
+            <Dependent Role="RoomServiceBedPolicy">
+              <PropertyRef Name="RoomId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Servi__7908F585">
+          <End Role="RoomServiceCatalog" Type="Self.RoomServiceCatalog" Multiplicity="1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrders" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="RoomServiceCatalog">
+              <PropertyRef Name="MaDichVu" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="ServiceId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__UserI__7814D14C">
+          <End Role="Users" Type="Self.Users" Multiplicity="1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrders" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Bookings_KhuyenMai">
+          <End Role="KhuyenMai" Type="Self.KhuyenMai" Multiplicity="0..1" />
+          <End Role="Bookings" Type="Self.Bookings" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="KhuyenMai">
+              <PropertyRef Name="MaKhuyenMai" />
+            </Principal>
+            <Dependent Role="Bookings">
+              <PropertyRef Name="MaKhuyenMai" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Bookings_Users">
+          <End Role="Users" Type="Self.Users" Multiplicity="0..1" />
+          <End Role="Bookings" Type="Self.Bookings" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="Bookings">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ChiTietDonDatMon_DonDatMon">
+          <End Role="DonDatMon" Type="Self.DonDatMon" Multiplicity="1" />
+          <End Role="ChiTietDonDatMon" Type="Self.ChiTietDonDatMon" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="DonDatMon">
+              <PropertyRef Name="MaDon" />
+            </Principal>
+            <Dependent Role="ChiTietDonDatMon">
+              <PropertyRef Name="MaDon" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ChiTietDonDatMon_MonAn">
+          <End Role="MonAn" Type="Self.MonAn" Multiplicity="1" />
+          <End Role="ChiTietDonDatMon" Type="Self.ChiTietDonDatMon" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="MonAn">
+              <PropertyRef Name="MaMonAn" />
+            </Principal>
+            <Dependent Role="ChiTietDonDatMon">
+              <PropertyRef Name="MaMonAn" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_Bookings_dbo_Rooms_RoomId">
+          <End Role="Rooms" Type="Self.Rooms" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="Bookings" Type="Self.Bookings" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Rooms">
+              <PropertyRef Name="RoomId" />
+            </Principal>
+            <Dependent Role="Bookings">
+              <PropertyRef Name="RoomId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_DanhGia_dbo_Bookings_BookingId">
+          <End Role="Bookings" Type="Self.Bookings" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="DanhGia" Type="Self.DanhGia" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bookings">
+              <PropertyRef Name="BookingId" />
+            </Principal>
+            <Dependent Role="DanhGia">
+              <PropertyRef Name="BookingId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_DatPhongDichVu_dbo_Bookings_BookingId">
+          <End Role="Bookings" Type="Self.Bookings" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="DatPhongDichVu" Type="Self.DatPhongDichVu" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bookings">
+              <PropertyRef Name="BookingId" />
+            </Principal>
+            <Dependent Role="DatPhongDichVu">
+              <PropertyRef Name="BookingId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_DatPhongDichVu_dbo_DichVu_MaDichVu">
+          <End Role="DichVu" Type="Self.DichVu" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="DatPhongDichVu" Type="Self.DatPhongDichVu" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="DichVu">
+              <PropertyRef Name="MaDichVu" />
+            </Principal>
+            <Dependent Role="DatPhongDichVu">
+              <PropertyRef Name="MaDichVu" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_PhysicalRooms_dbo_Rooms_RoomTypeId">
+          <End Role="Rooms" Type="Self.Rooms" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="PhysicalRooms" Type="Self.PhysicalRooms" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Rooms">
+              <PropertyRef Name="RoomId" />
+            </Principal>
+            <Dependent Role="PhysicalRooms">
+              <PropertyRef Name="RoomTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_ThanhToan_dbo_Bookings_BookingId">
+          <End Role="Bookings" Type="Self.Bookings" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="ThanhToan" Type="Self.ThanhToan" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bookings">
+              <PropertyRef Name="BookingId" />
+            </Principal>
+            <Dependent Role="ThanhToan">
+              <PropertyRef Name="BookingId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_UserPermissions_dbo_Users_UserId">
+          <End Role="Users" Type="Self.Users" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="UserPermissions" Type="Self.UserPermissions" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="UserPermissions">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DonDatMon_Bookings">
+          <End Role="Bookings" Type="Self.Bookings" Multiplicity="0..1" />
+          <End Role="DonDatMon" Type="Self.DonDatMon" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bookings">
+              <PropertyRef Name="BookingId" />
+            </Principal>
+            <Dependent Role="DonDatMon">
+              <PropertyRef Name="BookingId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DonDatMon_BookingService">
+          <End Role="DatPhongDichVu" Type="Self.DatPhongDichVu" Multiplicity="0..1" />
+          <End Role="DonDatMon" Type="Self.DonDatMon" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="DatPhongDichVu">
+              <PropertyRef Name="MaDatPhongDichVu" />
+            </Principal>
+            <Dependent Role="DonDatMon">
+              <PropertyRef Name="BookingServiceId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DonDatMon_Users">
+          <End Role="Users" Type="Self.Users" Multiplicity="0..1" />
+          <End Role="DonDatMon" Type="Self.DonDatMon" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="DonDatMon">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MonAn_DanhMucMonAn">
+          <End Role="DanhMucMonAn" Type="Self.DanhMucMonAn" Multiplicity="1" />
+          <End Role="MonAn" Type="Self.MonAn" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="DanhMucMonAn">
+              <PropertyRef Name="MaDanhMuc" />
+            </Principal>
+            <Dependent Role="MonAn">
+              <PropertyRef Name="MaDanhMuc" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_PasswordResetTokens_Users">
+          <End Role="Users" Type="Self.Users" Multiplicity="1" />
+          <End Role="PasswordResetTokens" Type="Self.PasswordResetTokens" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="PasswordResetTokens">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="QLKhachSanDBModel1StoreContainer">
+          <EntitySet Name="__MigrationHistory" EntityType="Self.__MigrationHistory" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Bookings" EntityType="Self.Bookings" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ChiTietDonDatMon" EntityType="Self.ChiTietDonDatMon" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="DanhGia" EntityType="Self.DanhGia" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="DanhMucMonAn" EntityType="Self.DanhMucMonAn" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="DatPhongDichVu" EntityType="Self.DatPhongDichVu" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="DichVu" EntityType="Self.DichVu" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="DonDatMon" EntityType="Self.DonDatMon" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="HotelAutoCancelAudit" EntityType="Self.HotelAutoCancelAudit" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="KhuyenMai" EntityType="Self.KhuyenMai" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="MonAn" EntityType="Self.MonAn" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="PasswordResetTokens" EntityType="Self.PasswordResetTokens" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Permissions" EntityType="Self.Permissions" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="PhysicalRooms" EntityType="Self.PhysicalRooms" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="RoomMaintenances" EntityType="Self.RoomMaintenances" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Rooms" EntityType="Self.Rooms" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="RoomServiceBedPolicy" EntityType="Self.RoomServiceBedPolicy" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="RoomServiceCatalog" EntityType="Self.RoomServiceCatalog" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="RoomServiceHistory" EntityType="Self.RoomServiceHistory" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="RoomServiceOrders" EntityType="Self.RoomServiceOrders" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="RoomServiceProducts" EntityType="Self.RoomServiceProducts" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="SePayEnvironment" EntityType="Self.SePayEnvironment" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="SePayTransactions" EntityType="Self.SePayTransactions" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ThanhToan" EntityType="Self.ThanhToan" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="UserPermissions" EntityType="Self.UserPermissions" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Users" EntityType="Self.Users" Schema="dbo" store:Type="Tables" />
+          <AssociationSet Name="FK__RoomServi__Actor__056ECC6A" Association="Self.FK__RoomServi__Actor__056ECC6A">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="RoomServiceHistory" EntitySet="RoomServiceHistory" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Booki__762C88DA" Association="Self.FK__RoomServi__Booki__762C88DA">
+            <End Role="Bookings" EntitySet="Bookings" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Creat__7FB5F314" Association="Self.FK__RoomServi__Creat__7FB5F314">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__MaDic__68D28DBC" Association="Self.FK__RoomServi__MaDic__68D28DBC">
+            <End Role="DichVu" EntitySet="DichVu" />
+            <End Role="RoomServiceCatalog" EntitySet="RoomServiceCatalog" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__MaDic__6D9742D9" Association="Self.FK__RoomServi__MaDic__6D9742D9">
+            <End Role="RoomServiceCatalog" EntitySet="RoomServiceCatalog" />
+            <End Role="RoomServiceProducts" EntitySet="RoomServiceProducts" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Order__047AA831" Association="Self.FK__RoomServi__Order__047AA831">
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+            <End Role="RoomServiceHistory" EntitySet="RoomServiceHistory" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__PaidB__00AA174D" Association="Self.FK__RoomServi__PaidB__00AA174D">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Physi__7720AD13" Association="Self.FK__RoomServi__Physi__7720AD13">
+            <End Role="PhysicalRooms" EntitySet="PhysicalRooms" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Produ__79FD19BE" Association="Self.FK__RoomServi__Produ__79FD19BE">
+            <End Role="RoomServiceProducts" EntitySet="RoomServiceProducts" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__RoomI__7167D3BD" Association="Self.FK__RoomServi__RoomI__7167D3BD">
+            <End Role="Rooms" EntitySet="Rooms" />
+            <End Role="RoomServiceBedPolicy" EntitySet="RoomServiceBedPolicy" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Servi__7908F585" Association="Self.FK__RoomServi__Servi__7908F585">
+            <End Role="RoomServiceCatalog" EntitySet="RoomServiceCatalog" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__UserI__7814D14C" Association="Self.FK__RoomServi__UserI__7814D14C">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Bookings_KhuyenMai" Association="Self.FK_Bookings_KhuyenMai">
+            <End Role="KhuyenMai" EntitySet="KhuyenMai" />
+            <End Role="Bookings" EntitySet="Bookings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Bookings_Users" Association="Self.FK_Bookings_Users">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="Bookings" EntitySet="Bookings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ChiTietDonDatMon_DonDatMon" Association="Self.FK_ChiTietDonDatMon_DonDatMon">
+            <End Role="DonDatMon" EntitySet="DonDatMon" />
+            <End Role="ChiTietDonDatMon" EntitySet="ChiTietDonDatMon" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ChiTietDonDatMon_MonAn" Association="Self.FK_ChiTietDonDatMon_MonAn">
+            <End Role="MonAn" EntitySet="MonAn" />
+            <End Role="ChiTietDonDatMon" EntitySet="ChiTietDonDatMon" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_Bookings_dbo_Rooms_RoomId" Association="Self.FK_dbo_Bookings_dbo_Rooms_RoomId">
+            <End Role="Rooms" EntitySet="Rooms" />
+            <End Role="Bookings" EntitySet="Bookings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_DanhGia_dbo_Bookings_BookingId" Association="Self.FK_dbo_DanhGia_dbo_Bookings_BookingId">
+            <End Role="Bookings" EntitySet="Bookings" />
+            <End Role="DanhGia" EntitySet="DanhGia" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_DatPhongDichVu_dbo_Bookings_BookingId" Association="Self.FK_dbo_DatPhongDichVu_dbo_Bookings_BookingId">
+            <End Role="Bookings" EntitySet="Bookings" />
+            <End Role="DatPhongDichVu" EntitySet="DatPhongDichVu" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_DatPhongDichVu_dbo_DichVu_MaDichVu" Association="Self.FK_dbo_DatPhongDichVu_dbo_DichVu_MaDichVu">
+            <End Role="DichVu" EntitySet="DichVu" />
+            <End Role="DatPhongDichVu" EntitySet="DatPhongDichVu" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_PhysicalRooms_dbo_Rooms_RoomTypeId" Association="Self.FK_dbo_PhysicalRooms_dbo_Rooms_RoomTypeId">
+            <End Role="Rooms" EntitySet="Rooms" />
+            <End Role="PhysicalRooms" EntitySet="PhysicalRooms" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_ThanhToan_dbo_Bookings_BookingId" Association="Self.FK_dbo_ThanhToan_dbo_Bookings_BookingId">
+            <End Role="Bookings" EntitySet="Bookings" />
+            <End Role="ThanhToan" EntitySet="ThanhToan" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_UserPermissions_dbo_Users_UserId" Association="Self.FK_dbo_UserPermissions_dbo_Users_UserId">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="UserPermissions" EntitySet="UserPermissions" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DonDatMon_Bookings" Association="Self.FK_DonDatMon_Bookings">
+            <End Role="Bookings" EntitySet="Bookings" />
+            <End Role="DonDatMon" EntitySet="DonDatMon" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DonDatMon_BookingService" Association="Self.FK_DonDatMon_BookingService">
+            <End Role="DatPhongDichVu" EntitySet="DatPhongDichVu" />
+            <End Role="DonDatMon" EntitySet="DonDatMon" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DonDatMon_Users" Association="Self.FK_DonDatMon_Users">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="DonDatMon" EntitySet="DonDatMon" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MonAn_DanhMucMonAn" Association="Self.FK_MonAn_DanhMucMonAn">
+            <End Role="DanhMucMonAn" EntitySet="DanhMucMonAn" />
+            <End Role="MonAn" EntitySet="MonAn" />
+          </AssociationSet>
+          <AssociationSet Name="FK_PasswordResetTokens_Users" Association="Self.FK_PasswordResetTokens_Users">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="PasswordResetTokens" EntitySet="PasswordResetTokens" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="QLKhachSanDBModel1" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="C__MigrationHistory">
+          <Key>
+            <PropertyRef Name="MigrationId" />
+            <PropertyRef Name="ContextKey" />
+          </Key>
+          <Property Name="MigrationId" Type="String" MaxLength="150" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="ContextKey" Type="String" MaxLength="300" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Model" Type="Binary" MaxLength="Max" FixedLength="false" Nullable="false" />
+          <Property Name="ProductVersion" Type="String" MaxLength="32" FixedLength="false" Unicode="true" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Booking">
+          <Key>
+            <PropertyRef Name="BookingId" />
+          </Key>
+          <Property Name="BookingId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="RoomId" Type="Int32" Nullable="false" />
+          <Property Name="CustomerName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CustomerPhone" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CustomerEmail" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CustomerCCCD" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CheckInDate" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="CheckOutDate" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="GuestCount" Type="Int32" Nullable="false" />
+          <Property Name="RoomCount" Type="Int32" Nullable="false" />
+          <Property Name="SpecialRequest" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="PaymentMethod" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="TotalAmount" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="Status" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="UserId" Type="Int32" />
+          <Property Name="MaKhuyenMai" Type="Int32" />
+          <Property Name="TienGiam" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <NavigationProperty Name="RoomServiceOrders" Relationship="Self.FK__RoomServi__Booki__762C88DA" FromRole="Bookings" ToRole="RoomServiceOrders" />
+          <NavigationProperty Name="KhuyenMai" Relationship="Self.FK_Bookings_KhuyenMai" FromRole="Bookings" ToRole="KhuyenMai" />
+          <NavigationProperty Name="User" Relationship="Self.FK_Bookings_Users" FromRole="Bookings" ToRole="Users" />
+          <NavigationProperty Name="Room" Relationship="Self.FK_dbo_Bookings_dbo_Rooms_RoomId" FromRole="Bookings" ToRole="Rooms" />
+          <NavigationProperty Name="DanhGias" Relationship="Self.FK_dbo_DanhGia_dbo_Bookings_BookingId" FromRole="Bookings" ToRole="DanhGia" />
+          <NavigationProperty Name="DatPhongDichVus" Relationship="Self.FK_dbo_DatPhongDichVu_dbo_Bookings_BookingId" FromRole="Bookings" ToRole="DatPhongDichVu" />
+          <NavigationProperty Name="ThanhToans" Relationship="Self.FK_dbo_ThanhToan_dbo_Bookings_BookingId" FromRole="Bookings" ToRole="ThanhToan" />
+          <NavigationProperty Name="DonDatMons" Relationship="Self.FK_DonDatMon_Bookings" FromRole="Bookings" ToRole="DonDatMon" />
+        </EntityType>
+        <EntityType Name="ChiTietDonDatMon">
+          <Key>
+            <PropertyRef Name="MaChiTiet" />
+          </Key>
+          <Property Name="MaChiTiet" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="MaDon" Type="Int32" Nullable="false" />
+          <Property Name="MaMonAn" Type="Int32" Nullable="false" />
+          <Property Name="SoLuong" Type="Int32" Nullable="false" />
+          <Property Name="DonGia" Type="Decimal" Precision="18" Scale="0" Nullable="false" />
+          <Property Name="ThanhTien" Type="Decimal" Precision="18" Scale="0" Nullable="false" />
+          <NavigationProperty Name="DonDatMon" Relationship="Self.FK_ChiTietDonDatMon_DonDatMon" FromRole="ChiTietDonDatMon" ToRole="DonDatMon" />
+          <NavigationProperty Name="MonAn" Relationship="Self.FK_ChiTietDonDatMon_MonAn" FromRole="ChiTietDonDatMon" ToRole="MonAn" />
+        </EntityType>
+        <EntityType Name="DanhGia">
+          <Key>
+            <PropertyRef Name="MaDanhGia" />
+          </Key>
+          <Property Name="MaDanhGia" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="BookingId" Type="Int32" Nullable="false" />
+          <Property Name="SoSao" Type="Int32" Nullable="false" />
+          <Property Name="BinhLuan" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="NgayDanhGia" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="HoatDong" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="Booking" Relationship="Self.FK_dbo_DanhGia_dbo_Bookings_BookingId" FromRole="DanhGia" ToRole="Bookings" />
+        </EntityType>
+        <EntityType Name="DanhMucMonAn">
+          <Key>
+            <PropertyRef Name="MaDanhMuc" />
+          </Key>
+          <Property Name="MaDanhMuc" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="TenDanhMuc" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="MoTa" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="ThuTu" Type="Int32" Nullable="false" />
+          <Property Name="HoatDong" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="MonAns" Relationship="Self.FK_MonAn_DanhMucMonAn" FromRole="DanhMucMonAn" ToRole="MonAn" />
+        </EntityType>
+        <EntityType Name="DatPhongDichVu">
+          <Key>
+            <PropertyRef Name="MaDatPhongDichVu" />
+          </Key>
+          <Property Name="MaDatPhongDichVu" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="BookingId" Type="Int32" Nullable="false" />
+          <Property Name="MaDichVu" Type="Int32" Nullable="false" />
+          <Property Name="SoLuong" Type="Int32" Nullable="false" />
+          <Property Name="DonGia" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="ThanhTien" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <NavigationProperty Name="Booking" Relationship="Self.FK_dbo_DatPhongDichVu_dbo_Bookings_BookingId" FromRole="DatPhongDichVu" ToRole="Bookings" />
+          <NavigationProperty Name="DichVu" Relationship="Self.FK_dbo_DatPhongDichVu_dbo_DichVu_MaDichVu" FromRole="DatPhongDichVu" ToRole="DichVu" />
+          <NavigationProperty Name="DonDatMons" Relationship="Self.FK_DonDatMon_BookingService" FromRole="DatPhongDichVu" ToRole="DonDatMon" />
+        </EntityType>
+        <EntityType Name="DichVu">
+          <Key>
+            <PropertyRef Name="MaDichVu" />
+          </Key>
+          <Property Name="MaDichVu" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="TenDichVu" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="MoTa" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Gia" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="DonVi" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="HoatDong" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="DatPhongDichVus" Relationship="Self.FK_dbo_DatPhongDichVu_dbo_DichVu_MaDichVu" FromRole="DichVu" ToRole="DatPhongDichVu" />
+          <NavigationProperty Name="RoomServiceCatalog" Relationship="Self.FK__RoomServi__MaDic__68D28DBC" FromRole="DichVu" ToRole="RoomServiceCatalog" />
+        </EntityType>
+        <EntityType Name="DonDatMon">
+          <Key>
+            <PropertyRef Name="MaDon" />
+          </Key>
+          <Property Name="MaDon" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserId" Type="Int32" />
+          <Property Name="BookingId" Type="Int32" />
+          <Property Name="HoTen" Type="String" MaxLength="150" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="SoDienThoai" Type="String" MaxLength="20" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="HinhThuc" Type="String" MaxLength="30" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="SoBan" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="SoPhong" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="GhiChu" Type="String" MaxLength="1000" FixedLength="false" Unicode="true" />
+          <Property Name="TongTien" Type="Decimal" Precision="18" Scale="0" Nullable="false" />
+          <Property Name="TrangThai" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="PhuongThucThanhToan" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="TrangThaiThanhToan" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="7" />
+          <Property Name="PaidAt" Type="DateTime" Precision="7" />
+          <Property Name="PaymentReference" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="PaymentEvidence" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="PayWithBooking" Type="Boolean" Nullable="false" />
+          <Property Name="BookingServiceId" Type="Int32" />
+          <NavigationProperty Name="Booking" Relationship="Self.FK_DonDatMon_Bookings" FromRole="DonDatMon" ToRole="Bookings" />
+          <NavigationProperty Name="ChiTietDonDatMons" Relationship="Self.FK_ChiTietDonDatMon_DonDatMon" FromRole="DonDatMon" ToRole="ChiTietDonDatMon" />
+          <NavigationProperty Name="DatPhongDichVu" Relationship="Self.FK_DonDatMon_BookingService" FromRole="DonDatMon" ToRole="DatPhongDichVu" />
+          <NavigationProperty Name="User" Relationship="Self.FK_DonDatMon_Users" FromRole="DonDatMon" ToRole="Users" />
+        </EntityType>
+        <EntityType Name="HotelAutoCancelAudit">
+          <Key>
+            <PropertyRef Name="AuditId" />
+          </Key>
+          <Property Name="AuditId" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="BookingId" Type="Int32" Nullable="false" />
+          <Property Name="PreviousStatus" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="NewStatus" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="CheckInDate" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="ProcessedAtUtc" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="HadPaidPayment" Type="Boolean" Nullable="false" />
+          <Property Name="NeedsFinancialReview" Type="Boolean" Nullable="false" />
+          <Property Name="Reason" Type="String" MaxLength="300" FixedLength="false" Unicode="true" Nullable="false" />
+        </EntityType>
+        <EntityType Name="KhuyenMai">
+          <Key>
+            <PropertyRef Name="MaKhuyenMai" />
+          </Key>
+          <Property Name="MaKhuyenMai" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="MaCode" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="TenKhuyenMai" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="MoTa" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="LoaiGiamGia" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="GiaTriGiam" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="DonToiThieu" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="GiamToiDa" Type="Decimal" Precision="18" Scale="2" />
+          <Property Name="NgayBatDau" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="NgayKetThuc" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="SoLuotSuDungToiDa" Type="Int32" />
+          <Property Name="SoLuotDaSuDung" Type="Int32" Nullable="false" />
+          <Property Name="HoatDong" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="Bookings" Relationship="Self.FK_Bookings_KhuyenMai" FromRole="KhuyenMai" ToRole="Bookings" />
+        </EntityType>
+        <EntityType Name="MonAn">
+          <Key>
+            <PropertyRef Name="MaMonAn" />
+          </Key>
+          <Property Name="MaMonAn" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="MaDanhMuc" Type="Int32" Nullable="false" />
+          <Property Name="TenMonAn" Type="String" MaxLength="150" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="MoTa" Type="String" MaxLength="1000" FixedLength="false" Unicode="true" />
+          <Property Name="Gia" Type="Decimal" Precision="18" Scale="0" Nullable="false" />
+          <Property Name="HinhAnh" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="DonVi" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="ThoiGianChuanBi" Type="Int32" />
+          <Property Name="NoiBat" Type="Boolean" Nullable="false" />
+          <Property Name="HoatDong" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="ChiTietDonDatMons" Relationship="Self.FK_ChiTietDonDatMon_MonAn" FromRole="MonAn" ToRole="ChiTietDonDatMon" />
+          <NavigationProperty Name="DanhMucMonAn" Relationship="Self.FK_MonAn_DanhMucMonAn" FromRole="MonAn" ToRole="DanhMucMonAn" />
+        </EntityType>
+        <EntityType Name="PasswordResetToken">
+          <Key>
+            <PropertyRef Name="ResetTokenId" />
+          </Key>
+          <Property Name="ResetTokenId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserId" Type="Int32" Nullable="false" />
+          <Property Name="TokenHash" Type="String" MaxLength="64" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="ExpiresAt" Type="DateTime" Nullable="false" Precision="7" />
+          <Property Name="IsUsed" Type="Boolean" Nullable="false" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="7" />
+          <NavigationProperty Name="User" Relationship="Self.FK_PasswordResetTokens_Users" FromRole="PasswordResetTokens" ToRole="Users" />
+        </EntityType>
+        <EntityType Name="Permission">
+          <Key>
+            <PropertyRef Name="PermissionId" />
+          </Key>
+          <Property Name="PermissionId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="PermissionCode" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="PermissionName" Type="String" MaxLength="200" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Category" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+        </EntityType>
+        <EntityType Name="PhysicalRoom">
+          <Key>
+            <PropertyRef Name="PhysicalRoomId" />
+          </Key>
+          <Property Name="PhysicalRoomId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="RoomTypeId" Type="Int32" Nullable="false" />
+          <Property Name="RoomNumber" Type="String" MaxLength="20" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Floor" Type="Int32" Nullable="false" />
+          <Property Name="Status" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <NavigationProperty Name="RoomServiceOrders" Relationship="Self.FK__RoomServi__Physi__7720AD13" FromRole="PhysicalRooms" ToRole="RoomServiceOrders" />
+          <NavigationProperty Name="Room" Relationship="Self.FK_dbo_PhysicalRooms_dbo_Rooms_RoomTypeId" FromRole="PhysicalRooms" ToRole="Rooms" />
+        </EntityType>
+        <EntityType Name="RoomMaintenance">
+          <Key>
+            <PropertyRef Name="MaintenanceId" />
+          </Key>
+          <Property Name="MaintenanceId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="PhysicalRoomId" Type="Int32" Nullable="false" />
+          <Property Name="StartDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="EndDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="Reason" Type="String" MaxLength="500" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Note" Type="String" MaxLength="2000" FixedLength="false" Unicode="true" />
+          <Property Name="Status" Type="String" MaxLength="40" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="EndedAt" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="Room">
+          <Key>
+            <PropertyRef Name="RoomId" />
+          </Key>
+          <Property Name="RoomId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="RoomName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="RoomType" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Price" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="Capacity" Type="Int32" Nullable="false" />
+          <Property Name="Description" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ImageUrl" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="TotalRooms" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="Bookings" Relationship="Self.FK_dbo_Bookings_dbo_Rooms_RoomId" FromRole="Rooms" ToRole="Bookings" />
+          <NavigationProperty Name="PhysicalRooms" Relationship="Self.FK_dbo_PhysicalRooms_dbo_Rooms_RoomTypeId" FromRole="Rooms" ToRole="PhysicalRooms" />
+          <NavigationProperty Name="RoomServiceBedPolicy" Relationship="Self.FK__RoomServi__RoomI__7167D3BD" FromRole="Rooms" ToRole="RoomServiceBedPolicy" />
+        </EntityType>
+        <EntityType Name="RoomServiceBedPolicy">
+          <Key>
+            <PropertyRef Name="RoomId" />
+          </Key>
+          <Property Name="RoomId" Type="Int32" Nullable="false" />
+          <Property Name="MaxExtraBeds" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="Room" Relationship="Self.FK__RoomServi__RoomI__7167D3BD" FromRole="RoomServiceBedPolicy" ToRole="Rooms" />
+        </EntityType>
+        <EntityType Name="RoomServiceCatalog">
+          <Key>
+            <PropertyRef Name="MaDichVu" />
+          </Key>
+          <Property Name="MaDichVu" Type="Int32" Nullable="false" />
+          <Property Name="Code" Type="String" MaxLength="40" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="ImageUrl" Type="String" MaxLength="500" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Timing" Type="String" MaxLength="20" FixedLength="false" Unicode="false" Nullable="false" />
+          <NavigationProperty Name="DichVu" Relationship="Self.FK__RoomServi__MaDic__68D28DBC" FromRole="RoomServiceCatalog" ToRole="DichVu" />
+          <NavigationProperty Name="RoomServiceProducts" Relationship="Self.FK__RoomServi__MaDic__6D9742D9" FromRole="RoomServiceCatalog" ToRole="RoomServiceProducts" />
+          <NavigationProperty Name="RoomServiceOrders" Relationship="Self.FK__RoomServi__Servi__7908F585" FromRole="RoomServiceCatalog" ToRole="RoomServiceOrders" />
+        </EntityType>
+        <EntityType Name="RoomServiceHistory">
+          <Key>
+            <PropertyRef Name="EventId" />
+          </Key>
+          <Property Name="EventId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="OrderId" Type="Int32" Nullable="false" />
+          <Property Name="ActorId" Type="Int32" Nullable="false" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="7" />
+          <Property Name="Message" Type="String" MaxLength="1000" FixedLength="false" Unicode="true" Nullable="false" />
+          <NavigationProperty Name="User" Relationship="Self.FK__RoomServi__Actor__056ECC6A" FromRole="RoomServiceHistory" ToRole="Users" />
+          <NavigationProperty Name="RoomServiceOrder" Relationship="Self.FK__RoomServi__Order__047AA831" FromRole="RoomServiceHistory" ToRole="RoomServiceOrders" />
+        </EntityType>
+        <EntityType Name="RoomServiceOrder">
+          <Key>
+            <PropertyRef Name="OrderId" />
+          </Key>
+          <Property Name="OrderId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="BookingId" Type="Int32" Nullable="false" />
+          <Property Name="PhysicalRoomId" Type="Int32" Nullable="false" />
+          <Property Name="UserId" Type="Int32" Nullable="false" />
+          <Property Name="ServiceId" Type="Int32" Nullable="false" />
+          <Property Name="ProductId" Type="Int32" />
+          <Property Name="ServiceName" Type="String" MaxLength="300" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Unit" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Timing" Type="String" MaxLength="20" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="Quantity" Type="Int32" Nullable="false" />
+          <Property Name="UnitPrice" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="Total" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="PaymentMethod" Type="String" MaxLength="13" FixedLength="false" Unicode="true" Nullable="false" annotation:StoreGeneratedPattern="Computed" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="7" />
+          <Property Name="UseAt" Type="DateTime" Nullable="false" Precision="7" />
+          <Property Name="Note" Type="String" MaxLength="1000" FixedLength="false" Unicode="true" />
+          <Property Name="PaymentStatus" Type="String" MaxLength="40" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Status" Type="String" MaxLength="40" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="RequestKey" Type="Guid" Nullable="false" />
+          <Property Name="CreatedBy" Type="Int32" Nullable="false" />
+          <Property Name="Evidence" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="PaidAt" Type="DateTime" Precision="7" />
+          <Property Name="PaidBy" Type="Int32" />
+          <NavigationProperty Name="Booking" Relationship="Self.FK__RoomServi__Booki__762C88DA" FromRole="RoomServiceOrders" ToRole="Bookings" />
+          <NavigationProperty Name="PhysicalRoom" Relationship="Self.FK__RoomServi__Physi__7720AD13" FromRole="RoomServiceOrders" ToRole="PhysicalRooms" />
+          <NavigationProperty Name="RoomServiceCatalog" Relationship="Self.FK__RoomServi__Servi__7908F585" FromRole="RoomServiceOrders" ToRole="RoomServiceCatalog" />
+          <NavigationProperty Name="RoomServiceHistories" Relationship="Self.FK__RoomServi__Order__047AA831" FromRole="RoomServiceOrders" ToRole="RoomServiceHistory" />
+          <NavigationProperty Name="User" Relationship="Self.FK__RoomServi__Creat__7FB5F314" FromRole="RoomServiceOrders" ToRole="Users" />
+          <NavigationProperty Name="User1" Relationship="Self.FK__RoomServi__PaidB__00AA174D" FromRole="RoomServiceOrders" ToRole="Users" />
+          <NavigationProperty Name="RoomServiceProduct" Relationship="Self.FK__RoomServi__Produ__79FD19BE" FromRole="RoomServiceOrders" ToRole="RoomServiceProducts" />
+          <NavigationProperty Name="User2" Relationship="Self.FK__RoomServi__UserI__7814D14C" FromRole="RoomServiceOrders" ToRole="Users" />
+        </EntityType>
+        <EntityType Name="RoomServiceProduct">
+          <Key>
+            <PropertyRef Name="ProductId" />
+          </Key>
+          <Property Name="ProductId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="MaDichVu" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="150" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Price" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="Active" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="RoomServiceCatalog" Relationship="Self.FK__RoomServi__MaDic__6D9742D9" FromRole="RoomServiceProducts" ToRole="RoomServiceCatalog" />
+          <NavigationProperty Name="RoomServiceOrders" Relationship="Self.FK__RoomServi__Produ__79FD19BE" FromRole="RoomServiceProducts" ToRole="RoomServiceOrders" />
+        </EntityType>
+        <EntityType Name="SePayEnvironment">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Mode" Type="String" MaxLength="10" FixedLength="false" Unicode="false" Nullable="false" />
+        </EntityType>
+        <EntityType Name="SePayTransaction">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="SePayId" Type="Int64" Nullable="false" />
+          <Property Name="Mode" Type="String" MaxLength="10" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="Bank" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="AccountNumber" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="BankReference" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="OrderType" Type="String" MaxLength="10" FixedLength="false" Unicode="false" />
+          <Property Name="OrderId" Type="Int32" />
+          <Property Name="Amount" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="Direction" Type="String" MaxLength="10" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="Status" Type="String" MaxLength="20" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="Reason" Type="String" MaxLength="80" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="TransactionDate" Type="DateTime" Nullable="false" Precision="7" />
+          <Property Name="ReceivedAtUtc" Type="DateTime" Nullable="false" Precision="7" />
+          <Property Name="PayloadHash" Type="String" MaxLength="64" FixedLength="true" Unicode="false" Nullable="false" />
+          <Property Name="PaymentId" Type="Int32" />
+        </EntityType>
+        <EntityType Name="ThanhToan">
+          <Key>
+            <PropertyRef Name="MaThanhToan" />
+          </Key>
+          <Property Name="MaThanhToan" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="BookingId" Type="Int32" Nullable="false" />
+          <Property Name="PhuongThucThanhToan" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="SoTien" Type="Decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="NgayThanhToan" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="TrangThai" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="MaGiaoDich" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="GhiChu" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="Booking" Relationship="Self.FK_dbo_ThanhToan_dbo_Bookings_BookingId" FromRole="ThanhToan" ToRole="Bookings" />
+        </EntityType>
+        <EntityType Name="UserPermission">
+          <Key>
+            <PropertyRef Name="UserPermissionId" />
+          </Key>
+          <Property Name="UserPermissionId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserId" Type="Int32" Nullable="false" />
+          <Property Name="PermissionCode" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="GrantedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <NavigationProperty Name="User" Relationship="Self.FK_dbo_UserPermissions_dbo_Users_UserId" FromRole="UserPermissions" ToRole="Users" />
+        </EntityType>
+        <EntityType Name="User">
+          <Key>
+            <PropertyRef Name="UserId" />
+          </Key>
+          <Property Name="UserId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Username" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="PasswordHash" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="FullName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Email" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Role" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <NavigationProperty Name="Bookings" Relationship="Self.FK_Bookings_Users" FromRole="Users" ToRole="Bookings" />
+          <NavigationProperty Name="DonDatMons" Relationship="Self.FK_DonDatMon_Users" FromRole="Users" ToRole="DonDatMon" />
+          <NavigationProperty Name="PasswordResetTokens" Relationship="Self.FK_PasswordResetTokens_Users" FromRole="Users" ToRole="PasswordResetTokens" />
+          <NavigationProperty Name="RoomServiceHistories" Relationship="Self.FK__RoomServi__Actor__056ECC6A" FromRole="Users" ToRole="RoomServiceHistory" />
+          <NavigationProperty Name="RoomServiceOrders" Relationship="Self.FK__RoomServi__Creat__7FB5F314" FromRole="Users" ToRole="RoomServiceOrders" />
+          <NavigationProperty Name="RoomServiceOrders1" Relationship="Self.FK__RoomServi__PaidB__00AA174D" FromRole="Users" ToRole="RoomServiceOrders" />
+          <NavigationProperty Name="RoomServiceOrders2" Relationship="Self.FK__RoomServi__UserI__7814D14C" FromRole="Users" ToRole="RoomServiceOrders" />
+          <NavigationProperty Name="UserPermissions" Relationship="Self.FK_dbo_UserPermissions_dbo_Users_UserId" FromRole="Users" ToRole="UserPermissions" />
+        </EntityType>
+        <Association Name="FK__RoomServi__Booki__762C88DA">
+          <End Role="Bookings" Type="Self.Booking" Multiplicity="1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrder" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bookings">
+              <PropertyRef Name="BookingId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="BookingId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Bookings_KhuyenMai">
+          <End Role="KhuyenMai" Type="Self.KhuyenMai" Multiplicity="0..1" />
+          <End Role="Bookings" Type="Self.Booking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="KhuyenMai">
+              <PropertyRef Name="MaKhuyenMai" />
+            </Principal>
+            <Dependent Role="Bookings">
+              <PropertyRef Name="MaKhuyenMai" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Bookings_Users">
+          <End Role="Users" Type="Self.User" Multiplicity="0..1" />
+          <End Role="Bookings" Type="Self.Booking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="Bookings">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_Bookings_dbo_Rooms_RoomId">
+          <End Role="Rooms" Type="Self.Room" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="Bookings" Type="Self.Booking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Rooms">
+              <PropertyRef Name="RoomId" />
+            </Principal>
+            <Dependent Role="Bookings">
+              <PropertyRef Name="RoomId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_DanhGia_dbo_Bookings_BookingId">
+          <End Role="Bookings" Type="Self.Booking" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="DanhGia" Type="Self.DanhGia" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bookings">
+              <PropertyRef Name="BookingId" />
+            </Principal>
+            <Dependent Role="DanhGia">
+              <PropertyRef Name="BookingId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_DatPhongDichVu_dbo_Bookings_BookingId">
+          <End Role="Bookings" Type="Self.Booking" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="DatPhongDichVu" Type="Self.DatPhongDichVu" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bookings">
+              <PropertyRef Name="BookingId" />
+            </Principal>
+            <Dependent Role="DatPhongDichVu">
+              <PropertyRef Name="BookingId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_ThanhToan_dbo_Bookings_BookingId">
+          <End Role="Bookings" Type="Self.Booking" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="ThanhToan" Type="Self.ThanhToan" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bookings">
+              <PropertyRef Name="BookingId" />
+            </Principal>
+            <Dependent Role="ThanhToan">
+              <PropertyRef Name="BookingId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DonDatMon_Bookings">
+          <End Role="Bookings" Type="Self.Booking" Multiplicity="0..1" />
+          <End Role="DonDatMon" Type="Self.DonDatMon" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bookings">
+              <PropertyRef Name="BookingId" />
+            </Principal>
+            <Dependent Role="DonDatMon">
+              <PropertyRef Name="BookingId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ChiTietDonDatMon_DonDatMon">
+          <End Role="DonDatMon" Type="Self.DonDatMon" Multiplicity="1" />
+          <End Role="ChiTietDonDatMon" Type="Self.ChiTietDonDatMon" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="DonDatMon">
+              <PropertyRef Name="MaDon" />
+            </Principal>
+            <Dependent Role="ChiTietDonDatMon">
+              <PropertyRef Name="MaDon" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ChiTietDonDatMon_MonAn">
+          <End Role="MonAn" Type="Self.MonAn" Multiplicity="1" />
+          <End Role="ChiTietDonDatMon" Type="Self.ChiTietDonDatMon" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="MonAn">
+              <PropertyRef Name="MaMonAn" />
+            </Principal>
+            <Dependent Role="ChiTietDonDatMon">
+              <PropertyRef Name="MaMonAn" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MonAn_DanhMucMonAn">
+          <End Role="DanhMucMonAn" Type="Self.DanhMucMonAn" Multiplicity="1" />
+          <End Role="MonAn" Type="Self.MonAn" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="DanhMucMonAn">
+              <PropertyRef Name="MaDanhMuc" />
+            </Principal>
+            <Dependent Role="MonAn">
+              <PropertyRef Name="MaDanhMuc" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_DatPhongDichVu_dbo_DichVu_MaDichVu">
+          <End Role="DichVu" Type="Self.DichVu" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="DatPhongDichVu" Type="Self.DatPhongDichVu" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="DichVu">
+              <PropertyRef Name="MaDichVu" />
+            </Principal>
+            <Dependent Role="DatPhongDichVu">
+              <PropertyRef Name="MaDichVu" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DonDatMon_BookingService">
+          <End Role="DatPhongDichVu" Type="Self.DatPhongDichVu" Multiplicity="0..1" />
+          <End Role="DonDatMon" Type="Self.DonDatMon" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="DatPhongDichVu">
+              <PropertyRef Name="MaDatPhongDichVu" />
+            </Principal>
+            <Dependent Role="DonDatMon">
+              <PropertyRef Name="BookingServiceId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__MaDic__68D28DBC">
+          <End Role="DichVu" Type="Self.DichVu" Multiplicity="1" />
+          <End Role="RoomServiceCatalog" Type="Self.RoomServiceCatalog" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="DichVu">
+              <PropertyRef Name="MaDichVu" />
+            </Principal>
+            <Dependent Role="RoomServiceCatalog">
+              <PropertyRef Name="MaDichVu" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DonDatMon_Users">
+          <End Role="Users" Type="Self.User" Multiplicity="0..1" />
+          <End Role="DonDatMon" Type="Self.DonDatMon" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="DonDatMon">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_PasswordResetTokens_Users">
+          <End Role="Users" Type="Self.User" Multiplicity="1" />
+          <End Role="PasswordResetTokens" Type="Self.PasswordResetToken" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="PasswordResetTokens">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Physi__7720AD13">
+          <End Role="PhysicalRooms" Type="Self.PhysicalRoom" Multiplicity="1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrder" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="PhysicalRooms">
+              <PropertyRef Name="PhysicalRoomId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="PhysicalRoomId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_PhysicalRooms_dbo_Rooms_RoomTypeId">
+          <End Role="Rooms" Type="Self.Room" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="PhysicalRooms" Type="Self.PhysicalRoom" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Rooms">
+              <PropertyRef Name="RoomId" />
+            </Principal>
+            <Dependent Role="PhysicalRooms">
+              <PropertyRef Name="RoomTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__RoomI__7167D3BD">
+          <End Role="Rooms" Type="Self.Room" Multiplicity="1" />
+          <End Role="RoomServiceBedPolicy" Type="Self.RoomServiceBedPolicy" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="Rooms">
+              <PropertyRef Name="RoomId" />
+            </Principal>
+            <Dependent Role="RoomServiceBedPolicy">
+              <PropertyRef Name="RoomId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__MaDic__6D9742D9">
+          <End Role="RoomServiceCatalog" Type="Self.RoomServiceCatalog" Multiplicity="1" />
+          <End Role="RoomServiceProducts" Type="Self.RoomServiceProduct" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="RoomServiceCatalog">
+              <PropertyRef Name="MaDichVu" />
+            </Principal>
+            <Dependent Role="RoomServiceProducts">
+              <PropertyRef Name="MaDichVu" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Servi__7908F585">
+          <End Role="RoomServiceCatalog" Type="Self.RoomServiceCatalog" Multiplicity="1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrder" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="RoomServiceCatalog">
+              <PropertyRef Name="MaDichVu" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="ServiceId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Actor__056ECC6A">
+          <End Role="Users" Type="Self.User" Multiplicity="1" />
+          <End Role="RoomServiceHistory" Type="Self.RoomServiceHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="RoomServiceHistory">
+              <PropertyRef Name="ActorId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Order__047AA831">
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrder" Multiplicity="1" />
+          <End Role="RoomServiceHistory" Type="Self.RoomServiceHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="RoomServiceOrders">
+              <PropertyRef Name="OrderId" />
+            </Principal>
+            <Dependent Role="RoomServiceHistory">
+              <PropertyRef Name="OrderId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Creat__7FB5F314">
+          <End Role="Users" Type="Self.User" Multiplicity="1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrder" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="CreatedBy" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__PaidB__00AA174D">
+          <End Role="Users" Type="Self.User" Multiplicity="0..1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrder" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="PaidBy" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__Produ__79FD19BE">
+          <End Role="RoomServiceProducts" Type="Self.RoomServiceProduct" Multiplicity="0..1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrder" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="RoomServiceProducts">
+              <PropertyRef Name="ProductId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="ProductId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__RoomServi__UserI__7814D14C">
+          <End Role="Users" Type="Self.User" Multiplicity="1" />
+          <End Role="RoomServiceOrders" Type="Self.RoomServiceOrder" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="RoomServiceOrders">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_dbo_UserPermissions_dbo_Users_UserId">
+          <End Role="Users" Type="Self.User" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="UserPermissions" Type="Self.UserPermission" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="UserId" />
+            </Principal>
+            <Dependent Role="UserPermissions">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="QLKhachSanDBEntities1" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="C__MigrationHistory" EntityType="Self.C__MigrationHistory" />
+          <EntitySet Name="Bookings" EntityType="Self.Booking" />
+          <EntitySet Name="ChiTietDonDatMons" EntityType="Self.ChiTietDonDatMon" />
+          <EntitySet Name="DanhGias" EntityType="Self.DanhGia" />
+          <EntitySet Name="DanhMucMonAns" EntityType="Self.DanhMucMonAn" />
+          <EntitySet Name="DatPhongDichVus" EntityType="Self.DatPhongDichVu" />
+          <EntitySet Name="DichVus" EntityType="Self.DichVu" />
+          <EntitySet Name="DonDatMons" EntityType="Self.DonDatMon" />
+          <EntitySet Name="HotelAutoCancelAudits" EntityType="Self.HotelAutoCancelAudit" />
+          <EntitySet Name="KhuyenMais" EntityType="Self.KhuyenMai" />
+          <EntitySet Name="MonAns" EntityType="Self.MonAn" />
+          <EntitySet Name="PasswordResetTokens" EntityType="Self.PasswordResetToken" />
+          <EntitySet Name="Permissions" EntityType="Self.Permission" />
+          <EntitySet Name="PhysicalRooms" EntityType="Self.PhysicalRoom" />
+          <EntitySet Name="RoomMaintenances" EntityType="Self.RoomMaintenance" />
+          <EntitySet Name="Rooms" EntityType="Self.Room" />
+          <EntitySet Name="RoomServiceBedPolicies" EntityType="Self.RoomServiceBedPolicy" />
+          <EntitySet Name="RoomServiceCatalogs" EntityType="Self.RoomServiceCatalog" />
+          <EntitySet Name="RoomServiceHistories" EntityType="Self.RoomServiceHistory" />
+          <EntitySet Name="RoomServiceOrders" EntityType="Self.RoomServiceOrder" />
+          <EntitySet Name="RoomServiceProducts" EntityType="Self.RoomServiceProduct" />
+          <EntitySet Name="SePayEnvironments" EntityType="Self.SePayEnvironment" />
+          <EntitySet Name="SePayTransactions" EntityType="Self.SePayTransaction" />
+          <EntitySet Name="ThanhToans" EntityType="Self.ThanhToan" />
+          <EntitySet Name="UserPermissions" EntityType="Self.UserPermission" />
+          <EntitySet Name="Users" EntityType="Self.User" />
+          <AssociationSet Name="FK__RoomServi__Booki__762C88DA" Association="Self.FK__RoomServi__Booki__762C88DA">
+            <End Role="Bookings" EntitySet="Bookings" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Bookings_KhuyenMai" Association="Self.FK_Bookings_KhuyenMai">
+            <End Role="KhuyenMai" EntitySet="KhuyenMais" />
+            <End Role="Bookings" EntitySet="Bookings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Bookings_Users" Association="Self.FK_Bookings_Users">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="Bookings" EntitySet="Bookings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_Bookings_dbo_Rooms_RoomId" Association="Self.FK_dbo_Bookings_dbo_Rooms_RoomId">
+            <End Role="Rooms" EntitySet="Rooms" />
+            <End Role="Bookings" EntitySet="Bookings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_DanhGia_dbo_Bookings_BookingId" Association="Self.FK_dbo_DanhGia_dbo_Bookings_BookingId">
+            <End Role="Bookings" EntitySet="Bookings" />
+            <End Role="DanhGia" EntitySet="DanhGias" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_DatPhongDichVu_dbo_Bookings_BookingId" Association="Self.FK_dbo_DatPhongDichVu_dbo_Bookings_BookingId">
+            <End Role="Bookings" EntitySet="Bookings" />
+            <End Role="DatPhongDichVu" EntitySet="DatPhongDichVus" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_ThanhToan_dbo_Bookings_BookingId" Association="Self.FK_dbo_ThanhToan_dbo_Bookings_BookingId">
+            <End Role="Bookings" EntitySet="Bookings" />
+            <End Role="ThanhToan" EntitySet="ThanhToans" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DonDatMon_Bookings" Association="Self.FK_DonDatMon_Bookings">
+            <End Role="Bookings" EntitySet="Bookings" />
+            <End Role="DonDatMon" EntitySet="DonDatMons" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ChiTietDonDatMon_DonDatMon" Association="Self.FK_ChiTietDonDatMon_DonDatMon">
+            <End Role="DonDatMon" EntitySet="DonDatMons" />
+            <End Role="ChiTietDonDatMon" EntitySet="ChiTietDonDatMons" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ChiTietDonDatMon_MonAn" Association="Self.FK_ChiTietDonDatMon_MonAn">
+            <End Role="MonAn" EntitySet="MonAns" />
+            <End Role="ChiTietDonDatMon" EntitySet="ChiTietDonDatMons" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MonAn_DanhMucMonAn" Association="Self.FK_MonAn_DanhMucMonAn">
+            <End Role="DanhMucMonAn" EntitySet="DanhMucMonAns" />
+            <End Role="MonAn" EntitySet="MonAns" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_DatPhongDichVu_dbo_DichVu_MaDichVu" Association="Self.FK_dbo_DatPhongDichVu_dbo_DichVu_MaDichVu">
+            <End Role="DichVu" EntitySet="DichVus" />
+            <End Role="DatPhongDichVu" EntitySet="DatPhongDichVus" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DonDatMon_BookingService" Association="Self.FK_DonDatMon_BookingService">
+            <End Role="DatPhongDichVu" EntitySet="DatPhongDichVus" />
+            <End Role="DonDatMon" EntitySet="DonDatMons" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__MaDic__68D28DBC" Association="Self.FK__RoomServi__MaDic__68D28DBC">
+            <End Role="DichVu" EntitySet="DichVus" />
+            <End Role="RoomServiceCatalog" EntitySet="RoomServiceCatalogs" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DonDatMon_Users" Association="Self.FK_DonDatMon_Users">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="DonDatMon" EntitySet="DonDatMons" />
+          </AssociationSet>
+          <AssociationSet Name="FK_PasswordResetTokens_Users" Association="Self.FK_PasswordResetTokens_Users">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="PasswordResetTokens" EntitySet="PasswordResetTokens" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Physi__7720AD13" Association="Self.FK__RoomServi__Physi__7720AD13">
+            <End Role="PhysicalRooms" EntitySet="PhysicalRooms" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_PhysicalRooms_dbo_Rooms_RoomTypeId" Association="Self.FK_dbo_PhysicalRooms_dbo_Rooms_RoomTypeId">
+            <End Role="Rooms" EntitySet="Rooms" />
+            <End Role="PhysicalRooms" EntitySet="PhysicalRooms" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__RoomI__7167D3BD" Association="Self.FK__RoomServi__RoomI__7167D3BD">
+            <End Role="Rooms" EntitySet="Rooms" />
+            <End Role="RoomServiceBedPolicy" EntitySet="RoomServiceBedPolicies" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__MaDic__6D9742D9" Association="Self.FK__RoomServi__MaDic__6D9742D9">
+            <End Role="RoomServiceCatalog" EntitySet="RoomServiceCatalogs" />
+            <End Role="RoomServiceProducts" EntitySet="RoomServiceProducts" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Servi__7908F585" Association="Self.FK__RoomServi__Servi__7908F585">
+            <End Role="RoomServiceCatalog" EntitySet="RoomServiceCatalogs" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Actor__056ECC6A" Association="Self.FK__RoomServi__Actor__056ECC6A">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="RoomServiceHistory" EntitySet="RoomServiceHistories" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Order__047AA831" Association="Self.FK__RoomServi__Order__047AA831">
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+            <End Role="RoomServiceHistory" EntitySet="RoomServiceHistories" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Creat__7FB5F314" Association="Self.FK__RoomServi__Creat__7FB5F314">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__PaidB__00AA174D" Association="Self.FK__RoomServi__PaidB__00AA174D">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__Produ__79FD19BE" Association="Self.FK__RoomServi__Produ__79FD19BE">
+            <End Role="RoomServiceProducts" EntitySet="RoomServiceProducts" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK__RoomServi__UserI__7814D14C" Association="Self.FK__RoomServi__UserI__7814D14C">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="RoomServiceOrders" EntitySet="RoomServiceOrders" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_UserPermissions_dbo_Users_UserId" Association="Self.FK_dbo_UserPermissions_dbo_Users_UserId">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="UserPermissions" EntitySet="UserPermissions" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="QLKhachSanDBModel1StoreContainer" CdmEntityContainer="QLKhachSanDBEntities1">
+          <EntitySetMapping Name="C__MigrationHistory">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.C__MigrationHistory">
+              <MappingFragment StoreEntitySet="__MigrationHistory">
+                <ScalarProperty Name="MigrationId" ColumnName="MigrationId" />
+                <ScalarProperty Name="ContextKey" ColumnName="ContextKey" />
+                <ScalarProperty Name="Model" ColumnName="Model" />
+                <ScalarProperty Name="ProductVersion" ColumnName="ProductVersion" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Bookings">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.Booking">
+              <MappingFragment StoreEntitySet="Bookings">
+                <ScalarProperty Name="BookingId" ColumnName="BookingId" />
+                <ScalarProperty Name="RoomId" ColumnName="RoomId" />
+                <ScalarProperty Name="CustomerName" ColumnName="CustomerName" />
+                <ScalarProperty Name="CustomerPhone" ColumnName="CustomerPhone" />
+                <ScalarProperty Name="CustomerEmail" ColumnName="CustomerEmail" />
+                <ScalarProperty Name="CustomerCCCD" ColumnName="CustomerCCCD" />
+                <ScalarProperty Name="CheckInDate" ColumnName="CheckInDate" />
+                <ScalarProperty Name="CheckOutDate" ColumnName="CheckOutDate" />
+                <ScalarProperty Name="GuestCount" ColumnName="GuestCount" />
+                <ScalarProperty Name="RoomCount" ColumnName="RoomCount" />
+                <ScalarProperty Name="SpecialRequest" ColumnName="SpecialRequest" />
+                <ScalarProperty Name="PaymentMethod" ColumnName="PaymentMethod" />
+                <ScalarProperty Name="TotalAmount" ColumnName="TotalAmount" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="MaKhuyenMai" ColumnName="MaKhuyenMai" />
+                <ScalarProperty Name="TienGiam" ColumnName="TienGiam" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ChiTietDonDatMons">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.ChiTietDonDatMon">
+              <MappingFragment StoreEntitySet="ChiTietDonDatMon">
+                <ScalarProperty Name="MaChiTiet" ColumnName="MaChiTiet" />
+                <ScalarProperty Name="MaDon" ColumnName="MaDon" />
+                <ScalarProperty Name="MaMonAn" ColumnName="MaMonAn" />
+                <ScalarProperty Name="SoLuong" ColumnName="SoLuong" />
+                <ScalarProperty Name="DonGia" ColumnName="DonGia" />
+                <ScalarProperty Name="ThanhTien" ColumnName="ThanhTien" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="DanhGias">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.DanhGia">
+              <MappingFragment StoreEntitySet="DanhGia">
+                <ScalarProperty Name="MaDanhGia" ColumnName="MaDanhGia" />
+                <ScalarProperty Name="BookingId" ColumnName="BookingId" />
+                <ScalarProperty Name="SoSao" ColumnName="SoSao" />
+                <ScalarProperty Name="BinhLuan" ColumnName="BinhLuan" />
+                <ScalarProperty Name="NgayDanhGia" ColumnName="NgayDanhGia" />
+                <ScalarProperty Name="HoatDong" ColumnName="HoatDong" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="DanhMucMonAns">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.DanhMucMonAn">
+              <MappingFragment StoreEntitySet="DanhMucMonAn">
+                <ScalarProperty Name="MaDanhMuc" ColumnName="MaDanhMuc" />
+                <ScalarProperty Name="TenDanhMuc" ColumnName="TenDanhMuc" />
+                <ScalarProperty Name="MoTa" ColumnName="MoTa" />
+                <ScalarProperty Name="ThuTu" ColumnName="ThuTu" />
+                <ScalarProperty Name="HoatDong" ColumnName="HoatDong" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="DatPhongDichVus">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.DatPhongDichVu">
+              <MappingFragment StoreEntitySet="DatPhongDichVu">
+                <ScalarProperty Name="MaDatPhongDichVu" ColumnName="MaDatPhongDichVu" />
+                <ScalarProperty Name="BookingId" ColumnName="BookingId" />
+                <ScalarProperty Name="MaDichVu" ColumnName="MaDichVu" />
+                <ScalarProperty Name="SoLuong" ColumnName="SoLuong" />
+                <ScalarProperty Name="DonGia" ColumnName="DonGia" />
+                <ScalarProperty Name="ThanhTien" ColumnName="ThanhTien" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="DichVus">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.DichVu">
+              <MappingFragment StoreEntitySet="DichVu">
+                <ScalarProperty Name="MaDichVu" ColumnName="MaDichVu" />
+                <ScalarProperty Name="TenDichVu" ColumnName="TenDichVu" />
+                <ScalarProperty Name="MoTa" ColumnName="MoTa" />
+                <ScalarProperty Name="Gia" ColumnName="Gia" />
+                <ScalarProperty Name="DonVi" ColumnName="DonVi" />
+                <ScalarProperty Name="HoatDong" ColumnName="HoatDong" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="DonDatMons">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.DonDatMon">
+              <MappingFragment StoreEntitySet="DonDatMon">
+                <ScalarProperty Name="MaDon" ColumnName="MaDon" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="BookingId" ColumnName="BookingId" />
+                <ScalarProperty Name="HoTen" ColumnName="HoTen" />
+                <ScalarProperty Name="SoDienThoai" ColumnName="SoDienThoai" />
+                <ScalarProperty Name="HinhThuc" ColumnName="HinhThuc" />
+                <ScalarProperty Name="SoBan" ColumnName="SoBan" />
+                <ScalarProperty Name="SoPhong" ColumnName="SoPhong" />
+                <ScalarProperty Name="GhiChu" ColumnName="GhiChu" />
+                <ScalarProperty Name="TongTien" ColumnName="TongTien" />
+                <ScalarProperty Name="TrangThai" ColumnName="TrangThai" />
+                <ScalarProperty Name="PhuongThucThanhToan" ColumnName="PhuongThucThanhToan" />
+                <ScalarProperty Name="TrangThaiThanhToan" ColumnName="TrangThaiThanhToan" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="PaidAt" ColumnName="PaidAt" />
+                <ScalarProperty Name="PaymentReference" ColumnName="PaymentReference" />
+                <ScalarProperty Name="PaymentEvidence" ColumnName="PaymentEvidence" />
+                <ScalarProperty Name="PayWithBooking" ColumnName="PayWithBooking" />
+                <ScalarProperty Name="BookingServiceId" ColumnName="BookingServiceId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="HotelAutoCancelAudits">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.HotelAutoCancelAudit">
+              <MappingFragment StoreEntitySet="HotelAutoCancelAudit">
+                <ScalarProperty Name="AuditId" ColumnName="AuditId" />
+                <ScalarProperty Name="BookingId" ColumnName="BookingId" />
+                <ScalarProperty Name="PreviousStatus" ColumnName="PreviousStatus" />
+                <ScalarProperty Name="NewStatus" ColumnName="NewStatus" />
+                <ScalarProperty Name="CheckInDate" ColumnName="CheckInDate" />
+                <ScalarProperty Name="ProcessedAtUtc" ColumnName="ProcessedAtUtc" />
+                <ScalarProperty Name="HadPaidPayment" ColumnName="HadPaidPayment" />
+                <ScalarProperty Name="NeedsFinancialReview" ColumnName="NeedsFinancialReview" />
+                <ScalarProperty Name="Reason" ColumnName="Reason" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="KhuyenMais">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.KhuyenMai">
+              <MappingFragment StoreEntitySet="KhuyenMai">
+                <ScalarProperty Name="MaKhuyenMai" ColumnName="MaKhuyenMai" />
+                <ScalarProperty Name="MaCode" ColumnName="MaCode" />
+                <ScalarProperty Name="TenKhuyenMai" ColumnName="TenKhuyenMai" />
+                <ScalarProperty Name="MoTa" ColumnName="MoTa" />
+                <ScalarProperty Name="LoaiGiamGia" ColumnName="LoaiGiamGia" />
+                <ScalarProperty Name="GiaTriGiam" ColumnName="GiaTriGiam" />
+                <ScalarProperty Name="DonToiThieu" ColumnName="DonToiThieu" />
+                <ScalarProperty Name="GiamToiDa" ColumnName="GiamToiDa" />
+                <ScalarProperty Name="NgayBatDau" ColumnName="NgayBatDau" />
+                <ScalarProperty Name="NgayKetThuc" ColumnName="NgayKetThuc" />
+                <ScalarProperty Name="SoLuotSuDungToiDa" ColumnName="SoLuotSuDungToiDa" />
+                <ScalarProperty Name="SoLuotDaSuDung" ColumnName="SoLuotDaSuDung" />
+                <ScalarProperty Name="HoatDong" ColumnName="HoatDong" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="MonAns">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.MonAn">
+              <MappingFragment StoreEntitySet="MonAn">
+                <ScalarProperty Name="MaMonAn" ColumnName="MaMonAn" />
+                <ScalarProperty Name="MaDanhMuc" ColumnName="MaDanhMuc" />
+                <ScalarProperty Name="TenMonAn" ColumnName="TenMonAn" />
+                <ScalarProperty Name="MoTa" ColumnName="MoTa" />
+                <ScalarProperty Name="Gia" ColumnName="Gia" />
+                <ScalarProperty Name="HinhAnh" ColumnName="HinhAnh" />
+                <ScalarProperty Name="DonVi" ColumnName="DonVi" />
+                <ScalarProperty Name="ThoiGianChuanBi" ColumnName="ThoiGianChuanBi" />
+                <ScalarProperty Name="NoiBat" ColumnName="NoiBat" />
+                <ScalarProperty Name="HoatDong" ColumnName="HoatDong" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="PasswordResetTokens">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.PasswordResetToken">
+              <MappingFragment StoreEntitySet="PasswordResetTokens">
+                <ScalarProperty Name="ResetTokenId" ColumnName="ResetTokenId" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="TokenHash" ColumnName="TokenHash" />
+                <ScalarProperty Name="ExpiresAt" ColumnName="ExpiresAt" />
+                <ScalarProperty Name="IsUsed" ColumnName="IsUsed" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Permissions">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.Permission">
+              <MappingFragment StoreEntitySet="Permissions">
+                <ScalarProperty Name="PermissionId" ColumnName="PermissionId" />
+                <ScalarProperty Name="PermissionCode" ColumnName="PermissionCode" />
+                <ScalarProperty Name="PermissionName" ColumnName="PermissionName" />
+                <ScalarProperty Name="Category" ColumnName="Category" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="PhysicalRooms">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.PhysicalRoom">
+              <MappingFragment StoreEntitySet="PhysicalRooms">
+                <ScalarProperty Name="PhysicalRoomId" ColumnName="PhysicalRoomId" />
+                <ScalarProperty Name="RoomTypeId" ColumnName="RoomTypeId" />
+                <ScalarProperty Name="RoomNumber" ColumnName="RoomNumber" />
+                <ScalarProperty Name="Floor" ColumnName="Floor" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="RoomMaintenances">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.RoomMaintenance">
+              <MappingFragment StoreEntitySet="RoomMaintenances">
+                <ScalarProperty Name="MaintenanceId" ColumnName="MaintenanceId" />
+                <ScalarProperty Name="PhysicalRoomId" ColumnName="PhysicalRoomId" />
+                <ScalarProperty Name="StartDate" ColumnName="StartDate" />
+                <ScalarProperty Name="EndDate" ColumnName="EndDate" />
+                <ScalarProperty Name="Reason" ColumnName="Reason" />
+                <ScalarProperty Name="Note" ColumnName="Note" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="EndedAt" ColumnName="EndedAt" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Rooms">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.Room">
+              <MappingFragment StoreEntitySet="Rooms">
+                <ScalarProperty Name="RoomId" ColumnName="RoomId" />
+                <ScalarProperty Name="RoomName" ColumnName="RoomName" />
+                <ScalarProperty Name="RoomType" ColumnName="RoomType" />
+                <ScalarProperty Name="Price" ColumnName="Price" />
+                <ScalarProperty Name="Capacity" ColumnName="Capacity" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="ImageUrl" ColumnName="ImageUrl" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="TotalRooms" ColumnName="TotalRooms" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="RoomServiceBedPolicies">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.RoomServiceBedPolicy">
+              <MappingFragment StoreEntitySet="RoomServiceBedPolicy">
+                <ScalarProperty Name="RoomId" ColumnName="RoomId" />
+                <ScalarProperty Name="MaxExtraBeds" ColumnName="MaxExtraBeds" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="RoomServiceCatalogs">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.RoomServiceCatalog">
+              <MappingFragment StoreEntitySet="RoomServiceCatalog">
+                <ScalarProperty Name="MaDichVu" ColumnName="MaDichVu" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="ImageUrl" ColumnName="ImageUrl" />
+                <ScalarProperty Name="Timing" ColumnName="Timing" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="RoomServiceHistories">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.RoomServiceHistory">
+              <MappingFragment StoreEntitySet="RoomServiceHistory">
+                <ScalarProperty Name="EventId" ColumnName="EventId" />
+                <ScalarProperty Name="OrderId" ColumnName="OrderId" />
+                <ScalarProperty Name="ActorId" ColumnName="ActorId" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="Message" ColumnName="Message" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="RoomServiceOrders">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.RoomServiceOrder">
+              <MappingFragment StoreEntitySet="RoomServiceOrders">
+                <ScalarProperty Name="OrderId" ColumnName="OrderId" />
+                <ScalarProperty Name="BookingId" ColumnName="BookingId" />
+                <ScalarProperty Name="PhysicalRoomId" ColumnName="PhysicalRoomId" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="ServiceId" ColumnName="ServiceId" />
+                <ScalarProperty Name="ProductId" ColumnName="ProductId" />
+                <ScalarProperty Name="ServiceName" ColumnName="ServiceName" />
+                <ScalarProperty Name="Unit" ColumnName="Unit" />
+                <ScalarProperty Name="Timing" ColumnName="Timing" />
+                <ScalarProperty Name="Quantity" ColumnName="Quantity" />
+                <ScalarProperty Name="UnitPrice" ColumnName="UnitPrice" />
+                <ScalarProperty Name="Total" ColumnName="Total" />
+                <ScalarProperty Name="PaymentMethod" ColumnName="PaymentMethod" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+                <ScalarProperty Name="UseAt" ColumnName="UseAt" />
+                <ScalarProperty Name="Note" ColumnName="Note" />
+                <ScalarProperty Name="PaymentStatus" ColumnName="PaymentStatus" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="RequestKey" ColumnName="RequestKey" />
+                <ScalarProperty Name="CreatedBy" ColumnName="CreatedBy" />
+                <ScalarProperty Name="Evidence" ColumnName="Evidence" />
+                <ScalarProperty Name="PaidAt" ColumnName="PaidAt" />
+                <ScalarProperty Name="PaidBy" ColumnName="PaidBy" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="RoomServiceProducts">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.RoomServiceProduct">
+              <MappingFragment StoreEntitySet="RoomServiceProducts">
+                <ScalarProperty Name="ProductId" ColumnName="ProductId" />
+                <ScalarProperty Name="MaDichVu" ColumnName="MaDichVu" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Price" ColumnName="Price" />
+                <ScalarProperty Name="Active" ColumnName="Active" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SePayEnvironments">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.SePayEnvironment">
+              <MappingFragment StoreEntitySet="SePayEnvironment">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Mode" ColumnName="Mode" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SePayTransactions">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.SePayTransaction">
+              <MappingFragment StoreEntitySet="SePayTransactions">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="SePayId" ColumnName="SePayId" />
+                <ScalarProperty Name="Mode" ColumnName="Mode" />
+                <ScalarProperty Name="Bank" ColumnName="Bank" />
+                <ScalarProperty Name="AccountNumber" ColumnName="AccountNumber" />
+                <ScalarProperty Name="BankReference" ColumnName="BankReference" />
+                <ScalarProperty Name="OrderType" ColumnName="OrderType" />
+                <ScalarProperty Name="OrderId" ColumnName="OrderId" />
+                <ScalarProperty Name="Amount" ColumnName="Amount" />
+                <ScalarProperty Name="Direction" ColumnName="Direction" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="Reason" ColumnName="Reason" />
+                <ScalarProperty Name="TransactionDate" ColumnName="TransactionDate" />
+                <ScalarProperty Name="ReceivedAtUtc" ColumnName="ReceivedAtUtc" />
+                <ScalarProperty Name="PayloadHash" ColumnName="PayloadHash" />
+                <ScalarProperty Name="PaymentId" ColumnName="PaymentId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ThanhToans">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.ThanhToan">
+              <MappingFragment StoreEntitySet="ThanhToan">
+                <ScalarProperty Name="MaThanhToan" ColumnName="MaThanhToan" />
+                <ScalarProperty Name="BookingId" ColumnName="BookingId" />
+                <ScalarProperty Name="PhuongThucThanhToan" ColumnName="PhuongThucThanhToan" />
+                <ScalarProperty Name="SoTien" ColumnName="SoTien" />
+                <ScalarProperty Name="NgayThanhToan" ColumnName="NgayThanhToan" />
+                <ScalarProperty Name="TrangThai" ColumnName="TrangThai" />
+                <ScalarProperty Name="MaGiaoDich" ColumnName="MaGiaoDich" />
+                <ScalarProperty Name="GhiChu" ColumnName="GhiChu" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="UserPermissions">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.UserPermission">
+              <MappingFragment StoreEntitySet="UserPermissions">
+                <ScalarProperty Name="UserPermissionId" ColumnName="UserPermissionId" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="PermissionCode" ColumnName="PermissionCode" />
+                <ScalarProperty Name="GrantedAt" ColumnName="GrantedAt" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Users">
+            <EntityTypeMapping TypeName="QLKhachSanDBModel1.User">
+              <MappingFragment StoreEntitySet="Users">
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="Username" ColumnName="Username" />
+                <ScalarProperty Name="PasswordHash" ColumnName="PasswordHash" />
+                <ScalarProperty Name="FullName" ColumnName="FullName" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="Role" ColumnName="Role" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="true" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>

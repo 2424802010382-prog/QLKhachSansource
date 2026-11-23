@@ -76,6 +76,30 @@
                     items-center
                     gap-3">
 
+                <a href="@Url.Action("Orders", "RoomService")"
+                   class="bg-indigo-600
+                          hover:bg-indigo-700
+                          text-white
+                          font-bold
+                          px-4
+                          py-2.5
+                          rounded-xl">
+                    <i class="fas fa-bell-concierge mr-1"></i>
+                    Dịch vụ phòng
+                </a>
+
+                <a href="@Url.Action("RefundRequests", "Staff")"
+                   class="bg-red-600
+                          hover:bg-red-700
+                          text-white
+                          font-bold
+                          px-4
+                          py-2.5
+                          rounded-xl">
+                    <i class="fas fa-hand-holding-dollar mr-1"></i>
+                    Hoàn tiền
+                </a>
+
                 <a href="@Url.Action(
                         "Index",
                         "Staff"

@@ -87,6 +87,21 @@ namespace QLKhachSan.Controllers
         // =========================================================
 
         [HttpGet]
+        public JsonResult GetAvailablePromotions()
+        {
+            var today = DateTime.Today;
+            var promotions = db.KhuyenMais.AsNoTracking()
+                .Where(k => k.HoatDong && k.NgayBatDau <= today && k.NgayKetThuc >= today
+                    && (!k.SoLuotSuDungToiDa.HasValue || k.SoLuotDaSuDung < k.SoLuotSuDungToiDa.Value))
+                .OrderBy(k => k.DonToiThieu).ThenBy(k => k.MaCode)
+                .Select(k => new {
+                    code = k.MaCode, name = k.TenKhuyenMai, type = k.LoaiGiamGia,
+                    value = k.GiaTriGiam, minAmount = k.DonToiThieu, maxDiscount = k.GiamToiDa
+                }).ToList();
+            return Json(promotions, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpGet]
         public JsonResult CheckPromotion(string code)
         {
             if (string.IsNullOrWhiteSpace(code))
@@ -191,6 +206,100 @@ namespace QLKhachSan.Controllers
 
 
         // =========================================================
+        // LẤY DANH SÁCH THÔNG TIN KHÁCH HÀNG ĐÃ LƯU / ĐÃ TỪNG ĐẶT PHÒNG
+        // =========================================================
+
+        [HttpGet]
+        public JsonResult GetSavedCustomerProfiles()
+        {
+            if (Session["UserId"] == null)
+            {
+                return Json(new { success = false, profiles = new object[0] }, JsonRequestBehavior.AllowGet);
+            }
+
+            if (!int.TryParse(Convert.ToString(Session["UserId"]), out int userId))
+            {
+                return Json(new { success = false, profiles = new object[0] }, JsonRequestBehavior.AllowGet);
+            }
+
+            try
+            {
+                var user = db.Users.Find(userId);
+                var pastBookings = db.Bookings
+                    .AsNoTracking()
+                    .Where(b => b.UserId == userId && !string.IsNullOrEmpty(b.CustomerName))
+                    .OrderByDescending(b => b.CreatedAt)
+                    .ToList();
+
+                var profilesList = new List<object>();
+                var addedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                // 1. Thông tin từ tài khoản chính
+                if (user != null)
+                {
+                    var userLastBooking = pastBookings.FirstOrDefault(b =>
+                        (b.CustomerName ?? "").Trim().Equals((user.FullName ?? "").Trim(), StringComparison.OrdinalIgnoreCase));
+
+                    string userPhone = userLastBooking?.CustomerPhone ?? "";
+                    string userEmail = string.IsNullOrEmpty(user.Email) ? (userLastBooking?.CustomerEmail ?? "") : user.Email;
+                    string userCccd = userLastBooking?.CustomerCCCD ?? "";
+
+                    string key = $"{user.FullName?.Trim()}|{userPhone.Trim()}|{userCccd.Trim()}";
+                    addedKeys.Add(key);
+
+                    string detailStr = !string.IsNullOrEmpty(userPhone) ? userPhone : userEmail;
+                    if (!string.IsNullOrEmpty(userCccd)) detailStr += $" - CCCD: {userCccd}";
+
+                    profilesList.Add(new
+                    {
+                        name = user.FullName ?? "",
+                        phone = userPhone,
+                        email = userEmail,
+                        cccd = userCccd,
+                        label = $"👤 Thông tin của bạn ({user.FullName})" + (!string.IsNullOrEmpty(detailStr) ? $" - {detailStr}" : "")
+                    });
+                }
+
+                // 2. Thông tin khách hàng đã từng được đặt từ tài khoản này
+                foreach (var booking in pastBookings)
+                {
+                    string name = (booking.CustomerName ?? "").Trim();
+                    string phone = (booking.CustomerPhone ?? "").Trim();
+                    string email = (booking.CustomerEmail ?? "").Trim();
+                    string cccd = (booking.CustomerCCCD ?? "").Trim();
+
+                    if (string.IsNullOrEmpty(name)) continue;
+
+                    string key = $"{name}|{phone}|{cccd}";
+                    if (!addedKeys.Contains(key))
+                    {
+                        addedKeys.Add(key);
+
+                        string infoStr = !string.IsNullOrEmpty(phone) ? phone : email;
+                        if (!string.IsNullOrEmpty(cccd)) infoStr += $" - CCCD: {cccd}";
+
+                        profilesList.Add(new
+                        {
+                            name = name,
+                            phone = phone,
+                            email = email,
+                            cccd = cccd,
+                            label = $"👥 Khách đã đặt trước: {name}" + (!string.IsNullOrEmpty(infoStr) ? $" ({infoStr})" : "")
+                        });
+                    }
+                }
+
+                return Json(new { success = true, profiles = profilesList }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError(ex.ToString());
+                return Json(new { success = false, profiles = new object[0] }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+
+        // =========================================================
         // TẠO ĐẶT PHÒNG
         // =========================================================
 
@@ -206,6 +315,15 @@ namespace QLKhachSan.Controllers
                 try
                 {
                     HotelOperations.LockInventory(db);
+                    if (Session["UserId"] == null)
+                    {
+                        return Json(new
+                        {
+                            success = false,
+                            requireLogin = true,
+                            message = "Vui lòng đăng nhập tài khoản để thực hiện đặt phòng."
+                        });
+                    }
                     string role = Session["Role"] != null ? Session["Role"].ToString() : "";
                     if (role.Equals("Staff", StringComparison.OrdinalIgnoreCase) || role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
                     {
@@ -882,8 +1000,19 @@ namespace QLKhachSan.Controllers
 
 
                     // =============================================
-                    // TẠO BẢN GHI THANH TOÁN
+                    // TẠO BẢN GHI THANH TOÁN (CỌC 40% NẾU THANH TOÁN TẠI KHÁCH SẠN)
                     // =============================================
+
+                    decimal paymentAmount = totalAmount;
+                    string paymentStatus = "Chờ thanh toán";
+                    string paymentNote = "Đơn đặt phòng #" + booking.BookingId;
+
+                    if (paymentMethod == "Thanh toán tại khách sạn" || paymentMethod.Contains("Thanh toán tại khách sạn"))
+                    {
+                        paymentAmount = Math.Round(totalAmount * 0.4m, 0);
+                        paymentStatus = "Chờ thanh toán cọc";
+                        paymentNote = "Cọc giữ phòng 40% (60% thanh toán tại quầy) cho đơn #" + booking.BookingId;
+                    }
 
                     var payment =
                         new ThanhToan
@@ -892,23 +1021,22 @@ namespace QLKhachSan.Controllers
                                 booking.BookingId,
 
                             PhuongThucThanhToan =
-    paymentMethod,
+                                paymentMethod,
 
                             SoTien =
-                                totalAmount,
+                                paymentAmount,
 
                             NgayThanhToan =
                                 DateTime.Now,
 
                             TrangThai =
-                                "Chờ thanh toán",
+                                paymentStatus,
 
                             MaGiaoDich =
                                 null,
 
                             GhiChu =
-                                "Đơn đặt phòng #"
-                                + booking.BookingId
+                                paymentNote
                         };
 
 
@@ -1100,12 +1228,31 @@ namespace QLKhachSan.Controllers
             return owned != null && owned.Contains(id);
         }
 
+        private void CheckAndCancelIfExpired(Booking booking)
+        {
+            if (booking != null && (booking.Status == "Chờ xác nhận" || booking.Status == "Đã xác nhận") &&
+                HotelOperations.PaidAmount(booking) < booking.TotalAmount &&
+                (DateTime.Now - booking.CreatedAt).TotalMinutes > 10)
+            {
+                booking.Status = "Đã hủy";
+                HotelOperations.ReturnPromotionUse(db, booking.BookingId);
+                foreach (var p in db.ThanhToans.Where(x => x.BookingId == booking.BookingId && x.TrangThai != "Đã thanh toán").ToList())
+                {
+                    p.TrangThai = "Đã hủy";
+                }
+                booking.SpecialRequest = "[TỰ ĐỘNG HỦY DO QUÁ HẠN THANH TOÁN QR 10 PHÚT] " + (booking.SpecialRequest ?? "");
+                db.SaveChanges();
+                PhysicalRoomHelper.SyncPhysicalRoomStatuses(db);
+            }
+        }
+
         [HttpGet]
         public ActionResult Payment(int id)
         {
             if (!CanAccessBooking(id)) return HttpNotFound();
             var booking = db.Bookings.Include("Room").Include("ThanhToans").FirstOrDefault(b => b.BookingId == id);
             if (booking == null) return HttpNotFound();
+            CheckAndCancelIfExpired(booking);
             return View(booking);
         }
 
@@ -1135,10 +1282,17 @@ namespace QLKhachSan.Controllers
         [HttpGet]
         public JsonResult CheckPaymentStatus(int id)
         {
+            Response.Cache.SetCacheability(System.Web.HttpCacheability.NoCache);
+            Response.Cache.SetNoStore();
             if (!CanAccessBooking(id)) { Response.StatusCode = 403; return Json(new { success = false, isPaid = false }, JsonRequestBehavior.AllowGet); }
-            var booking = db.Bookings.Find(id);
+            var booking = db.Bookings.Include("ThanhToans").FirstOrDefault(b => b.BookingId == id);
+            if (booking == null) return Json(new { success = false, isPaid = false }, JsonRequestBehavior.AllowGet);
+            CheckAndCancelIfExpired(booking);
             decimal paid = db.ThanhToans.Where(p => p.BookingId == id && p.TrangThai == "Đã thanh toán").Select(p => (decimal?)p.SoTien).Sum() ?? 0;
             return Json(new { success = booking != null, isPaid = booking != null && paid >= booking.TotalAmount,
+                canPay = booking != null && HotelOperations.ActiveStatuses.Contains(booking.Status),
+                outstandingAmount = booking == null ? 0 : Math.Max(0, booking.TotalAmount - paid),
+                needsReview = booking != null && QLKhachSan.Services.SePayPaymentService.NeedsReview(db, "Booking", id),
                 status = booking == null ? "" : booking.Status }, JsonRequestBehavior.AllowGet);
         }
 
@@ -1177,7 +1331,7 @@ namespace QLKhachSan.Controllers
         public ActionResult Success(int id)
         {
             if (!CanAccessBooking(id)) return HttpNotFound();
-            var booking = db.Bookings.Include("Room").FirstOrDefault(b => b.BookingId == id);
+            var booking = db.Bookings.Include("Room").Include("ThanhToans").FirstOrDefault(b => b.BookingId == id);
             if (booking == null) return HttpNotFound();
             return View(booking);
         }
@@ -1191,7 +1345,7 @@ namespace QLKhachSan.Controllers
             try
             {
                 var available = new HashSet<int>(HotelOperations.AvailableRooms(db, roomId, checkIn.Date, checkOut.Date).Select(p => p.PhysicalRoomId));
-                var physicalRooms = db.PhysicalRooms.AsNoTracking().Where(p => p.RoomTypeId == roomId && p.IsActive && p.RoomType.IsActive)
+                var physicalRooms = db.PhysicalRooms.AsNoTracking().Where(p => p.RoomTypeId == roomId && p.IsActive && p.Room.IsActive)
                     .OrderBy(p => p.RoomNumber).ToList().Select(p => new { physicalRoomId = p.PhysicalRoomId,
                         roomNumber = p.RoomNumber, floor = p.Floor, isBooked = !available.Contains(p.PhysicalRoomId) }).ToList();
                 return Json(new { success = true, physicalRooms }, JsonRequestBehavior.AllowGet);

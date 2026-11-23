@@ -14,6 +14,12 @@ namespace QLKhachSan.Models
     
     public partial class DatPhongDichVu
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
+        public DatPhongDichVu()
+        {
+            this.DonDatMons = new HashSet<DonDatMon>();
+        }
+    
         public int MaDatPhongDichVu { get; set; }
         public int BookingId { get; set; }
         public int MaDichVu { get; set; }
@@ -23,5 +29,7 @@ namespace QLKhachSan.Models
     
         public virtual Booking Booking { get; set; }
         public virtual DichVu DichVu { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<DonDatMon> DonDatMons { get; set; }
     }
 }

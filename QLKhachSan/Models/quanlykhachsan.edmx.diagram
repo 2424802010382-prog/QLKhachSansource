@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="aa8c02dd373945efaac49577336daa84" Name="Diagram1" ZoomLevel="45">
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.C__MigrationHistory" Width="1.5" PointX="0.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.Booking" Width="1.5" PointX="3" PointY="11.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.ChiTietDonDatMon" Width="1.5" PointX="12.75" PointY="18.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.DanhGia" Width="1.5" PointX="5.25" PointY="12" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.DanhMucMonAn" Width="1.5" PointX="8.25" PointY="25" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.DatPhongDichVu" Width="1.5" PointX="5.25" PointY="15.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.DichVu" Width="1.5" PointX="3.75" PointY="4.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.DonDatMon" Width="1.5" PointX="10.5" PointY="17.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.HotelAutoCancelAudit" Width="1.5" PointX="2.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.KhuyenMai" Width="1.5" PointX="0.75" PointY="8" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.MonAn" Width="1.5" PointX="10.5" PointY="24.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.PasswordResetToken" Width="1.5" PointX="3" PointY="19.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.Permission" Width="1.5" PointX="4.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.PhysicalRoom" Width="1.5" PointX="5.625" PointY="8.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.RoomMaintenance" Width="1.5" PointX="6.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.Room" Width="1.5" PointX="0.5" PointY="19" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.RoomServiceBedPolicy" Width="1.5" PointX="3" PointY="25.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.RoomServiceCatalog" Width="1.5" PointX="6" PointY="4.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.RoomServiceHistory" Width="1.5" PointX="10.5" PointY="13.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.RoomServiceOrder" Width="1.5" PointX="8.25" PointY="11.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.RoomServiceProduct" Width="1.5" PointX="6" PointY="19.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.SePayEnvironment" Width="1.5" PointX="0.75" PointY="4.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.SePayTransaction" Width="1.5" PointX="8.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.ThanhToan" Width="1.5" PointX="5.25" PointY="26.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.UserPermission" Width="1.5" PointX="3" PointY="22.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="QLKhachSanDBModel1.User" Width="1.5" PointX="0.75" PointY="12.875" IsExpanded="true" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__Booki__762C88DA" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_Bookings_KhuyenMai" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_Bookings_Users" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_dbo_Bookings_dbo_Rooms_RoomId" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_dbo_DanhGia_dbo_Bookings_BookingId" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_dbo_DatPhongDichVu_dbo_Bookings_BookingId" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_dbo_ThanhToan_dbo_Bookings_BookingId" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_DonDatMon_Bookings" ManuallyRouted="true" >
+          <ConnectorPoint PointX="4.5" PointY="17.868230921073717" />
+          <ConnectorPoint PointX="5.125" PointY="18.493230921073717" />
+          <ConnectorPoint PointX="5.125" PointY="23.191712239583332" />
+          <ConnectorPoint PointX="10.125" PointY="23.191712239583332" />
+          <ConnectorPoint PointX="10.5" PointY="22.3137418174435" />
+        </AssociationConnector>
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_ChiTietDonDatMon_DonDatMon" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_ChiTietDonDatMon_MonAn" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_MonAn_DanhMucMonAn" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_dbo_DatPhongDichVu_dbo_DichVu_MaDichVu" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_DonDatMon_BookingService" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__MaDic__68D28DBC" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_DonDatMon_Users" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_PasswordResetTokens_Users" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__Physi__7720AD13" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_dbo_PhysicalRooms_dbo_Rooms_RoomTypeId" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__RoomI__7167D3BD" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__MaDic__6D9742D9" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__Servi__7908F585" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__Actor__056ECC6A" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__Order__047AA831" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__Creat__7FB5F314" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__PaidB__00AA174D" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__Produ__79FD19BE" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK__RoomServi__UserI__7814D14C" ManuallyRouted="false" />
+        <AssociationConnector Association="QLKhachSanDBModel1.FK_dbo_UserPermissions_dbo_Users_UserId" ManuallyRouted="false" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

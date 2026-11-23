@@ -3,7 +3,6 @@
     Layout = null;
     var perms = ViewBag.Permissions as List<string> ?? new List<string>();
 
-
     bool canViewBookings = perms.Contains("bookings.view") || perms.Contains("bookings.approve") || perms.Contains("bookings.checkout") || perms.Contains("payments.manage");
     bool canApproveBookings = perms.Contains("bookings.approve");
     bool canCheckIn = perms.Contains("bookings.checkin");
@@ -22,14 +21,21 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; }
+        .font-serif { font-family: 'Playfair Display', Georgia, serif !important; }
+    </style>
 </head>
 
 <body class="bg-[#f8f5ee] min-h-screen text-[#21170f]">
     @Html.Partial("~/Views/Shared/_SecurityClient.cshtml")
 
     <!-- HEADER -->
-    <header class="bg-[#241c17] text-[#f8f1e7] shadow-xl border-b border-[#d4af37]/30">
-        <div class="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
+    <header class="bg-[#241c17] text-[#f8f1e7] shadow-xl border-b border-[#d4af37]/30 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#f5d77a] text-[#21170f] flex items-center justify-center text-xl font-bold shadow-md">
                     <i class="fas fa-user-tie"></i>
@@ -40,94 +46,135 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-3">
-                <a href="@Url.Action("Index", "Home")" class="bg-[#2c2018] hover:bg-[#38281f] border border-[#d4af37]/40 text-[#f5d77a] font-semibold px-4 py-2.5 rounded-xl transition text-sm">
+            <div class="flex items-center gap-2 flex-wrap justify-center">
+                <a href="@Url.Action("Bookings", "Staff")" class="bg-white/10 hover:bg-white/20 text-yellow-300 border border-yellow-500/30 text-xs font-semibold px-3 py-2 rounded-xl transition">
+                    <i class="fas fa-calendar-check mr-1"></i> Phòng
+                </a>
+                <a href="@Url.Action("FoodOrders", "Staff")" class="bg-white/10 hover:bg-white/20 text-yellow-300 border border-yellow-500/30 text-xs font-semibold px-3 py-2 rounded-xl transition">
+                    <i class="fas fa-utensils mr-1"></i> Món ăn
+                </a>
+                <a href="@Url.Action("Orders", "RoomService")" class="bg-white/10 hover:bg-white/20 text-yellow-300 border border-yellow-500/30 text-xs font-semibold px-3 py-2 rounded-xl transition">
+                    <i class="fas fa-bell-concierge mr-1"></i> Dịch vụ phòng
+                </a>
+                <a href="@Url.Action("RefundRequests", "Staff")" class="bg-white/10 hover:bg-white/20 text-yellow-300 border border-yellow-500/30 text-xs font-semibold px-3 py-2 rounded-xl transition">
+                    <i class="fas fa-hand-holding-dollar mr-1"></i> Hoàn tiền
+                </a>
+                <a href="@Url.Action("Index", "Home")" class="bg-[#2c2018] hover:bg-[#38281f] border border-[#d4af37]/40 text-[#f5d77a] font-semibold px-3 py-2 rounded-xl transition text-xs">
                     <i class="fas fa-house mr-1"></i> Trang chủ
                 </a>
-                <a href="#" onclick="openLuxuryLogoutModal(event); return false;" class="bg-rose-700 hover:bg-rose-800 text-white font-bold px-4 py-2.5 rounded-xl transition text-sm shadow-md">
+                <a href="#" onclick="openLuxuryLogoutModal(event); return false;" class="bg-rose-700 hover:bg-rose-800 text-white font-bold px-3 py-2 rounded-xl transition text-xs shadow-md">
                     <i class="fas fa-right-from-bracket mr-1"></i> Đăng xuất
                 </a>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-6 py-10">
+    <main class="max-w-7xl mx-auto px-6 py-8">
 
-        <!-- WELCOME -->
-        <div class="bg-white rounded-2xl border border-[#e7dbc1] p-6 shadow-sm mb-8">
-            <p class="text-gray-500 text-sm">Xin chào nhân viên,</p>
-            <h2 class="text-3xl font-extrabold text-[#21170f]">
-                @(Session["FullName"] != null ? Session["FullName"].ToString() : Session["Username"].ToString())
-            </h2>
-            <p class="text-xs text-gray-500 mt-1">
-                <i class="fas fa-shield-halved text-indigo-600 mr-1"></i> Bảng điều khiển công việc theo quyền hạn được cấp
-            </p>
+        <!-- WELCOME BANNER -->
+        <div class="bg-white rounded-2xl border border-[#e7dbc1] p-6 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider">Xin chào nhân viên,</p>
+                <h2 class="text-3xl font-extrabold text-[#21170f] mt-1">
+                    @(Session["FullName"] != null ? Session["FullName"].ToString() : Session["Username"].ToString())
+                </h2>
+                <p class="text-xs text-gray-500 mt-1">
+                    <i class="fas fa-shield-halved text-indigo-600 mr-1"></i> Bảng điều khiển công việc &amp; xử lý nghiệp vụ trực tiếp
+                </p>
+            </div>
+
         </div>
 
-        <!-- THỐNG KÊ THEO QUYỀN HẠN -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-9">
+        <!-- THỐNG KÊ 3 LOẠI ĐƠN CHỜ XỬ LÝ -->
+        <div class="mb-4">
+            <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <i class="fas fa-clock text-amber-600"></i> Đơn đang chờ xử lý
+            </h3>
+        </div>
 
-            @if (canViewBookings)
-            {
-                <a href="@Url.Action("Bookings", "Staff", new { status = "Chờ xác nhận" })" class="bg-white rounded-2xl border border-[#e7dbc1] shadow-sm p-5 hover:shadow-md transition">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Đơn phòng chờ xác nhận</p>
-                            <p class="text-3xl font-extrabold text-amber-600 mt-2">@ViewBag.PendingBookings</p>
-                        </div>
-                        <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl">
-                            <i class="fas fa-clock"></i>
-                        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-9">
+
+            <!-- Card 1: Booking pending -->
+            <div class="bg-white rounded-2xl border border-[#e7dbc1] shadow-sm p-5 hover:shadow-md transition flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Đơn đặt phòng</p>
+                        <p class="text-3xl font-extrabold text-amber-600 mt-1">@(ViewBag.PendingBookings ?? 0)</p>
                     </div>
-                </a>
-            }
-
-            @if (canCheckIn)
-            {
-                <a href="@Url.Action("TodayCheckIns", "Staff")" class="bg-white rounded-2xl border border-[#e7dbc1] shadow-sm p-5 hover:shadow-md transition">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Nhận phòng hôm nay</p>
-                            <p class="text-3xl font-extrabold text-blue-600 mt-2">@ViewBag.TodayCheckIns</p>
-                        </div>
-                        <div class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-2xl">
-                            <i class="fas fa-door-open"></i>
-                        </div>
-                    </div>
-                </a>
-            }
-
-            @if (canFoodOrders)
-            {
-                <a href="@Url.Action("FoodOrders", "Staff")" class="bg-white rounded-2xl border border-[#e7dbc1] shadow-sm p-5 hover:shadow-md transition">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Đơn món đang xử lý</p>
-                            <p class="text-3xl font-extrabold text-orange-600 mt-2">@ViewBag.PendingFoodOrders</p>
-                        </div>
-                        <div class="w-14 h-14 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-2xl">
-                            <i class="fas fa-utensils"></i>
-                        </div>
-                    </div>
-                </a>
-            }
-
-            @if (canRevenue)
-            {
-                <div class="bg-white rounded-2xl border border-[#e7dbc1] shadow-sm p-5">
-                    <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <p class="text-gray-500 text-sm">Doanh thu hôm nay</p>
-                            <p class="text-2xl font-extrabold text-emerald-600 mt-2 whitespace-nowrap">
-                                @(((decimal)ViewBag.TodayRevenue).ToString("N0"))đ
-                            </p>
-                        </div>
-                        <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl flex-shrink-0">
-                            <i class="fas fa-money-bill-wave"></i>
-                        </div>
+                    <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl">
+                        <i class="fas fa-calendar-check"></i>
                     </div>
                 </div>
-            }
+                <a href="@Url.Action("Bookings", "Staff", new { status = "Chờ xác nhận" })" class="w-full bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold py-2 rounded-xl text-center transition flex items-center justify-center gap-1.5 mt-2">
+                    Xem và xử lý <i class="fas fa-arrow-right text-[10px]"></i>
+                </a>
+            </div>
+
+            <!-- Card 2: Food orders pending -->
+            <div class="bg-white rounded-2xl border border-[#e7dbc1] shadow-sm p-5 hover:shadow-md transition flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Đơn món ăn</p>
+                        <p class="text-3xl font-extrabold text-orange-600 mt-1">@(ViewBag.PendingFoodOrders ?? 0)</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-xl">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                </div>
+                <a href="@Url.Action("FoodOrders", "Staff")" class="w-full bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-bold py-2 rounded-xl text-center transition flex items-center justify-center gap-1.5 mt-2">
+                    Xem và xử lý <i class="fas fa-arrow-right text-[10px]"></i>
+                </a>
+            </div>
+
+            <!-- Card 3: Room service pending -->
+            <div class="bg-white rounded-2xl border border-[#e7dbc1] shadow-sm p-5 hover:shadow-md transition flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Dịch vụ phòng</p>
+                        <p class="text-3xl font-extrabold text-indigo-600 mt-1">@(ViewBag.PendingRoomServices ?? 0)</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl">
+                        <i class="fas fa-bell-concierge"></i>
+                    </div>
+                </div>
+                <a href="@Url.Action("Orders", "RoomService")" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-xs font-bold py-2 rounded-xl text-center transition flex items-center justify-center gap-1.5 mt-2">
+                    Xem và xử lý <i class="fas fa-arrow-right text-[10px]"></i>
+                </a>
+            </div>
+
+            <!-- Card 4: Today Check-Ins -->
+            <div class="bg-white rounded-2xl border border-[#e7dbc1] shadow-sm p-5 hover:shadow-md transition flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Nhận phòng hôm nay</p>
+                        <p class="text-3xl font-extrabold text-blue-600 mt-1">@(ViewBag.TodayCheckIns ?? 0)</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
+                        <i class="fas fa-door-open"></i>
+                    </div>
+                </div>
+                <a href="@Url.Action("TodayCheckIns", "Staff")" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold py-2 rounded-xl text-center transition flex items-center justify-center gap-1.5 mt-2">
+                    Danh sách Check-in <i class="fas fa-arrow-right text-[10px]"></i>
+                </a>
+            </div>
+
+            <!-- Card 5: Today Revenue -->
+            <div class="bg-white rounded-2xl border border-[#e7dbc1] shadow-sm p-5 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Doanh thu hôm nay</p>
+                        <p class="text-2xl font-extrabold text-emerald-600 mt-1 whitespace-nowrap">
+                            @(((decimal)(ViewBag.TodayRevenue ?? 0m)).ToString("N0"))đ
+                        </p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl flex-shrink-0">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                </div>
+                <div class="text-[11px] text-gray-400 font-semibold pt-2 border-t border-gray-100">
+                    Phòng + Món ăn đã thu
+                </div>
+            </div>
 
         </div>
 
@@ -152,10 +199,9 @@
                 </div>
 
                 <section id="staffRoomMatrix" data-url="@Url.Action("GetPhysicalRoomsMatrixByDate", "Staff")" data-today="@DateTime.Today.ToString("yyyy-MM-dd")" data-bookings-url="@(canViewBookings ? Url.Action("Bookings", "Staff") : canCheckIn ? Url.Action("TodayCheckIns", "Staff") : "")">
-                    <!-- THANH LỊCH CHỌN NGÀY (7 NGÀY & DATE PICKER) -->
+                    <!-- THANH LỊCH CHỌN NGÀY -->
                     <div class="bg-[#111827] text-white p-4 rounded-2xl mb-6 shadow-md">
                         <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
-                            <!-- Controls Left: Prev 7 days, Today, Next 7 days, Refresh -->
                             <div class="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-start">
                                 <button type="button" data-shift="-7" class="px-3.5 py-2 bg-white/10 hover:bg-yellow-500 hover:text-gray-900 rounded-xl text-xs font-bold transition flex items-center gap-1" title="7 ngày trước">
                                     <i class="fas fa-chevron-left"></i> 7 Ngày trước
@@ -171,12 +217,9 @@
                                 </button>
                             </div>
 
-                            <!-- 7 Days Buttons Bar -->
                             <div id="staffMatrixWeek" class="flex items-center gap-1.5 overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0 justify-start lg:justify-center" aria-label="Lịch 7 ngày">
-                                <!-- Dynamic 7 day pill buttons rendered by JS -->
                             </div>
 
-                            <!-- Custom Date Picker -->
                             <div class="flex items-center gap-2 w-full lg:w-auto justify-end">
                                 <span class="text-xs text-gray-300 font-semibold hidden sm:inline">Chọn ngày:</span>
                                 <input type="date" id="staffMatrixDate" class="bg-gray-800 text-yellow-300 border border-yellow-500/50 rounded-xl px-3 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-yellow-400" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
@@ -200,52 +243,72 @@
             </div>
         }
 
-        <!-- MENU CHỨC NĂNG NGHIỆP VỤ -->
+        <!-- MENU CHỨC NĂNG NGHIỆP VỤ (3 CHỨC NĂNG CHÍNH + TẠO ĐƠN) -->
         <div class="mb-5">
-            <h2 class="text-2xl font-extrabold text-gray-900">Chức năng nghiệp vụ</h2>
-            <p class="text-gray-500 mt-1">Chỉ hiển thị các chức năng tương ứng với quyền hạn được cấp.</p>
+            <h2 class="text-2xl font-extrabold text-gray-900">Chức năng nghiệp vụ chính</h2>
+            <p class="text-gray-500 mt-1">Trực tiếp xử lý các nghiệp vụ phát sinh từ khách hàng.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
-            @if (canViewBookings)
-            {
-                <div class="bg-white rounded-2xl shadow-sm border border-[#e7dbc1] p-6">
+            <!-- 1. XỬ LÝ ĐẶT PHÒNG -->
+            <div class="bg-white rounded-2xl shadow-sm border border-[#e7dbc1] p-6 hover:shadow-md transition flex flex-col justify-between">
+                <div>
                     <div class="w-14 h-14 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-2xl mb-5">
                         <i class="fas fa-calendar-check"></i>
                     </div>
-                    <h3 class="text-xl font-extrabold">Đơn đặt phòng</h3>
-                    <p class="text-gray-500 text-sm mt-2 mb-5">Xem và xử lý các đơn đặt phòng của khách.</p>
-                    <a href="@Url.Action("Bookings", "Staff")" class="inline-flex items-center gap-2 text-blue-600 font-bold hover:underline">
-                        Quản lý đơn <i class="fas fa-arrow-right"></i>
-                    </a>
+                    <h3 class="text-xl font-extrabold text-gray-900">Xử lý đặt phòng</h3>
+                    <p class="text-gray-500 text-sm mt-2 mb-5">Xem danh sách, xác nhận/từ chối đơn, check-in, check-out và đối soát thanh toán.</p>
                 </div>
-            }
+                <a href="@Url.Action("Bookings", "Staff")" class="w-full bg-[#153044] hover:bg-[#1b3a4e] text-white font-bold py-3 rounded-xl text-xs text-center transition flex items-center justify-center gap-2 shadow">
+                    Xem và xử lý <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
 
-            @if (canApproveBookings)
-            {
-                <div class="bg-white rounded-2xl shadow-sm border border-[#e7dbc1] p-6">
-                    <div class="w-14 h-14 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mb-5">
-                        <i class="fas fa-plus"></i>
-                    </div>
-                    <h3 class="text-xl font-extrabold">Tạo đơn tại quầy</h3>
-                    <p class="text-gray-500 text-sm mt-2 mb-5">Hỗ trợ khách đặt phòng trực tiếp tại quầy lễ tân.</p>
-                    <a href="@Url.Action("CreateBooking", "Staff")" class="inline-flex items-center gap-2 text-emerald-600 font-bold hover:underline">
-                        Tạo đơn <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            }
-
-            @if (canFoodOrders)
-            {
-                <div class="bg-white rounded-2xl shadow-sm border border-[#e7dbc1] p-6">
+            <!-- 2. XỬ LÝ MÓN ĂN -->
+            <div class="bg-white rounded-2xl shadow-sm border border-[#e7dbc1] p-6 hover:shadow-md transition flex flex-col justify-between">
+                <div>
                     <div class="w-14 h-14 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-2xl mb-5">
                         <i class="fas fa-utensils"></i>
                     </div>
-                    <h3 class="text-xl font-extrabold">Đơn gọi món F&B</h3>
-                    <p class="text-gray-500 text-sm mt-2 mb-5">Xác nhận và cập nhật trạng thái món ăn giao phòng.</p>
-                    <a href="@Url.Action("FoodOrders", "Staff")" class="inline-flex items-center gap-2 text-amber-700 font-bold hover:underline">
-                        Xử lý đơn món <i class="fas fa-arrow-right"></i>
+                    <h3 class="text-xl font-extrabold text-gray-900">Xử lý món ăn</h3>
+                    <p class="text-gray-500 text-sm mt-2 mb-5">Tiếp nhận đơn gọi món, cập nhật tiến độ chế biến, phục vụ, giao phòng và thu tiền.</p>
+                </div>
+                <a href="@Url.Action("FoodOrders", "Staff")" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl text-xs text-center transition flex items-center justify-center gap-2 shadow">
+                    Xem và xử lý <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- 3. XỬ LÝ DỊCH VỤ PHÒNG -->
+            <div class="bg-white rounded-2xl shadow-sm border border-[#e7dbc1] p-6 hover:shadow-md transition flex flex-col justify-between ring-2 ring-indigo-500/20">
+                <div>
+                    <div class="w-14 h-14 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-2xl mb-5">
+                        <i class="fas fa-bell-concierge"></i>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-xl font-extrabold text-gray-900">Xử lý dịch vụ phòng</h3>
+                        <span class="bg-indigo-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Mới</span>
+                    </div>
+                    <p class="text-gray-500 text-sm mt-2 mb-5">Tiếp nhận yêu cầu giặt ủi, thêm nệm, minibar, cập nhật tiến độ và đối soát thanh toán.</p>
+                </div>
+                <a href="@Url.Action("Orders", "RoomService")" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl text-xs text-center transition flex items-center justify-center gap-2 shadow">
+                    Xem và xử lý <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- 4. TẠO ĐƠN TẠI QUẦY -->
+            @if (canApproveBookings)
+            {
+                <div class="bg-white rounded-2xl shadow-sm border border-[#e7dbc1] p-6 hover:shadow-md transition flex flex-col justify-between">
+                    <div>
+                        <div class="w-14 h-14 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mb-5">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <h3 class="text-xl font-extrabold text-gray-900">Tạo đơn tại quầy</h3>
+                        <p class="text-gray-500 text-sm mt-2 mb-5">Hỗ trợ khách đặt phòng trực tiếp tại quầy lễ tân theo phân quyền được cấp.</p>
+                    </div>
+                    <a href="@Url.Action("CreateBooking", "Staff")" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs text-center transition flex items-center justify-center gap-2 shadow">
+                        Tạo đơn mới <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
             }
@@ -257,5 +320,6 @@
     @Html.Partial("~/Views/Shared/_LuxuryModal.cshtml")
     <script src="@Url.Content("~/Scripts/staff-room-matrix.js")" defer></script>
 
+    @Html.Partial("~/Views/Shared/_AIChat.cshtml")
 </body>
 </html>

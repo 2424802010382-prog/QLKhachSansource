@@ -310,6 +310,22 @@
                  px-4 sm:px-6 lg:px-8
                  py-12">
 
+        @if (TempData["RefundSuccess"] != null)
+        {
+            <div class="mb-6 bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-center gap-3">
+                <i class="fas fa-circle-check text-green-600 text-xl"></i>
+                <div>@Html.Raw(TempData["RefundSuccess"])</div>
+            </div>
+        }
+
+        @if (TempData["RefundError"] != null)
+        {
+            <div class="mb-6 bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-center gap-3">
+                <i class="fas fa-circle-exclamation text-red-600 text-xl"></i>
+                <div>@TempData["RefundError"]</div>
+            </div>
+        }
+
 
         @if (
             Model == null ||
@@ -956,6 +972,23 @@
                                         </span>
 
 
+                                        @if (!string.IsNullOrWhiteSpace(booking.RefundStatus))
+                                        {
+                                            <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold @(booking.RefundStatus == "DaHoanTien" ? "bg-green-100 text-green-800 border border-green-300" : (booking.RefundStatus == "TuChoi" ? "bg-red-100 text-red-800 border border-red-300" : "bg-amber-100 text-amber-800 border border-amber-300"))">
+                                                <i class="fas fa-arrow-rotate-left mr-1.5"></i>
+                                                @booking.RefundStatusText
+                                            </span>
+                                        }
+                                        else if (booking.CanRequestRefund)
+                                        {
+                                            <button type="button"
+                                                    onclick="openRefundModal(@booking.BookingId, '@Html.Encode(booking.RoomName)', @booking.TotalAmount, @booking.RefundRate, @booking.EstimatedRefundAmount)"
+                                                    class="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2.5 rounded-lg transition shadow-sm text-sm">
+                                                <i class="fas fa-hand-holding-dollar mr-1.5"></i>
+                                                Yêu cầu hoàn tiền (@booking.RefundRate%)
+                                            </button>
+                                        }
+
                                         <a href="@Url.Action(
                 "Details",
                 "BookingHistory",
@@ -1033,6 +1066,168 @@
         </div>
 
     </footer>
+
+    <!-- ========================================================= -->
+    <!-- MODAL YÊU CẦU HOÀN TIỀN -->
+    <!-- ========================================================= -->
+    <div id="refundModal" class="fixed inset-0 bg-black/70 hidden justify-center items-center p-4 z-50 transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 md:p-8 shadow-2xl relative transform scale-95 transition-transform duration-300">
+            <button type="button" onclick="closeRefundModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center text-2xl mb-3">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900">Yêu Cầu Hoàn Tiền</h3>
+                <p class="text-gray-500 text-sm mt-1">Đơn đặt phòng <span id="modalBookingId" class="font-bold text-gray-800">#0</span> - <span id="modalRoomName"></span></p>
+            </div>
+
+            <!-- Thẻ chính sách & Tính toán -->
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-600">Đã thanh toán:</span>
+                    <strong id="modalPaidAmount" class="text-gray-900 font-bold">0đ</strong>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-600">Tỷ lệ hoàn (Chính sách):</span>
+                    <strong id="modalRefundRate" class="text-amber-700 font-bold">0%</strong>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-amber-200">
+                    <span class="text-gray-900 font-bold">Số tiền hoàn dự kiến:</span>
+                    <strong id="modalRefundAmount" class="text-red-600 text-lg font-black">0đ</strong>
+                </div>
+            </div>
+
+            <form action="@Url.Action("RequestRefund", "BookingHistory")" method="post" onsubmit="return confirmRefundSubmit(event);">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="inputBookingId" name="BookingId" value="0" />
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Ngân hàng nhận tiền <span class="text-red-500">*</span></label>
+                    <select name="BankName" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none">
+                        <option value="">-- Chọn Ngân hàng --</option>
+                        <option value="VietinBank">VietinBank (Ngân hàng Công Thương)</option>
+                        <option value="Vietcombank">Vietcombank (Ngân hàng Ngoại Thương)</option>
+                        <option value="BIDV">BIDV (Ngân hàng Đầu tư và Phát triển)</option>
+                        <option value="Agribank">Agribank (Ngân hàng Nông nghiệp)</option>
+                        <option value="MBBank">MBBank (Ngân hàng Quân Đội)</option>
+                        <option value="Techcombank">Techcombank (Kỹ Thương)</option>
+                        <option value="VPBank">VPBank (Thịnh Vượng)</option>
+                        <option value="ACB">ACB (Á Châu)</option>
+                        <option value="TPBank">TPBank (Tiên Phong)</option>
+                        <option value="Sacombank">Sacombank (Sài Gòn Thương Tín)</option>
+                        <option value="VIB">VIB (Quốc Tế)</option>
+                        <option value="SHB">SHB (Sài Gòn - Hà Nội)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Số tài khoản <span class="text-red-500">*</span></label>
+                        <input type="text" name="AccountNumber" required placeholder="Ví dụ: 108620022211" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Tên chủ tài khoản <span class="text-red-500">*</span></label>
+                        <input type="text" name="AccountHolder" required placeholder="HOANG VAN A" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm uppercase focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Lý do yêu cầu hoàn tiền <span class="text-red-500">*</span></label>
+                    <textarea name="Reason" rows="3" required placeholder="Vui lòng nêu rõ lý do hủy phòng và yêu cầu hoàn tiền..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeRefundModal()" class="w-1/2 border border-gray-300 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-50 transition">Hủy bỏ</button>
+                    <button type="submit" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition shadow-md">Gửi Yêu Cầu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL XÁC NHẬN GỬI YÊU CẦU HOÀN TIỀN (THEO MÀU DỰ ÁN) -->
+    <!-- ========================================================= -->
+    <div id="customConfirmModal" class="fixed inset-0 bg-black/70 hidden justify-center items-center p-4 z-[60] transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center relative transform scale-95 transition-transform duration-300">
+            <div class="w-14 h-14 mx-auto rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xl mb-4">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <h4 class="text-xl font-bold text-gray-900 mb-2">Xác Nhận Gửi Yêu Cầu</h4>
+            <p class="text-gray-600 text-sm mb-6 leading-relaxed">Bạn có chắc chắn muốn gửi yêu cầu hoàn tiền cho đơn đặt phòng này không?</p>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeCustomConfirmModal()" class="w-1/2 border border-gray-300 text-gray-700 font-bold py-2.5 rounded-xl hover:bg-gray-50 transition text-sm">Hủy</button>
+                <button type="button" onclick="executeRefundSubmit()" class="w-1/2 bg-[#171006] hover:bg-black text-[#f5d77a] font-bold py-2.5 rounded-xl transition shadow-md text-sm">Xác Nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let refundFormToSubmit = null;
+
+        function confirmRefundSubmit(event) {
+            event.preventDefault();
+            refundFormToSubmit = event.target;
+            const modal = document.getElementById('customConfirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.children[0].classList.remove('scale-95');
+                modal.children[0].classList.add('scale-100');
+            }, 10);
+            return false;
+        }
+
+        function closeCustomConfirmModal() {
+            const modal = document.getElementById('customConfirmModal');
+            modal.classList.add('opacity-0');
+            modal.children[0].classList.remove('scale-100');
+            modal.children[0].classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        function executeRefundSubmit() {
+            if (refundFormToSubmit) {
+                const form = refundFormToSubmit;
+                refundFormToSubmit = null;
+                form.submit();
+            }
+        }
+
+        function openRefundModal(bookingId, roomName, paidAmount, refundRate, refundAmount) {
+            document.getElementById('modalBookingId').innerText = '#' + bookingId;
+            document.getElementById('modalRoomName').innerText = roomName;
+            document.getElementById('modalPaidAmount').innerText = Number(paidAmount).toLocaleString('vi-VN') + 'đ';
+            document.getElementById('modalRefundRate').innerText = refundRate + '%';
+            document.getElementById('modalRefundAmount').innerText = Number(refundAmount).toLocaleString('vi-VN') + 'đ';
+            document.getElementById('inputBookingId').value = bookingId;
+
+            const modal = document.getElementById('refundModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.children[0].classList.remove('scale-95');
+                modal.children[0].classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeRefundModal() {
+            const modal = document.getElementById('refundModal');
+            modal.classList.add('opacity-0');
+            modal.children[0].classList.remove('scale-100');
+            modal.children[0].classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+    </script>
 
 
 </body>

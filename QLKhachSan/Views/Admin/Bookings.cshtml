@@ -160,31 +160,9 @@
                                         <td class="p-4 text-center">
                                             <div class="flex items-center justify-center gap-2">
                                                 <a href="@Url.Action("BookingDetails", "Admin", new { id = b.BookingId })"
-                                                   class="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg" title="Xem chi tiết">
-                                                    <i class="fas fa-eye"></i>
+                                                   class="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg font-semibold text-xs inline-flex items-center gap-1" title="Xem chi tiết (Chỉ đọc)">
+                                                    <i class="fas fa-eye"></i> Xem chi tiết
                                                 </a>
-
-                                                @if (b.Status == "Chờ xác nhận")
-                                                {
-                                                    <button type="button" onclick="performAdminBookingAction(@b.BookingId, 'confirm', 'Xác nhận đơn đặt phòng', 'Xác nhận đơn đặt phòng #@b.BookingId?')" class="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg" title="Xác nhận">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                    <button type="button" onclick="performAdminBookingAction(@b.BookingId, 'cancel', 'Hủy đơn đặt phòng', 'Bạn có chắc chắn muốn HỦY đơn đặt phòng #@b.BookingId?')" class="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg" title="Hủy">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                }
-                                                else if (b.Status == "Đã xác nhận")
-                                                {
-                                                    <button type="button" onclick="performAdminBookingAction(@b.BookingId, 'checkin', 'Xác nhận Nhận phòng', 'Xác nhận khách nhận phòng cho đơn #@b.BookingId?')" class="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg" title="Nhận phòng (Check-in)">
-                                                        <i class="fas fa-key"></i>
-                                                    </button>
-                                                }
-                                                else if (b.Status == "Đang ở")
-                                                {
-                                                    <button type="button" onclick="performAdminBookingAction(@b.BookingId, 'checkout', 'Xác nhận Trả phòng', 'Xác nhận khách trả phòng cho đơn #@b.BookingId?')" class="p-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg" title="Trả phòng (Check-out)">
-                                                        <i class="fas fa-sign-out-alt"></i>
-                                                    </button>
-                                                }
                                             </div>
                                         </td>
                                     </tr>
